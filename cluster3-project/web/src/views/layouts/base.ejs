@@ -1,0 +1,25 @@
+<%#
+  Base layout for every server-rendered page.
+
+  Renders the HTML document shell and wraps a page template. Controllers call
+  res.render('layouts/base', { title, page }): `page` is the name of a template
+  in src/views/pages, which this layout includes between the shared header and
+  footer partials. This keeps a single place for the document head, styles, and
+  chrome without a separate layout engine.
+%>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= typeof title !== 'undefined' ? title : 'LPA Store' %></title>
+    <link rel="stylesheet" href="/css/tailwind.css" />
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <%- include('../partials/header') %>
+    <main class="mx-auto max-w-5xl px-4 py-10">
+      <%- include('../pages/' + page) %>
+    </main>
+    <%- include('../partials/footer') %>
+  </body>
+</html>

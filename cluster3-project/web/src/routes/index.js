@@ -8,6 +8,7 @@
  */
 
 import express from 'express';
+import homeRoutes from './views/home.routes.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -19,7 +20,8 @@ export function registerRoutes(app) {
   const viewRouter = express.Router();
   const apiRouter = express.Router();
 
-  // Route modules (home page, health check, ...) are attached here per slice.
+  // View routes (HTML).
+  viewRouter.use('/', homeRoutes);
 
   app.use('/', viewRouter);
   app.use('/api', apiRouter);
