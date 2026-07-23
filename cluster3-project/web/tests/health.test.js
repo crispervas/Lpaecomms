@@ -24,10 +24,10 @@ after(async () => {
   await prisma.$disconnect();
 });
 
-test('GET /api/health returns 200 and reports the database as connected', async () => {
+test('GET /v1/api/health returns 200 and reports the database as connected', async () => {
   const app = createApp();
 
-  const response = await request(app).get('/api/health');
+  const response = await request(app).get('/v1/api/health');
 
   assert.equal(response.status, 200);
   assert.deepEqual(response.body, { status: 'ok', db: 'connected' });

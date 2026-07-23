@@ -39,7 +39,7 @@ cluster3-project/web/
 │   │   ├── views/
 │   │   │   └── home.routes.js      # GET /            → HomeController.index
 │   │   └── api/
-│   │       └── health.routes.js    # GET /api/health  → HealthController.check
+│   │       └── health.routes.js    # GET /v1/api/health → HealthController.check
 │   ├── controllers/
 │   │   ├── home.controller.js      # class HomeController
 │   │   └── health.controller.js    # class HealthController
@@ -61,7 +61,7 @@ cluster3-project/web/
 ├── prisma/
 │   └── schema.prisma               # datasource + generator (no models yet)
 ├── tests/
-│   └── health.test.js              # GET /api/health with node:test + supertest
+│   └── health.test.js              # GET /v1/api/health with node:test + supertest
 ├── tailwind.config.js              # content globs INCLUDE src/views/**/*.ejs
 ├── docker-compose.yml              # postgres:16
 ├── .env.example                    # Documents every variable (versioned)

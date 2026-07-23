@@ -28,5 +28,5 @@ export function registerRoutes(app) {
   apiRouter.use('/', healthRoutes);
 
   app.use('/', viewRouter);
-  app.use('/api', apiRouter);
+  app.use('/v1/api', apiRouter);
 }
