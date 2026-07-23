@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "prisma generate",
+    "test": "node --test",
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "build:css": "tailwindcss -i ./styles/tailwind.css -o ./src/public/css/tailwind.css --minify",
