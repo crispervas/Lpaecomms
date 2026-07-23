@@ -11,6 +11,7 @@ import express from 'express';
 import homeRoutes from './views/home.routes.js';
 import aboutRoutes from './views/about.routes.js';
 import contactRoutes from './views/contact.routes.js';
+import authRoutes from './views/auth.routes.js';
 import healthRoutes from './api/health.routes.js';
 
 /**
@@ -27,6 +28,7 @@ export function registerRoutes(app) {
   viewRouter.use('/', homeRoutes);
   viewRouter.use('/', aboutRoutes);
   viewRouter.use('/', contactRoutes);
+  viewRouter.use('/', authRoutes);
 
   // API routes (JSON).
   apiRouter.use('/', healthRoutes);
