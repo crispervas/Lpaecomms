@@ -8,7 +8,12 @@
  * value is hardcoded per environment and nothing branches on a hostname.
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { expand } from 'dotenv-expand';
+
+// Load .env and expand ${VAR} references so DATABASE_URL can be composed from
+// the individual POSTGRES_* variables rather than duplicating them.
+expand(dotenv.config());
 
 /**
  * Environments the application recognises.

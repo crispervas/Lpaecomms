@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-lpaecomms}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lpaecomms_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-lpaecomms_web}
+      POSTGRES_DB: ${POSTGRES_DB:-lpaecommsdb}
     ports:
       # Host port is configurable to avoid clashing with a local PostgreSQL.
       - "${POSTGRES_PORT:-5432}:5432"
@@ -22,7 +22,7 @@ services:
       - lpaecomms_web_pgdata:/var/lib/postgresql/data
     healthcheck:
       # Lets dependents wait until PostgreSQL actually accepts connections.
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lpaecomms} -d ${POSTGRES_DB:-lpaecomms_web}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lpaecomms} -d ${POSTGRES_DB:-lpaecommsdb}"]
       interval: 10s
       timeout: 5s
       retries: 5
