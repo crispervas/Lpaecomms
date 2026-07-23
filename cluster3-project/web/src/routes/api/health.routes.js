@@ -14,7 +14,7 @@ import { HealthController } from '../../controllers/health.controller.js';
 const router = express.Router();
 const healthController = new HealthController(new HealthModel(prisma));
 
-// GET /v1/api/health -> report service and database health.
+// GET /api/v1/health -> report service and database health.
 router.get('/health', (req, res) => healthController.check(req, res));
 
 export default router;
