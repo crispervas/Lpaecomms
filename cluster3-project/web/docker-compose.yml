@@ -1,0 +1,31 @@
+# Local PostgreSQL for the web platform (development only).
+#
+# All values are read from environment variables so nothing environment-specific
+# is hardcoded. Docker Compose substitutes them from a `.env` file placed next to
+# this file (see .env.example). The `:-` defaults keep the stack runnable out of
+# the box for local development; staging and production use managed databases and
+# do not use this file.
+
+services:
+  db:
+    image: postgres:16
+    container_name: lpa-web-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lpa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lpa_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lpa_web}
+    ports:
+      # Host port is configurable to avoid clashing with a local PostgreSQL.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - lpa_web_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Lets dependents wait until PostgreSQL actually accepts connections.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lpa} -d ${POSTGRES_DB:-lpa_web}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  lpa_web_pgdata:
