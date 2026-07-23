@@ -9,6 +9,7 @@
 
 import express from 'express';
 import homeRoutes from './views/home.routes.js';
+import healthRoutes from './api/health.routes.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -22,6 +23,9 @@ export function registerRoutes(app) {
 
   // View routes (HTML).
   viewRouter.use('/', homeRoutes);
+
+  // API routes (JSON).
+  apiRouter.use('/', healthRoutes);
 
   app.use('/', viewRouter);
   app.use('/api', apiRouter);
