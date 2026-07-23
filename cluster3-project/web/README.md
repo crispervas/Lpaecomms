@@ -3,6 +3,26 @@
 Server-rendered e-commerce storefront and REST API for Logic Peripherals
 Australia (LPA). Stack: Express 5 + EJS + Tailwind CSS, PostgreSQL via Prisma.
 
+## Technology stack
+
+Every technology used in this platform and what it is for. This list grows as
+new tools are introduced.
+
+| Technology | What it is for |
+| --- | --- |
+| **Node.js** | JavaScript runtime that executes the server-side code. |
+| **pnpm** | Package manager. Installs dependencies through a global content-addressable store with hard links, which is faster and uses less disk. Scoped to this `web` package for now. |
+| **Express 5** | Web framework. Handles HTTP routing and middleware, serving both the EJS views (browser users) and the REST API (mobile and desktop). |
+| **EJS** | Server-side templating engine. Renders HTML pages on the server from `.ejs` templates. |
+| **Tailwind CSS** | Utility-first CSS framework. Provides all styling for the views; compiled into the static assets directory. |
+| **PostgreSQL** | Relational database. Central data store shared by all three platforms. |
+| **Prisma** | ORM for PostgreSQL. Declares the schema, runs migrations, and provides the data-access client used by the model layer. |
+| **Docker Compose** | Runs PostgreSQL locally in a reproducible, disposable container for development. |
+| **dotenv** | Loads environment variables from a local `.env` file so configuration stays per-environment and out of the source code. |
+| **node:test** | Node's built-in test runner. Runs the automated tests with no extra framework. |
+| **supertest** | Sends HTTP requests to the Express app inside tests to assert route behaviour. |
+| **Bruno** | API client and documentation. The `bruno/` collection at the repository root is the source of truth for every REST endpoint and its three environments. |
+
 ## Planned folder structure
 
 ```
