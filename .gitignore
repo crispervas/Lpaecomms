@@ -30,7 +30,7 @@ out/
 
 # Tailwind: generated stylesheet compiled into the Express static assets.
 # Keep the source CSS; ignore the compiled bundle.
-cluster3-project/web/public/css/tailwind.css
+cluster3-project/web/src/public/css/tailwind.css
 
 # ---------------------------------------------------------------------------
 # Web (Express 5 + EJS + Tailwind)

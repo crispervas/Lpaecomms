@@ -8,7 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "build:css": "tailwindcss -i ./styles/tailwind.css -o ./src/public/css/tailwind.css --minify",
+    "dev:css": "tailwindcss -i ./styles/tailwind.css -o ./src/public/css/tailwind.css --watch"
   },
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.0",

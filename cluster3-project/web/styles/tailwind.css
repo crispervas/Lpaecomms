@@ -1,0 +1,10 @@
+/*
+ * Tailwind CSS source for the web platform.
+ *
+ * The build step (`pnpm run build:css`) compiles this file into
+ * src/public/css/tailwind.css, which Express serves as a static asset. Add
+ * custom component or utility layers below the directives as the UI grows.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
