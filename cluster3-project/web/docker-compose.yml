@@ -9,23 +9,23 @@
 services:
   db:
     image: postgres:16
-    container_name: lpa-web-db
+    container_name: lpaecomms-web-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-lpa}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lpa_dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-lpa_web}
+      POSTGRES_USER: ${POSTGRES_USER:-lpaecomms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lpaecomms_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lpaecomms_web}
     ports:
       # Host port is configurable to avoid clashing with a local PostgreSQL.
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - lpa_web_pgdata:/var/lib/postgresql/data
+      - lpaecomms_web_pgdata:/var/lib/postgresql/data
     healthcheck:
       # Lets dependents wait until PostgreSQL actually accepts connections.
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lpa} -d ${POSTGRES_DB:-lpa_web}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lpaecomms} -d ${POSTGRES_DB:-lpaecomms_web}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  lpa_web_pgdata:
+  lpaecomms_web_pgdata:

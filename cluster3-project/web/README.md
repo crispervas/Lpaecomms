@@ -1,7 +1,7 @@
-# Web — LPA e-commerce store
+# Web — Lpaecomms e-commerce store
 
-Server-rendered e-commerce storefront and REST API for Logic Peripherals
-Australia (LPA). Stack: Express 5 + EJS + Tailwind CSS, PostgreSQL via Prisma.
+Server-rendered e-commerce storefront and REST API for Lpaecomms. Stack:
+Express 5 + EJS + Tailwind CSS, PostgreSQL via Prisma.
 
 ## Technology stack
 

@@ -18,6 +18,6 @@ export class HomeController {
    * @returns {void}
    */
   index(req, res) {
-    res.render('layouts/base', { title: 'LPA Store — Home', page: 'home' });
+    res.render('layouts/base', { title: 'Lpaecomms — Home', page: 'home' });
   }
 }

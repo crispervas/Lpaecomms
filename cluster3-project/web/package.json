@@ -1,7 +1,7 @@
 {
-  "name": "lpa-web",
+  "name": "lpaecomms-web",
   "version": "0.1.0",
-  "description": "Server-rendered e-commerce store and REST API for Logic Peripherals Australia (LPA)",
+  "description": "Server-rendered e-commerce store and REST API for Lpaecomms",
   "type": "module",
   "main": "src/server.js",
   "engines": {
