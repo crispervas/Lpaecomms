@@ -9,6 +9,7 @@
 
 import express from 'express';
 import homeRoutes from './views/home.routes.js';
+import aboutRoutes from './views/about.routes.js';
 import healthRoutes from './api/health.routes.js';
 
 /**
@@ -23,6 +24,7 @@ export function registerRoutes(app) {
 
   // View routes (HTML).
   viewRouter.use('/', homeRoutes);
+  viewRouter.use('/', aboutRoutes);
 
   // API routes (JSON).
   apiRouter.use('/', healthRoutes);
