@@ -1,0 +1,48 @@
+meta {
+  name: Get health
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/health
+  body: none
+  auth: none
+}
+
+docs {
+  # Get health
+
+  Liveness and readiness check for the web service. Confirms the API process is
+  up and that it can reach its PostgreSQL database. Intended for uptime monitors
+  and deployment health checks.
+
+  ## Auth
+
+  None. This endpoint is public.
+
+  ## Parameters
+
+  None.
+
+  ## Responses
+
+  ### 200 OK — service healthy
+
+  The service is up and the database is reachable.
+
+  {
+    "status": "ok",
+    "db": "connected"
+  }
+
+  ### 503 Service Unavailable — database unreachable
+
+  The service is up but cannot reach the database. The status code lets uptime
+  monitors detect the degraded state without parsing the body.
+
+  {
+    "status": "degraded",
+    "db": "unreachable"
+  }
+}
