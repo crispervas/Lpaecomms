@@ -34,6 +34,13 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Expose the current path to every view so the navigation can mark the
+  // active link without each controller having to pass it.
+  app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    next();
+  });
+
   // Mount view routes (HTML) and API routes (JSON).
   registerRoutes(app);
 
