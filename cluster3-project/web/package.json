@@ -7,14 +7,18 @@
   "engines": {
     "node": ">=20"
   },
-  "scripts": {},
+  "scripts": {
+    "postinstall": "prisma generate"
+  },
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "dotenv": "^17.4.2",
     "ejs": "^6.0.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "prisma": "^7.9.0",

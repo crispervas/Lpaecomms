@@ -1,0 +1,15 @@
+// Prisma schema for the web platform.
+//
+// Declares the PostgreSQL data source and the client generator. Prisma 7 no
+// longer accepts the connection URL here: the CLI reads it from prisma.config.js
+// and the runtime client receives a pg driver adapter (see src/lib/prisma.js),
+// both sourced from the DATABASE_URL environment variable. No domain models
+// exist yet; the first model arrives with the product catalogue slice.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
