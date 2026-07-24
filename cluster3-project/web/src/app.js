@@ -11,6 +11,8 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerRoutes } from './routes/index.js';
+import { notFoundHandlerApi, notFoundHandlerWeb } from './config/notFoundHandler.js';
+import { errorHandler, logErrors, wrapErrors } from './config/errorHandler.js';
 
 /** Absolute path to the `src` directory, resolved from this module. */
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +45,24 @@ export function createApp() {
 
   // Mount view routes (HTML) and API routes (JSON).
   registerRoutes(app);
+
+  // Catch-all for unmatched requests, split by client:
+  //   /api/*  -> JSON 404 for the REST clients (mobile, desktop).
+  //   others  -> HTML 404 page for browser navigation.
+  // Both run after every route, so reaching them means nothing matched, and
+  // before the error middleware so a 404 is a normal response, not an error.
+  app.use('/api', notFoundHandlerApi);
+  app.use(notFoundHandlerWeb);
+
+  // Error-handling chain. Order is significant and must not change:
+  //   logErrors   — record the error (development only), then re-throw it.
+  //   wrapErrors  — turn any non-Boom error into a Boom error.
+  //   errorHandler — build and send the final JSON response.
+  // Each only runs once something upstream calls next(err); errorHandler relies
+  // on wrapErrors having already guaranteed a Boom-shaped error.
+  app.use(logErrors);
+  app.use(wrapErrors);
+  app.use(errorHandler);
 
   return app;
 }
