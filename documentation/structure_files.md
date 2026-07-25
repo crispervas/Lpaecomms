@@ -121,8 +121,15 @@ src/
     ├── css/
     │   └── tailwind.css  # Compiled Tailwind (build output)
     └── js/
-        └── nav.js        # Small client-side script for the nav
+        ├── nav.js         # Small client-side script for the nav
+        └── contact-map.js # Leaflet map on the Contact page (mashup: products + location)
 ```
+
+> **Per-page assets without a bundler.** `layouts/base.ejs` accepts two optional
+> locals — `styles` (stylesheet URLs added to `<head>`) and `scripts` (script
+> URLs loaded in order before `</body>`). A controller passes them to load a
+> library only where it is needed. Example: the Contact controller passes the
+> Leaflet CDN stylesheet/script plus `/js/contact-map.js`.
 
 ### Why `server.js` and `app.js` are separate
 

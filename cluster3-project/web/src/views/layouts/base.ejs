@@ -6,6 +6,11 @@
   in src/views/pages, which this layout includes between the shared header and
   footer partials. This keeps a single place for the document head, styles, and
   chrome without a separate layout engine.
+
+  Two optional locals let a page pull in its own assets without a bundler:
+  `styles` (array of stylesheet URLs added to <head>) and `scripts` (array of
+  script URLs loaded, in order, at the end of <body>). Pages that omit them
+  render unchanged.
 %>
 <!doctype html>
 <html lang="en">
@@ -14,6 +19,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><%= typeof title !== 'undefined' ? title : 'Lpaecomms' %></title>
     <link rel="stylesheet" href="/css/tailwind.css" />
+    <%# Optional per-page stylesheets, injected through the `styles` local
+        (e.g. Leaflet on the Contact page). %>
+    <% (typeof styles !== 'undefined' ? styles : []).forEach((href) => { %>
+    <link rel="stylesheet" href="<%= href %>" />
+    <% }) %>
   </head>
   <body class="flex min-h-screen flex-col bg-slate-50 text-slate-900">
     <%- include('../partials/header') %>
@@ -23,5 +33,11 @@
     </main>
     <%- include('../partials/footer') %>
     <script src="/js/nav.js" defer></script>
+    <%# Optional per-page scripts, injected through the `scripts` local and
+        loaded in order after the shared ones (e.g. Leaflet, then the map init).
+        `defer` preserves order and runs them once the DOM is parsed. %>
+    <% (typeof scripts !== 'undefined' ? scripts : []).forEach((src) => { %>
+    <script src="<%= src %>" defer></script>
+    <% }) %>
   </body>
 </html>

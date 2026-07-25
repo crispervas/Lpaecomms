@@ -13,6 +13,18 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PAGE_TITLE = 'Lpaecomms — Contact us';
 
 /**
+ * Front-end assets for the Contact page map. Leaflet is pinned and loaded from
+ * a CDN; the init script is served from public/. Order matters — Leaflet must
+ * load before the init script that uses it. Passed to the layout via the
+ * `styles`/`scripts` locals.
+ */
+const MAP_STYLES = ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'];
+const MAP_SCRIPTS = [
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  '/js/contact-map.js',
+];
+
+/**
  * Controller for the Contact page.
  */
 export class ContactController {
@@ -27,6 +39,8 @@ export class ContactController {
     res.render('layouts/base', {
       title: PAGE_TITLE,
       page: 'contact',
+      styles: MAP_STYLES,
+      scripts: MAP_SCRIPTS,
       errors: {},
       values: { name: '', email: '', message: '' },
       success: false,
@@ -54,6 +68,8 @@ export class ContactController {
       res.status(422).render('layouts/base', {
         title: PAGE_TITLE,
         page: 'contact',
+      styles: MAP_STYLES,
+      scripts: MAP_SCRIPTS,
         errors,
         values,
         success: false,
@@ -66,6 +82,8 @@ export class ContactController {
     res.render('layouts/base', {
       title: PAGE_TITLE,
       page: 'contact',
+      styles: MAP_STYLES,
+      scripts: MAP_SCRIPTS,
       errors: {},
       values: { name: '', email: '', message: '' },
       success: true,
