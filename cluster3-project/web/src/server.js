@@ -12,5 +12,6 @@ import { createApp } from './app.js';
 const app = createApp();
 
 app.listen(config.port, () => {
+  console.log(`It was Developed by Cristhian Pereira`);
   console.log(`web (${config.nodeEnv}) listening on http://localhost:${config.port}`);
 });
