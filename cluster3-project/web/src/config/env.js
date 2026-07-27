@@ -13,7 +13,7 @@ import { expand } from 'dotenv-expand';
 
 // Load .env and expand ${VAR} references so DATABASE_URL can be composed from
 // the individual POSTGRES_* variables rather than duplicating them.
-expand(dotenv.config());
+expand(dotenv.config({ override: true }));
 
 /**
  * Environments the application recognises.
