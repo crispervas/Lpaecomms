@@ -7,18 +7,62 @@
  * so for now it needs no model.
  */
 
+/** Page title reused by both branches. */
+const PAGE_TITLE = 'Lpaecomms — Mashups';
+
+/** External catalogue feeding the first mashup preview. */
+const PRODUCTS_SOURCE = 'https://api.escuelajs.co/api/v1/products?limit=1&offset=1';
+
 /**
  * Controller for the Mashups page.
  */
 export class MashupController {
+
   /**
    * Render the Mashups page.
    *
+   * The page degrades instead of failing: an unreachable external source still
+   * renders the layout, with a notice in place of the data. The failure is
+   * therefore logged here rather than forwarded to `next`, because the error
+   * middleware would try to send a second response for the same request.
+   *
    * @param {import('express').Request} req - Incoming request.
    * @param {import('express').Response} res - Outgoing response.
-   * @returns {void}
+   * @returns {Promise<void>} Resolves once the page has been rendered.
    */
-  index(req, res) {
-    res.render('layouts/base', { title: 'Lpaecomms — Mashups', page: 'mashup' });
+  async index(req, res) {
+    try {
+      const response = await fetch(PRODUCTS_SOURCE);
+
+      // fetch only rejects on network failure: a 4xx/5xx arrives as a resolved
+      // response, so without this check an error body would render as products.
+      if (!response.ok) {
+        throw new Error(`Product source responded ${response.status}`);
+      }
+
+      const products = await response.json();
+
+      res.render('layouts/base', {
+        title: PAGE_TITLE,
+        page: 'mashup',
+        products,
+        errors: {},
+      });
+    } catch (error) {
+      
+      console.error('Mashup source unavailable:', {
+        message: error.message,
+        source: PRODUCTS_SOURCE,
+        url: req.originalUrl,
+        stack: error.stack,
+      });
+
+      res.render('layouts/base', {
+        title: PAGE_TITLE,
+        page: 'mashup',
+        products: null,
+        errors: { fetch: 'Live product data is unavailable right now.' },
+      });
+    }
   }
 }
