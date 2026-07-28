@@ -20,6 +20,18 @@
           <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             Combines: LPA price + API Ninjas exchange rates
           </p>
+          <p class="mt-4 text-sm text-slate-500">
+             Select your product: <select id="product-quantity" name="product-quantity" aria-disabled="true"
+                class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" onChange="handleSelect(this.value)">
+                <option value="" disabled selected>Choose an option</option>
+              <%
+              for ( var i = 0; i < products.length; i++ )
+              {%>
+                  <option value="<%=products[ i ] %>" <%=selected %>><%=products[ i ].title %></option><%
+              }
+              %>
+              </select>
+          </p>
         </div>
       </div>
 
@@ -28,13 +40,13 @@
       <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p class="text-sm text-slate-500">Wireless Mouse</p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">AUD $92.34</p>
+            <p class="text-sm text-slate-500"><%= selected ? selected : 'No product available' %></p>
+            <p class="mt-1 text-3xl font-semibold tracking-tight text-slate-900" >AUD <%=  %></p>
           </div>
           <div class="sm:w-40">
             <label for="currency" class="block text-xs font-medium text-slate-600">Display currency</label>
-            <select id="currency" name="currency" disabled aria-disabled="true"
-              class="mt-1 w-full cursor-not-allowed rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+            <select id="currency" name="currency" aria-disabled="true"
+              class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
               <option>AUD</option>
               <option>USD</option>
               <option>GBP</option>

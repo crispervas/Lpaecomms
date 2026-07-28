@@ -11,7 +11,8 @@
 const PAGE_TITLE = 'Lpaecomms — Mashups';
 
 /** External catalogue feeding the first mashup preview. */
-const PRODUCTS_SOURCE = 'https://api.escuelajs.co/api/v1/products?limit=1&offset=1';
+/** const PRODUCTS_SOURCE = 'https://api.escuelajs.co/api/v1/products?limit=1&offset=1';*/
+const PRODUCTS_SOURCE = 'https://api.escuelajs.co/api/v1/categories/2/products?limit=5&offset=1';
 
 /**
  * Controller for the Mashups page.
@@ -46,6 +47,7 @@ export class MashupController {
         title: PAGE_TITLE,
         page: 'mashup',
         products,
+        selected: null,
         errors: {},
       });
     } catch (error) {
@@ -61,8 +63,11 @@ export class MashupController {
         title: PAGE_TITLE,
         page: 'mashup',
         products: null,
+        selected: {},
         errors: { fetch: 'Live product data is unavailable right now.' },
       });
     }
   }
+
+
 }
