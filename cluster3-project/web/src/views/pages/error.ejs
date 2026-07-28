@@ -1,0 +1,47 @@
+<%# Generic error page. Rendered by errorHandlerWeb for any failed browser
+    request; unmatched URLs get pages/404.ejs instead. Wrapped by
+    layouts/base.ejs.
+
+    Locals: `status` — HTTP status code; `url` — the request that failed;
+    `detail` — the error message outside production, null in production. %>
+<section class="mx-auto max-w-lg py-16 text-center">
+  <%# Oversized status code as the visual anchor, mirroring the 404 page.
+      aria-hidden so screen readers hear the heading below, not the number. %>
+  <p class="text-7xl font-bold tracking-tight text-slate-300 sm:text-8xl" aria-hidden="true">
+    <%= typeof status !== 'undefined' ? status : 500 %>
+  </p>
+
+  <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+    Something went wrong
+  </h1>
+
+  <p class="mx-auto mt-4 max-w-md text-slate-600">
+    The request could not be completed. The problem has been logged — try again
+    in a moment, or get in touch if it keeps happening.
+  </p>
+
+  <%# Only shown outside production, where the handler passes a message. Escaped
+      output, so an error string can never inject markup into the page. %>
+  <% if (typeof detail !== 'undefined' && detail) { %>
+    <p class="mx-auto mt-5 max-w-md break-words rounded-md bg-slate-100 px-3 py-2 text-left font-mono text-sm text-slate-600">
+      <%= detail %>
+    </p>
+  <% } %>
+
+  <% if (typeof url !== 'undefined' && url) { %>
+    <p class="mt-3 break-all text-sm text-slate-400">
+      Requested: <code class="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600"><%= url %></code>
+    </p>
+  <% } %>
+
+  <div class="mt-8 flex flex-wrap justify-center gap-3">
+    <a href="/"
+      class="rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-700">
+      Back to home
+    </a>
+    <a href="/contact"
+      class="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
+      Contact support
+    </a>
+  </div>
+</section>
