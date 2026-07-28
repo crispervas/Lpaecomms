@@ -61,7 +61,8 @@ web/
 ├── styles/
 │   └── tailwind.css      # Tailwind SOURCE (input to the build)
 ├── tests/
-│   └── health.test.js    # Tests (node --test + supertest)
+│   ├── health.test.js       # Health endpoint (needs the dev database running)
+│   └── errorHandler.test.js # Error middleware: JSON for API, HTML for the browser
 └── src/                  # Application code — see section 3
 ```
 
@@ -110,13 +111,18 @@ src/
 │   ├── partials/
 │   │   ├── header.ejs    # Shared header / navigation
 │   │   └── footer.ejs    # Shared footer
+│   ├── components/       # Reusable page fragments, included by a page
+│   │   ├── mashupOne.ejs   # Products + Location card
+│   │   ├── mashupTwo.ejs   # Products + Currency Converter card
+│   │   └── mashupThree.ejs # Secure Password Checker card
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
 │       ├── contact.ejs
 │       ├── login.ejs
 │       ├── mashup.ejs
-│       └── 404.ejs       # Not Found page
+│       ├── 404.ejs       # Not Found page
+│       └── error.ejs     # Generic error page (any failed browser request)
 └── public/               # Static assets served as-is
     ├── css/
     │   └── tailwind.css  # Compiled Tailwind (build output)
@@ -130,6 +136,17 @@ src/
 > URLs loaded in order before `</body>`). A controller passes them to load a
 > library only where it is needed. Example: the Contact controller passes the
 > Leaflet CDN stylesheet/script plus `/js/contact-map.js`.
+
+> **`partials/` vs `components/`.** `partials/` holds the site chrome that
+> `layouts/base.ejs` wraps around every page (header, footer). `components/`
+> holds fragments a *page* pulls in for its own content, like the three mashup
+> cards. EJS has no component system — `include` is textual inclusion sharing the
+> parent's scope — so two conventions keep it manageable: **write literal include
+> paths** (a name built by concatenation only fails at render time and cannot be
+> grepped), and **pass what the component needs as the second argument**
+> (`include('../components/mashupOne', { products })`) instead of relying on the
+> parent's locals leaking in. Each component states its expected locals in its
+> header comment.
 
 ### Why `server.js` and `app.js` are separate
 
@@ -219,17 +236,29 @@ These run at the end of the middleware chain, after every route has had its
 chance to match (see `app.js`):
 
 ```
-Something calls next(err)                 Unmatched request
-   │                                          │
-   ▼                                          ▼
-config/errorHandler.js:                    config/notFoundHandler.js:
-   logErrors    (log in development)          /api/*  → notFoundHandlerApi  → JSON 404
-   wrapErrors   (force a Boom error)          others  → notFoundHandlerWeb → renders pages/404.ejs
+Something calls next(err)                      Unmatched request
+   │                                               │
+   ▼                                               ▼
+config/errorHandler.js:                         config/notFoundHandler.js:
+   logErrors    (log — every environment)          /api/*  → notFoundHandlerApi  → JSON 404
+   wrapErrors   (force a Boom error)               others  → notFoundHandlerWeb → renders pages/404.ejs
    errorHandler (send the response)
+      /api/*  → JSON body
+      others  → renders pages/error.ejs
 ```
 
-The 404 handling is split by client for the same reason as the routes: REST
-clients (mobile, desktop) expect JSON, browsers expect an HTML page.
+Both chains are split by client for the same reason as the routes: REST clients
+(mobile, desktop) expect JSON, browsers expect an HTML page. A view route that
+answered `next(err)` with JSON would break that separation.
+
+Two rules the error chain follows deliberately:
+
+- **Logging and disclosure are separate decisions.** The server records every
+  error in all three environments; what production withholds is the stack trace
+  and message sent *to the client*, never the log entry.
+- **The error page must not be able to loop.** `errorHandler` bails out to
+  Express's default handler when the response has already started streaming, and
+  falls back to plain text if `pages/error.ejs` itself fails to render.
 
 ---
 
