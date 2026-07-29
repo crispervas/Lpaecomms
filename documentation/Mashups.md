@@ -140,6 +140,29 @@ If a valid cached rate exists, it is used instead of calling the API
 The API call must be made from the backend (internal proxy), not directly from the browser, to avoid exposing the X-Api-Key in client-side code
 Proposed internal endpoint: GET /api/convert?have=GBP&want=AUD&amount=5000
 
+### Implementation status
+
+This mashup is live on the Mashups page (`/mashup`), the "Products + Currency Converter" card.
+
+**What it consumes.** The browser script calls two of this application's own REST endpoints — the same contract the mobile and desktop clients use: `GET /api/v1/products` for the catalogue and `GET /api/v1/convert?have=&want=&amount=` for the exchange rate.
+
+**Files involved.**
+
+| File | Role |
+|---|---|
+| `src/public/js/mashup-currency.js` | Populates the product and currency selectors, requests conversions, and renders the result |
+| `src/views/components/mashupTwo.ejs` | Provides the `#mashup-product`, `#mashup-currency`, `#mashup-base-price`, `#mashup-converted-price`, and `#mashup-convert-status` elements the script binds to |
+| `src/controllers/currency.controller.js` / `src/models/currency.model.js` | Server-side proxy to API Ninjas — keeps `NINJA_API_KEY` out of the browser entirely, since the client never calls the provider directly |
+
+**Debounce.** Changing either selector schedules a 300ms timer (`DEBOUNCE_MS`) before the conversion request fires; a second change within that window cancels the pending timer instead of adding a second in-flight request, so rapid switching between currencies settles into one call.
+
+**Caching.** The one-hour rate cache lives in the currency model's process memory (`CurrencyModel.rateCache`), not in `localStorage`: rates are shared across every visitor hitting the same server instance rather than duplicated per browser, and nothing about exchange rates needs to survive a page reload on the client.
+
+**AUD short-circuit.** Selecting AUD as the display currency never calls `/api/v1/convert`: the script recognises `target === BASE_CURRENCY` and renders the catalogue price directly, since converting a currency into itself has a known answer that does not need a round trip.
+
+**Failure fallback.** If `/api/v1/products` fails, the product selector shows "Products unavailable" and the status line reports the catalogue is down. If `/api/v1/convert` fails or answers a non-2xx status — including the 502 the API Ninjas free plan currently returns for every non-identity pair — the converted field falls back to the AUD price with the status "Live rates are unavailable — showing the price in AUD.", never a blank field.
+
+**Security.** Product names come from the same untrusted third-party feed as mashup 1. The script inserts them with `new Option(product.name, ...)`, which sets `textContent`, not `innerHTML` — a name containing markup is rendered as inert text in the `<option>`, the same defence `mashup-map.js` uses for its popups.
 
 ## MASHUP 3 — Secure Password Checker
 

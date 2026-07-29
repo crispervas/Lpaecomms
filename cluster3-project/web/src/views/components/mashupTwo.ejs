@@ -11,7 +11,7 @@
     <div class="min-w-0 flex-1">
       <div class="flex items-start justify-between gap-3">
         <h2 id="mashup-2" class="text-lg font-semibold">Products + Currency Converter</h2>
-        <span class="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">UI preview</span>
+        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Live</span>
       </div>
       <p class="mt-1 text-sm text-slate-600">
         Convert a product's price into the customer's currency right next to
@@ -23,7 +23,44 @@
     </div>
   </div>
 
+  <%# Both selectors start empty of data: the product list arrives from
+      /api/v1/products in the browser. The status line is a live region so a
+      screen reader announces the converted price without the user re-reading
+      the block. %>
   <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-    <p class="text-sm text-slate-500">Converter placeholder</p>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="mashup-product" class="block text-xs font-medium text-slate-600">Product</label>
+        <select id="mashup-product" name="product"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="">Loading products…</option>
+        </select>
+      </div>
+      <div>
+        <label for="mashup-currency" class="block text-xs font-medium text-slate-600">Display currency</label>
+        <select id="mashup-currency" name="currency"
+          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+          <option value="AUD">AUD</option>
+          <option value="USD">USD</option>
+          <option value="GBP">GBP</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-wide text-slate-500">Base price</p>
+        <p id="mashup-base-price" class="mt-1 text-lg font-medium text-slate-700">—</p>
+      </div>
+      <div class="sm:text-right">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Converted</p>
+        <p id="mashup-converted-price" class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">—</p>
+      </div>
+    </div>
+
+    <p id="mashup-convert-status" role="status" class="mt-3 text-sm text-slate-500">
+      Choose a product to see its price converted.
+    </p>
   </div>
 </article>
