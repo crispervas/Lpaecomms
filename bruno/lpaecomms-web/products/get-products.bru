@@ -17,9 +17,40 @@ docs {
   where each product is available. Backs two mashups: the interactive map and
   the currency converter. Mobile and desktop clients use the same endpoint.
 
-  The catalogue itself comes from an external demo feed; the store locations are
-  merged in by the server, because the feed carries no coordinates. Prices are
-  expressed in AUD.
+  The catalogue itself comes from an external demo feed
+  (`https://api.escuelajs.co/api/v1/products`); the store locations are merged
+  in by the server, because the feed carries no coordinates.
+
+  ## Pairing and truncation
+
+  Products are paired with store locations **by index**: the feed's first
+  product gets the first entry in the server's fixed `STORE_LOCATIONS` table,
+  the second product gets the second entry, and so on. This is a positional
+  pairing, not a real product-to-store relationship from a database — Lpaecomms
+  has no product table yet — so it exists purely to give the map mashup one
+  coordinate per marker.
+
+  The response is truncated to the number of known store locations (currently
+  five), even if the feed returns more. A product without a place on the map is
+  not something the map mashup can display.
+
+  ## AUD assumption
+
+  `priceAud` reports the feed's `price` field unmodified, under the AUD
+  currency code. The feed does not state a currency itself; treating its
+  numbers as Australian dollars is an assumption made for this demonstration,
+  not a property the upstream data actually carries.
+
+  ## Caching
+
+  Responses are cached in process for **5 minutes**, keyed by the catalogue
+  URL. A single `/mashup` page load triggers two independent calls to this
+  endpoint — one from the map mashup, one from the currency converter mashup —
+  and the cache collapses them into one upstream call instead of two, so both
+  mashups always see the same catalogue rather than two responses that could
+  disagree if the feed changed in between. A failed upstream call is never
+  cached and never evicts a still-valid cached entry, so one bad request cannot
+  poison a good one for the rest of the TTL.
 
   ## Auth
 
@@ -33,29 +64,36 @@ docs {
 
   ### 200 OK — catalogue returned
 
-  An array of up to five products, in display order.
+  An object holding an array of up to five products, in display order. Wrapped
+  in an object rather than returned as a bare top-level array so metadata (for
+  example pagination) can be added later without changing the response's root
+  type — a bare array cannot grow that way without breaking every client at
+  once.
 
-  [
-    {
-      "id": 1,
-      "name": "Classic Red Pullover",
-      "priceAud": 10,
-      "imageUrl": "https://i.imgur.com/1twoaDy.jpeg",
-      "store": "Surfers Paradise",
-      "latitude": -28.0023,
-      "longitude": 153.4145
-    }
-  ]
+  {
+    "products": [
+      {
+        "id": 1,
+        "name": "Classic Red Pullover",
+        "priceAud": 10,
+        "imageUrl": "https://i.imgur.com/1twoaDy.jpeg",
+        "store": "Surfers Paradise",
+        "latitude": -28.0023,
+        "longitude": 153.4145
+      }
+    ]
+  }
 
   Fields:
 
-  - `id` (number) — product identifier from the catalogue feed.
-  - `name` (string) — product name.
-  - `priceAud` (number) — base price in Australian dollars.
-  - `imageUrl` (string) — product image; empty string when the feed has none.
-  - `store` (string) — Gold Coast store holding the product.
-  - `latitude` (number) — store latitude, WGS 84.
-  - `longitude` (number) — store longitude, WGS 84.
+  - `products` (array) — the catalogue, at most one entry per known store location.
+  - `products[].id` (number) — product identifier from the catalogue feed.
+  - `products[].name` (string) — product name.
+  - `products[].priceAud` (number) — base price, assumed to be Australian dollars (see AUD assumption above).
+  - `products[].imageUrl` (string) — product image; empty string when the feed has none.
+  - `products[].store` (string) — Gold Coast store holding the product.
+  - `products[].latitude` (number) — store latitude, WGS 84.
+  - `products[].longitude` (number) — store longitude, WGS 84.
 
   ### 502 Bad Gateway — catalogue source unavailable
 

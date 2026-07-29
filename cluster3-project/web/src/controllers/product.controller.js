@@ -31,14 +31,27 @@ export class ProductController {
    */
   async list(req, res, next) {
     try {
-      res.json(await this.productModel.listWithLocations());
+      const products = await this.productModel.listWithLocations();
+      // Wrapped in an object, not returned as a bare array: a top-level array
+      // cannot grow (pagination, metadata) without changing the response's
+      // root type and breaking every client at once.
+      res.json({ products });
     } catch (error) {
+      // A Boom error already carries the status this controller (or a future
+      // one added to this endpoint) chose deliberately; only a non-Boom error
+      // — meaning the model itself failed — becomes a 502. Matches the
+      // currency and password controllers, which apply the same rule.
+      //
       // Boom only redacts a 500's message, so an Error passed as the second
       // argument here would be merged into the 502 message and reach every
       // client, in every environment, including production. Passing the cause
       // as plain data keeps the client message generic while `logErrors` still
       // records the detail server-side via `err.data`.
-      next(boom.badGateway('The product catalogue source is unavailable.', { cause: error.message }));
+      next(
+        error.isBoom
+          ? error
+          : boom.badGateway('The product catalogue source is unavailable.', { cause: error.message }),
+      );
     }
   }
 }

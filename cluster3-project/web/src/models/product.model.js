@@ -3,7 +3,11 @@
  *
  * Data access for the product catalogue. Lpaecomms has no product table yet, so
  * the catalogue comes from a public demo feed and the store locations — which
- * that feed does not carry — are merged in here. Knows nothing about HTTP
+ * that feed does not carry — are merged in here. Caches the merged result for
+ * a short TTL, the same way `CurrencyModel` caches rates: it protects the demo
+ * feed's quota and, because both mashup scripts call this model's endpoint on
+ * every `/mashup` page load, keeps them looking at one consistent catalogue
+ * instead of two responses that could disagree. Knows nothing about HTTP
  * responses: it returns products or throws, and the controller decides what a
  * failure means to a client.
  */
@@ -13,6 +17,27 @@ const CATALOGUE_URL = 'https://api.escuelajs.co/api/v1/products?offset=0&limit=5
 
 /** Give up on a slow feed rather than holding a request open indefinitely. */
 const REQUEST_TIMEOUT_MS = 5000;
+
+/**
+ * Five minutes: long enough to collapse a single `/mashup` page load's two
+ * independent `GET /api/v1/products` calls (the map and the currency
+ * converter each fetch it) into one upstream call, and to keep both mashups
+ * looking at the same catalogue instead of two responses that could disagree
+ * if the feed changed in between — short enough that the demo still looks
+ * live, matching the policy `CurrencyModel` already applies to its own
+ * third-party quota.
+ */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Merged catalogue responses, shared by every `ProductModel` instance and
+ * keyed by catalogue URL rather than held per instance. Keying by URL is what
+ * lets a test construct a model with an overridden `catalogueUrl` (see the
+ * constructor) without ever reading or evicting the production URL's entry,
+ * even though the cache itself lives at module scope.
+ * @type {Map<string, {products: Array<Object>, expiresAt: number}>}
+ */
+const catalogueCache = new Map();
 
 /**
  * Lpaecomms store locations on the Gold Coast, assigned to products by index.
@@ -72,7 +97,27 @@ export class ProductModel {
   }
 
   /**
+   * Discard every cached catalogue response.
+   *
+   * Production never needs this: a still-valid entry is never evicted early.
+   * It exists as a seam for tests — a suite that stubs `fetch` differently
+   * from one test to the next would otherwise observe an earlier test's
+   * cached response for the same URL, since the cache outlives any single
+   * `ProductModel` instance.
+   *
+   * @returns {void}
+   */
+  static clearCache() {
+    catalogueCache.clear();
+  }
+
+  /**
    * Fetch the catalogue and merge each product with its store location.
+   *
+   * Serves a cached result when one is still fresh for this instance's
+   * `catalogueUrl`, so two calls within the TTL never make two upstream
+   * requests. A failed fetch is never written to the cache and never disturbs
+   * whatever entry is already there.
    *
    * @returns {Promise<Array<{id: number, name: string, priceAud: number, imageUrl: string, store: string, latitude: number, longitude: number}>>}
    *   Products in display order, at most one per known store location.
@@ -80,6 +125,11 @@ export class ProductModel {
    *   non-2xx status.
    */
   async listWithLocations() {
+    const cached = catalogueCache.get(this.catalogueUrl);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.products;
+    }
+
     const response = await fetch(this.catalogueUrl, {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -94,12 +144,18 @@ export class ProductModel {
 
     // Never return more products than there are locations: a product without a
     // place on the map is not something the mashup can display.
-    return products.slice(0, STORE_LOCATIONS.length).map((product, index) => ({
+    const merged = products.slice(0, STORE_LOCATIONS.length).map((product, index) => ({
       id: product.id,
       name: product.title,
       priceAud: product.price,
       imageUrl: firstImageUrl(product.images),
       ...STORE_LOCATIONS[index],
     }));
+
+    // Written only once the fetch and merge both succeeded, so a failure can
+    // never overwrite — and therefore can never evict — a still-valid entry.
+    catalogueCache.set(this.catalogueUrl, { products: merged, expiresAt: Date.now() + CACHE_TTL_MS });
+
+    return merged;
   }
 }

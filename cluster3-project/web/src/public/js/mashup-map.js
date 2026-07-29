@@ -69,7 +69,7 @@
   const showNotice = (message) => {
     map.remove();
     container.className =
-      'mt-5 flex h-72 w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-center text-sm text-amber-800 md:h-96';
+      'mt-5 flex h-[300px] w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-center text-sm text-amber-800 md:h-[400px]';
     container.textContent = message;
   };
 
@@ -89,7 +89,10 @@
       if (!response.ok) throw new Error(`Products endpoint responded ${response.status}`);
       return response.json();
     })
-    .then((products) => {
+    // The endpoint answers { products: [...] }, not a bare array, so a
+    // pagination field or similar metadata can be added later without
+    // changing the response's root type.
+    .then(({ products }) => {
       if (!products.length) {
         showNotice('No products are available to show on the map right now.');
         return;

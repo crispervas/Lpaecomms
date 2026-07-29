@@ -151,7 +151,10 @@
       if (!response.ok) throw new Error(`Products endpoint responded ${response.status}`);
       return response.json();
     })
-    .then((loaded) => {
+    // The endpoint answers { products: [...] }, not a bare array, so a
+    // pagination field or similar metadata can be added later without
+    // changing the response's root type.
+    .then(({ products: loaded }) => {
       products = loaded;
       productSelect.replaceChildren();
 
