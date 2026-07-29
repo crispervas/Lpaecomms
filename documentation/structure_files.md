@@ -102,7 +102,8 @@ src/
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
 │       ├── product.routes.js
-│       └── currency.routes.js
+│       ├── currency.routes.js
+│       └── password.routes.js
 ├── controllers/          # CONTROLLER: request in, response out
 │   ├── home.controller.js
 │   ├── about.controller.js
@@ -111,11 +112,13 @@ src/
 │   ├── mashup.controller.js
 │   ├── health.controller.js
 │   ├── product.controller.js
-│   └── currency.controller.js
+│   ├── currency.controller.js
+│   └── password.controller.js
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
 │   ├── product.model.js  # External catalogue + Gold Coast store locations
-│   └── currency.model.js  # Exchange rates via API Ninjas (cached)
+│   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
+│   └── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
 ├── lib/                  # Shared infrastructure helpers
 │   └── prisma.js         # Single shared PrismaClient instance (a singleton)
 ├── views/                # VIEW: server-rendered EJS templates
