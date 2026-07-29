@@ -1,64 +1,29 @@
 <%# ── MASHUP 2 — Products + Currency Converter ─────────────────────
     Card previewing the price-conversion integration. Included by
-    pages/mashup.ejs. Static layout, so it takes no locals. %>
-    <article aria-labelledby="mashup-2" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="flex items-start gap-4">
-        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </span>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-3">
-            <h2 id="mashup-2" class="text-lg font-semibold">Products + Currency Converter</h2>
-            <span class="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">UI preview</span>
-          </div>
-          <p class="mt-1 text-sm text-slate-600">
-            Convert a product's price into the customer's currency right next to
-            the price, without reloading the page.
-          </p>
-          <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-            Combines: LPA price + API Ninjas exchange rates
-          </p>
-          <p class="mt-4 text-sm text-slate-500">
-             Select your product: <select id="product-quantity" name="product-quantity" aria-disabled="true"
-                class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" onChange="handleSelect(this.value)">
-                <option value="" disabled selected>Choose an option</option>
-              <%
-              for ( var i = 0; i < products.length; i++ )
-              {%>
-                  <option value="<%=products[ i ] %>" <%=selected %>><%=products[ i ].title %></option><%
-              }
-              %>
-              </select>
-          </p>
-        </div>
+    pages/mashup.ejs. Takes no locals: the converter fetches its own data. %>
+<article aria-labelledby="mashup-2" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="flex items-start gap-4">
+    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+    </span>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-start justify-between gap-3">
+        <h2 id="mashup-2" class="text-lg font-semibold">Products + Currency Converter</h2>
+        <span class="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500">UI preview</span>
       </div>
+      <p class="mt-1 text-sm text-slate-600">
+        Convert a product's price into the customer's currency right next to
+        the price, without reloading the page.
+      </p>
+      <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Combines: Lpaecomms catalogue + API Ninjas exchange rates
+      </p>
+    </div>
+  </div>
 
-      <%# Product row with a currency selector next to the base price. The
-          selector is disabled: no live conversion happens in this preview. %>
-      <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p class="text-sm text-slate-500"><%= selected ? selected : 'No product available' %></p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight text-slate-900" >AUD <%=  %></p>
-          </div>
-          <div class="sm:w-40">
-            <label for="currency" class="block text-xs font-medium text-slate-600">Display currency</label>
-            <select id="currency" name="currency" aria-disabled="true"
-              class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
-              <option>AUD</option>
-              <option>USD</option>
-              <option>GBP</option>
-              <option>EUR</option>
-            </select>
-          </div>
-        </div>
-        <div class="mt-4 flex items-center gap-2 border-t border-slate-200 pt-4 text-sm text-slate-500">
-          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-          <span>Converted price appears here</span>
-        </div>
-      </div>
-    </article>
+  <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
+    <p class="text-sm text-slate-500">Converter placeholder</p>
+  </div>
+</article>

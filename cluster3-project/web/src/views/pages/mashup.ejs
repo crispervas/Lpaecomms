@@ -1,31 +1,21 @@
-<%# Mashups page: UI previews for the agreed mashups. Layout only — the
-    controls are non-interactive and no external service is wired here. Built
-    incrementally, one mashup at a time. Wrapped by layouts/base.ejs. %>
+<%# Mashups page: three live integrations, each combining Lpaecomms' own page
+    with an external service. The page itself carries no data — every card
+    fetches from /api/v1 in the browser, which is the same contract the mobile
+    and desktop clients use. Wrapped by layouts/base.ejs. %>
 <section class="mx-auto max-w-4xl">
   <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Mashups</h1>
   <p class="mt-4 max-w-2xl text-slate-600">
     A mashup blends data or services from more than one source into a single
-    view. The integration below combines LPA's own data with an external
-    service. Every control here is a non-interactive preview of the layout;
-    the live integration is wired separately.
+    view. Each integration below combines Lpaecomms' own page with an external
+    service, live.
   </p>
 
-  <%# The page still renders when an external source is down; this notice is the
-      only visible difference, so the failure is never silent to the user. %>
-  <% if (typeof errors !== 'undefined' && errors.fetch) { %>
-    <p role="status"
-      class="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-      <%= errors.fetch %>
-    </p>
-  <% } %>
-
   <%# Each mashup is its own component under views/components. The paths are
-      literal so a wrong name fails loudly at include time and stays greppable,
-      and the data a component needs is passed explicitly rather than inherited
-      from the page's locals — the second argument is the component's contract. %>
+      literal so a wrong name fails loudly at include time and stays greppable.
+      None of them takes locals: their data arrives over the API. %>
   <div class="mt-10 space-y-8">
-    <%- include('../components/mashupOne', { products }) %>
-    <%- include('../components/mashupTwo', { products }) %>
+    <%- include('../components/mashupOne') %>
+    <%- include('../components/mashupTwo') %>
     <%- include('../components/mashupThree') %>
   </div>
 </section>

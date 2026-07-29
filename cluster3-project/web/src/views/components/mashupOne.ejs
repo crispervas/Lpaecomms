@@ -1,9 +1,6 @@
 <%# ── MASHUP 1 — Products + Location ───────────────────────────────
     Card previewing the catalogue-on-a-map integration. Included by
-    pages/mashup.ejs.
-
-    Locals: `products` — the external catalogue payload, or null when the
-    source is unreachable. %>
+    pages/mashup.ejs. Takes no locals: the map fetches its own data. %>
     <article aria-labelledby="mashup-1" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-start gap-4">
         <%# Purpose icon: a coloured chip makes each mashup scannable at a
@@ -26,12 +23,6 @@
           <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             Combines: LPA catalogue + Leaflet + OpenStreetMap
           </p>
-          <%# Raw feed dump while the integration is still a preview. `products`
-              is null when the external source is unreachable, so the component
-              must not assume it has data to stringify. %>
-          <code class="mt-2 block rounded bg-slate-100 px-2 py-1 text-xs text-slate-500">
-            <%= products ? JSON.stringify(products, null, 2) : 'No product data available' %>
-          </code>
         </div>
       </div>
 
