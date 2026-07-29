@@ -146,7 +146,8 @@ src/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: products + location)
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
-        └── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
+        ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
+        └── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)
 ```
 
 > **Per-page assets without a bundler.** `layouts/base.ejs` accepts two optional

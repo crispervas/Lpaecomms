@@ -212,10 +212,39 @@ The Have I Been Pwned Pwned Passwords public endpoint does not require an API ke
 Never log the plain-text password, not even in the development console
 Request timeout: 3 seconds; on failure, allow registration to continue with a generic warning instead of blocking the user
 
+### Implementation status
+
+This mashup is live on the Mashups page (`/mashup`), the "Secure Password Checker" card.
+
+**What it consumes.** The browser script calls this application's own `GET /api/v1/password/breaches?prefix=` endpoint — the k-anonymity proxy added in Task 6, backed by `BreachModel`'s call to the Have I Been Pwned range API.
+
+**Files involved.**
+
+| File | Role |
+|---|---|
+| `src/public/js/mashup-password.js` | Scores strength locally, computes the SHA-1 in the browser, and drives the breach lookup |
+| `src/views/components/mashupThree.ejs` | Provides the `#mashup-password`, `#mashup-strength-bar`, `#mashup-strength-label`, and `#mashup-breach-status` elements the script binds to |
+| `src/controllers/password.controller.js` / `src/models/breach.model.js` | Server-side proxy to Have I Been Pwned — validates the prefix is exactly five hex characters and strips the plain-text response's padding decoys before returning `{ prefix, count, suffixes }` |
+
+**Strength scoring.** Scored entirely client-side against four local rules (length ≥ 8, mixed case, a digit, a symbol) and never touches the network — a weak password is flagged without a single byte leaving the browser.
+
+**Privacy (k-anonymity).** The SHA-1 hash is computed in the browser with `crypto.subtle.digest`. Only the first five hex characters (the "prefix") are sent, in the request's query string; the remaining 35 characters (the "suffix") never leave the page and are compared locally against the `suffixes` map the server returns. Neither the password nor its full hash ever appears in a request URL, body, header, or console output — on the client or the server.
+
+**Debounce and timeout.** Typing schedules the lookup after a 500ms debounce (`DEBOUNCE_MS`), so a lookup fires once per pause rather than once per keystroke. The request itself is bounded by a 3 second timeout (`REQUEST_TIMEOUT_MS`, via `AbortSignal.timeout`), so a slow third party cannot stall the page; the check is advisory, so a timeout degrades to a warning rather than blocking the user.
+
+**Secure-context requirement.** `crypto.subtle` only exists in a secure context (HTTPS, or `localhost` in development). Its absence is detected before a lookup is attempted: the strength meter still scores and paints normally over plain HTTP, and only the breach lookup is disabled, with the status line explaining why.
+
+**Stale-response guard.** Same `latestRequestId` counter pattern as `mashup-currency.js`: bumped before the hash/network round trip and re-checked after every `await` that precedes a DOM write, on both the success and the catch path, plus once more when the field is cleared — so a slow response for an earlier password can never overwrite what is on screen for a newer one.
 
 ## Implemented Web Mashups — Company Location Map and Intro Video
 
-The two mashups below are already implemented in the web layer (`cluster3-project/web`). Unlike the design specifications above, this section documents what is actually built and where, so it can be traced directly to the source code.
+All five mashups documented in this file are now implemented in `cluster3-project/web`. The three built on the Mashups page each have their own "Implementation status" section directly under their design specification above:
+
+- Products + Location — see Implementation status under MASHUP 1.
+- Products + Currency Converter — see Implementation status under MASHUP 2.
+- Secure Password Checker — see Implementation status under MASHUP 3.
+
+The two mashups below are documented in full here instead, since they are standalone integrations rather than write-ups tied to one of the three design specifications above.
 
 ### A) Company location map (Contact page)
 

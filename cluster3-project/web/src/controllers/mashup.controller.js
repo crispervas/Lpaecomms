@@ -21,6 +21,7 @@ const MASHUP_SCRIPTS = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   '/js/mashup-map.js',
   '/js/mashup-currency.js',
+  '/js/mashup-password.js',
 ];
 
 /**
