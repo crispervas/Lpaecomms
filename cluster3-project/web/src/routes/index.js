@@ -15,6 +15,7 @@ import authRoutes from './views/auth.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
 import healthRoutes from './api/health.routes.js';
 import productRoutes from './api/product.routes.js';
+import currencyRoutes from './api/currency.routes.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -36,6 +37,7 @@ export function registerRoutes(app) {
   // API routes (JSON).
   apiRouter.use('/', healthRoutes);
   apiRouter.use('/', productRoutes);
+  apiRouter.use('/', currencyRoutes);
 
   app.use('/', viewRouter);
   app.use('/api/v1', apiRouter);

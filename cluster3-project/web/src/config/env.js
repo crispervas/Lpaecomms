@@ -65,6 +65,7 @@ if (!VALID_ENVIRONMENTS.includes(nodeEnv)) {
  * @property {string} nodeEnv - Active environment name.
  * @property {number} port - HTTP port the server listens on.
  * @property {string} databaseUrl - PostgreSQL connection string for Prisma.
+ * @property {string|null} ninjaApiKey - API Ninjas key, or null when unset.
  * @property {boolean} isDevelopment - True when running in development.
  * @property {boolean} isStaging - True when running in staging.
  * @property {boolean} isProduction - True when running in production.
@@ -80,6 +81,10 @@ export const config = Object.freeze({
   nodeEnv,
   port: parsePort(process.env.PORT ?? '3000'),
   databaseUrl: required('DATABASE_URL'),
+  // Optional on purpose. `required()` throws at import time, so a required key
+  // would stop the server from booting and stop the test suite from running for
+  // anyone without one. Absent, only the conversion endpoint degrades.
+  ninjaApiKey: process.env.NINJA_API_KEY ?? null,
   isDevelopment: nodeEnv === 'development',
   isStaging: nodeEnv === 'staging',
   isProduction: nodeEnv === 'production',

@@ -101,7 +101,8 @@ src/
 │   │   └── mashup.routes.js
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
-│       └── product.routes.js
+│       ├── product.routes.js
+│       └── currency.routes.js
 ├── controllers/          # CONTROLLER: request in, response out
 │   ├── home.controller.js
 │   ├── about.controller.js
@@ -109,10 +110,12 @@ src/
 │   ├── auth.controller.js
 │   ├── mashup.controller.js
 │   ├── health.controller.js
-│   └── product.controller.js
+│   ├── product.controller.js
+│   └── currency.controller.js
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
-│   └── product.model.js  # External catalogue + Gold Coast store locations
+│   ├── product.model.js  # External catalogue + Gold Coast store locations
+│   └── currency.model.js  # Exchange rates via API Ninjas (cached)
 ├── lib/                  # Shared infrastructure helpers
 │   └── prisma.js         # Single shared PrismaClient instance (a singleton)
 ├── views/                # VIEW: server-rendered EJS templates

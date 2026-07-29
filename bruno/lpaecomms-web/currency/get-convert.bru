@@ -1,0 +1,109 @@
+meta {
+  name: Convert currency
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/convert?have=AUD&want=USD&amount=899
+  body: none
+  auth: none
+}
+
+params:query {
+  have: AUD
+  want: USD
+  amount: 899
+}
+
+docs {
+  # Convert currency
+
+  Converts an amount between the currencies Lpaecomms transacts in, using live
+  exchange rates from API Ninjas. Backs the currency converter mashup and is
+  available to the mobile and desktop clients.
+
+  This endpoint exists as a server-side proxy so the provider API key stays in
+  `NINJA_API_KEY` and never reaches a client. Rates are cached in process for
+  one hour per currency pair, so repeated calls for the same pair do not consume
+  the provider's free-plan quota.
+
+  ## Auth
+
+  None for the caller. The service authenticates to the provider itself with the
+  `X-Api-Key` header, read from the `NINJA_API_KEY` environment variable.
+
+  ## Parameters
+
+  Query parameters, all required:
+
+  - `have` (string, required) — source currency. One of `AUD`, `USD`, `GBP`, `EUR`.
+  - `want` (string, required) — target currency. Same set as `have`.
+  - `amount` (number, required) — amount in the source currency. Must be greater than zero.
+
+  Converting a currency into itself is valid and returns a rate of 1 without
+  calling the provider.
+
+  ## Responses
+
+  ### 200 OK — conversion performed
+
+  {
+    "have": "AUD",
+    "want": "USD",
+    "amount": 899,
+    "rate": 0.659,
+    "converted": 592.44,
+    "cached": false
+  }
+
+  Fields:
+
+  - `rate` (number) — exchange rate applied.
+  - `converted` (number) — amount in the target currency, rounded to cents.
+  - `cached` (boolean) — true when the rate came from the one-hour cache rather
+    than a fresh provider call.
+
+  ### 400 Bad Request — invalid parameters
+
+  A currency outside the supported set, or an amount that is not a positive
+  number.
+
+  {
+    "statusCode": 400,
+    "error": "Bad Request",
+    "message": "Parameters \"have\" and \"want\" must be one of: AUD, USD, GBP, EUR.",
+    "validation": [],
+    "url": "/api/v1/convert?have=AUD&want=JPY&amount=899",
+    "method": "GET"
+  }
+
+  ### 502 Bad Gateway — provider unavailable
+
+  The provider is unreachable, timed out after 5 seconds, or answered a non-2xx
+  status. Provider authentication failures (401/403) are logged server-side and
+  surface here too: a client is never told the key is wrong.
+
+  {
+    "statusCode": 502,
+    "error": "Bad Gateway",
+    "message": "The currency provider is unavailable.",
+    "validation": [],
+    "url": "/api/v1/convert?have=AUD&want=USD&amount=899",
+    "method": "GET"
+  }
+
+  ### 503 Service Unavailable — not configured
+
+  `NINJA_API_KEY` is not set in this environment. The rest of the service keeps
+  working; only conversion is unavailable.
+
+  {
+    "statusCode": 503,
+    "error": "Service Unavailable",
+    "message": "Currency conversion is not configured.",
+    "validation": [],
+    "url": "/api/v1/convert?have=AUD&want=USD&amount=899",
+    "method": "GET"
+  }
+}
