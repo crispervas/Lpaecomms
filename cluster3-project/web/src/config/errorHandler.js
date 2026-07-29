@@ -75,6 +75,11 @@ export const logErrors = (err, req, res, next) => {
         method: req.method,
         url: req.originalUrl,
         stack: err.stack,
+        // Some callers attach upstream detail as data instead of merging it into
+        // the message (see product.controller.js), precisely so it stays out of
+        // the client response. Logging it here is what keeps that detail from
+        // being lost rather than just hidden.
+        data: err.data,
     });
 
     next(err);

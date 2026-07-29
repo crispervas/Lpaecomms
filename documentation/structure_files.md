@@ -93,16 +93,19 @@ src/
 │   │   ├── auth.routes.js
 │   │   └── mashup.routes.js
 │   └── api/              # API routes (return JSON)
-│       └── health.routes.js
+│       ├── health.routes.js
+│       └── product.routes.js
 ├── controllers/          # CONTROLLER: request in, response out
 │   ├── home.controller.js
 │   ├── about.controller.js
 │   ├── contact.controller.js
 │   ├── auth.controller.js
 │   ├── mashup.controller.js
-│   └── health.controller.js
-├── models/               # MODEL: data access (database queries)
-│   └── health.model.js
+│   ├── health.controller.js
+│   └── product.controller.js
+├── models/               # MODEL: data access (database and external sources)
+│   ├── health.model.js
+│   └── product.model.js  # External catalogue + Gold Coast store locations
 ├── lib/                  # Shared infrastructure helpers
 │   └── prisma.js         # Single shared PrismaClient instance (a singleton)
 ├── views/                # VIEW: server-rendered EJS templates

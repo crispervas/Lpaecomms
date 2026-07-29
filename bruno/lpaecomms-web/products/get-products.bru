@@ -1,0 +1,73 @@
+meta {
+  name: List products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/products
+  body: none
+  auth: none
+}
+
+docs {
+  # List products
+
+  Returns the Lpaecomms product catalogue with the Gold Coast store location
+  where each product is available. Backs two mashups: the interactive map and
+  the currency converter. Mobile and desktop clients use the same endpoint.
+
+  The catalogue itself comes from an external demo feed; the store locations are
+  merged in by the server, because the feed carries no coordinates. Prices are
+  expressed in AUD.
+
+  ## Auth
+
+  None. This endpoint is public.
+
+  ## Parameters
+
+  None.
+
+  ## Responses
+
+  ### 200 OK — catalogue returned
+
+  An array of up to five products, in display order.
+
+  [
+    {
+      "id": 1,
+      "name": "Classic Red Pullover",
+      "priceAud": 10,
+      "imageUrl": "https://i.imgur.com/1twoaDy.jpeg",
+      "store": "Surfers Paradise",
+      "latitude": -28.0023,
+      "longitude": 153.4145
+    }
+  ]
+
+  Fields:
+
+  - `id` (number) — product identifier from the catalogue feed.
+  - `name` (string) — product name.
+  - `priceAud` (number) — base price in Australian dollars.
+  - `imageUrl` (string) — product image; empty string when the feed has none.
+  - `store` (string) — Gold Coast store holding the product.
+  - `latitude` (number) — store latitude, WGS 84.
+  - `longitude` (number) — store longitude, WGS 84.
+
+  ### 502 Bad Gateway — catalogue source unavailable
+
+  The upstream catalogue is unreachable, timed out after 5 seconds, or answered
+  a non-2xx status. The fault is upstream, not in this service.
+
+  {
+    "statusCode": 502,
+    "error": "Bad Gateway",
+    "message": "The product catalogue source is unavailable.",
+    "validation": [],
+    "url": "/api/v1/products",
+    "method": "GET"
+  }
+}
