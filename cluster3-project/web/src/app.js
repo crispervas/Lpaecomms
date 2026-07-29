@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { registerRoutes } from './routes/index.js';
 import { notFoundHandlerApi, notFoundHandlerWeb } from './config/notFoundHandler.js';
 import { errorHandler, logErrors, wrapErrors } from './config/errorHandler.js';
+import { apiCorsHeaders } from './config/apiCors.js';
 
 /** Absolute path to the `src` directory, resolved from this module. */
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +44,12 @@ export function createApp() {
     next();
   });
 
+  // CORS headers apply to every /api response — success, failure, and the
+  // API's own 404 alike — so this must be mounted ahead of both the routes
+  // and notFoundHandlerApi below, not folded into either one. View routes are
+  // served same-origin to the browser and carry no CORS header.
+  app.use('/api', apiCorsHeaders);
+
   // Mount view routes (HTML) and API routes (JSON).
   registerRoutes(app);
 
@@ -55,9 +62,9 @@ export function createApp() {
   app.use(notFoundHandlerWeb);
 
   // Error-handling chain. Order is significant and must not change:
-  //   logErrors   — record the error (development only), then re-throw it.
+  //   logErrors   — record the error, in every environment, then re-throw it.
   //   wrapErrors  — turn any non-Boom error into a Boom error.
-  //   errorHandler — build and send the final JSON response.
+  //   errorHandler — build and send the final response, JSON or HTML by client.
   // Each only runs once something upstream calls next(err); errorHandler relies
   // on wrapErrors having already guaranteed a Boom-shaped error.
   app.use(logErrors);

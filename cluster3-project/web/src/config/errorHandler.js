@@ -90,21 +90,18 @@ export const logErrors = (err, req, res, next) => {
  *
  * Non-Boom errors (thrown strings, native `Error`s, third-party failures) are
  * wrapped as a 500 so the final handler can rely on `err.output` always existing.
+ * CORS headers are not this middleware's job: `apiCorsHeaders` (config/apiCors.js)
+ * sets them ahead of the routes for every `/api` response, success or failure,
+ * so they do not need to be repeated on the error path here.
  *
  * @param {Error} err - The forwarded error.
- * @param {import('express').Request} req - Read to decide whether CORS applies.
- * @param {import('express').Response} res - Used to set CORS headers on API errors.
+ * @param {import('express').Request} req - Unused; kept for the four-argument
+ *   error-middleware signature Express requires.
+ * @param {import('express').Response} res - Unused for the same reason.
  * @param {import('express').NextFunction} next - Forwards a guaranteed-Boom error.
  * @returns {void}
  */
 export const wrapErrors = (err, req, res, next) => {
-    // CORS concerns the REST clients only; browser pages are served same-origin.
-    if (isApiRequest(req)) {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
-        res.header("Access-Control-Allow-Headers", "Content-Type");
-    }
-
     // Anything that isn't already Boom becomes a 500 so downstream code stays uniform.
     if (!err.isBoom) return next(boom.badImplementation(err));
     next(err);

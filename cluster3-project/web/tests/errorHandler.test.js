@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import request from 'supertest';
 
 import { errorHandler, logErrors, wrapErrors } from '../src/config/errorHandler.js';
+import { apiCorsHeaders } from '../src/config/apiCors.js';
 
 /** Absolute path to `src`, so the test app resolves views the way `app.js` does. */
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
@@ -42,6 +43,11 @@ const buildFailingApp = () => {
     res.locals.currentPath = req.path;
     next();
   });
+
+  // Mirrors app.js: CORS applies to every /api response and must be mounted
+  // ahead of the routes, not left to wrapErrors — this app has no routes.js,
+  // so it is wired here directly.
+  app.use('/api', apiCorsHeaders);
 
   app.get('/boom', () => {
     throw new Error(BOOM_MESSAGE);
