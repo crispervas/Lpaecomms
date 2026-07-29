@@ -75,6 +75,23 @@ map.invalidateSize() must run after layout changes (e.g. opening/closing a side 
 Lazy loading of the Leaflet script, only when the user scrolls to the map section (Intersection Observer)
 Target response time for the locations endpoint: < 300ms
 
+### Implementation status
+
+This mashup is live on the Mashups page (`/mashup`), the "Products + Location" card.
+
+**What it consumes.** The browser script fetches `GET /api/v1/products` — the same endpoint the mobile and desktop clients call — and plots one Leaflet marker per product returned.
+
+**Files involved.**
+
+| File | Role |
+|---|---|
+| `src/public/js/mashup-map.js` | Initialises the Leaflet map, fetches the catalogue, and renders markers/popups |
+| `src/views/components/mashupOne.ejs` | Provides the `#mashup-map` container the script renders into |
+| `src/models/product.model.js` | Merges the external catalogue with Gold Coast store coordinates |
+
+**Store locations.** The external demo feed carries no coordinates, so store locations are merged in server-side from a fixed Gold Coast table (`STORE_LOCATIONS` in `product.model.js`) rather than invented in the browser.
+
+**Deliberately not built.** Marker clustering (`Leaflet.markercluster`) and Intersection-Observer lazy loading of the Leaflet script — both listed under Interface behaviour/Performance above — were left out on purpose: five products cannot overlap enough for clustering to matter, and the script tag already uses `defer`, which keeps Leaflet off the critical rendering path without the added complexity of an observer.
 
 ## MASHUP 2 — Products + Currency Converter
 

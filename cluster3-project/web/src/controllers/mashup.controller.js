@@ -11,6 +11,18 @@
 const PAGE_TITLE = 'Lpaecomms — Mashups';
 
 /**
+ * Front-end assets for the Mashups page. Leaflet is pinned and loaded from a
+ * CDN; the mashup scripts are served from public/. Order matters — Leaflet must
+ * load before the map script that uses it. Passed to the layout via the
+ * `styles`/`scripts` locals so no other page downloads Leaflet.
+ */
+const MASHUP_STYLES = ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'];
+const MASHUP_SCRIPTS = [
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  '/js/mashup-map.js',
+];
+
+/**
  * Controller for the Mashups page.
  */
 export class MashupController {
@@ -25,6 +37,8 @@ export class MashupController {
     res.render('layouts/base', {
       title: PAGE_TITLE,
       page: 'mashup',
+      styles: MASHUP_STYLES,
+      scripts: MASHUP_SCRIPTS,
     });
   }
 }
