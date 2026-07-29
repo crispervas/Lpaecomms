@@ -84,12 +84,12 @@ test('CurrencyController validates before checking configuration, even with a ke
 });
 
 // Driven directly against the controller, the same way the 503 test above is,
-// rather than through supertest + createApp(): the running app's currency
-// route wires in config.ninjaApiKey at import time, and this environment has
-// no NINJA_API_KEY, so an app-level request would hit the 503 branch before
-// ever reaching the provider call this test needs to exercise. Constructing
-// the controller with a configured model reaches the same convert() code path
-// the app would use once a real key is present, without inventing one.
+// rather than through supertest + createApp(): validation runs before the
+// configuration check, so these controller-level assertions hold regardless
+// of whether NINJA_API_KEY happens to be configured in this environment.
+// Constructing the controller with a configured model reaches the same
+// convert() code path the app would use once a real key is present, without
+// depending on the environment providing one.
 test('CurrencyController answers 502 with a generic message when the provider fails', async () => {
   globalThis.fetch = async () => new Response('Forbidden: invalid API key', { status: 403 });
 

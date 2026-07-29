@@ -1,4 +1,4 @@
-# Mashup amd WEB Technology
+# Mashup and WEB Technology
 
 ## Comparative: Web 1.0, Web 2.0, Web 3.0, and Web 4.0
 
@@ -91,7 +91,7 @@ This mashup is live on the Mashups page (`/mashup`), the "Products + Location" c
 
 **Store locations.** The external demo feed carries no coordinates, so store locations are merged in server-side from a fixed Gold Coast table (`STORE_LOCATIONS` in `product.model.js`) rather than invented in the browser.
 
-**Deliberately not built.** Marker clustering (`Leaflet.markercluster`) and Intersection-Observer lazy loading of the Leaflet script — both listed under Interface behaviour/Performance above — were left out on purpose: five products cannot overlap enough for clustering to matter, and the script tag already uses `defer`, which keeps Leaflet off the critical rendering path without the added complexity of an observer.
+**Deliberately not built.** Marker clustering (`Leaflet.markercluster`) and Intersection-Observer lazy loading of the Leaflet script — both listed under Interface behaviour/Performance above — were left out on purpose: five products cannot overlap enough for clustering to matter, and the script tag already uses `defer`, which keeps Leaflet off the critical rendering path without the added complexity of an observer. The Data structure section above also specifies a dedicated `GET /api/products/locations` endpoint returning snake_case fields (`price`, `lat`, `lng`, `image_url`); that design was folded into the single `GET /api/v1/products` endpoint instead, returning camelCase fields (`priceAud`, `latitude`, `longitude`, `imageUrl`) alongside `id`, `name`, and `store` — one endpoint serving both this mashup and the currency converter, rather than a second endpoint duplicating most of the same data. `map.invalidateSize()`, listed under Responsiveness above to correct rendering after a layout change, was not implemented either: the Mashups page has no layout element that resizes the map's container after the initial load, so there is no event that would need to trigger it.
 
 ## MASHUP 2 — Products + Currency Converter
 
@@ -161,6 +161,8 @@ This mashup is live on the Mashups page (`/mashup`), the "Products + Currency Co
 **AUD short-circuit.** Selecting AUD as the display currency never calls `/api/v1/convert`: the script recognises `target === BASE_CURRENCY` and renders the catalogue price directly, since converting a currency into itself has a known answer that does not need a round trip.
 
 **Failure fallback.** If `/api/v1/products` fails, the product selector shows "Products unavailable" and the status line reports the catalogue is down. If `/api/v1/convert` fails or answers a non-2xx status — including the 502 the API Ninjas free plan currently returns for every non-identity pair — the converted field falls back to the AUD price with the status "Live rates are unavailable — showing the price in AUD.", never a blank field.
+
+**Deliberately not built.** The HTTP request specification above singles out 429 (rate limit exceeded) for its own fallback — reuse a cached value — separate from every other non-2xx status. The implementation does not distinguish it: `CurrencyModel` throws the same generic error for any non-2xx provider response, and `CurrencyController` wraps every non-Boom error into the same 502, so a 429 reaches the client exactly like a 500 or a 403 would, not as a fallback to a stale cached rate.
 
 **Security.** Product names come from the same untrusted third-party feed as mashup 1. The script inserts them with `new Option(product.name, ...)`, which sets `textContent`, not `innerHTML` — a name containing markup is rendered as inert text in the `<option>`, the same defence `mashup-map.js` uses for its popups.
 
@@ -236,7 +238,9 @@ This mashup is live on the Mashups page (`/mashup`), the "Secure Password Checke
 
 **Stale-response guard.** Same `latestRequestId` counter pattern as `mashup-currency.js`: bumped before the hash/network round trip and re-checked after every `await` that precedes a DOM write, on both the success and the catch path, plus once more when the field is cleared — so a slow response for an earlier password can never overwrite what is on screen for a newer one.
 
-## Implemented Web Mashups — Company Location Map and Intro Video
+**Not applicable.** The interface components above require that "the form's submit button must remain disabled while verification is in progress, or if the password has been flagged as compromised". All three mashups live on the `/mashup` demo page, which has no form and no submit button — there is nothing here for that rule to apply to.
+
+## Implemented Web Mashups — Summary, Company Location Map, and Intro Video
 
 All five mashups documented in this file are now implemented in `cluster3-project/web`. The three built on the Mashups page each have their own "Implementation status" section directly under their design specification above:
 

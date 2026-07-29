@@ -37,8 +37,14 @@ bruno/lpaecomms-web/
 │   ├── development.bru
 │   ├── staging.bru
 │   └── production.bru
-└── health/
-    └── get-health.bru             # A request + its docs (purpose, params, responses)
+├── health/
+│   └── get-health.bru             # A request + its docs (purpose, params, responses)
+├── products/
+│   └── get-products.bru           # Product catalogue request + docs (pairing, truncation, caching)
+├── currency/
+│   └── get-convert.bru            # Currency conversion request + docs (caching, identity short-circuit)
+└── password/
+    └── get-password-breaches.bru  # Breached password lookup request + docs (k-anonymity)
 ```
 
 Bruno is the **single source of truth for the API**. Every endpoint has a `.bru`
@@ -61,8 +67,11 @@ web/
 ├── styles/
 │   └── tailwind.css      # Tailwind SOURCE (input to the build)
 ├── tests/
-│   ├── health.test.js       # Health endpoint (needs the dev database running)
-│   └── errorHandler.test.js # Error middleware: JSON for API, HTML for the browser
+│   ├── health.test.js             # Health endpoint (needs the dev database running)
+│   ├── errorHandler.test.js       # Error middleware: JSON for API, HTML for the browser
+│   ├── products.api.test.js       # Product catalogue endpoint, response shape, and caching
+│   ├── convert.api.test.js        # Currency conversion endpoint, validation order, and caching
+│   └── passwordBreaches.api.test.js # Breached password lookup endpoint (k-anonymity)
 └── src/                  # Application code — see section 3
 ```
 
@@ -90,7 +99,8 @@ src/
 ├── config/               # Cross-cutting configuration and middleware
 │   ├── env.js            # Reads & validates environment variables (fails fast)
 │   ├── errorHandler.js   # Error middleware chain (logErrors → wrapErrors → errorHandler)
-│   └── notFoundHandler.js# 404 handlers: JSON for API, HTML page for the browser
+│   ├── notFoundHandler.js# 404 handlers: JSON for API, HTML page for the browser
+│   └── apiCors.js        # CORS headers for every /api response, success and failure alike
 ├── routes/               # URL → controller mapping (the routing layer)
 │   ├── index.js          # registerRoutes(): mounts view routes at / and API at /api/v1
 │   ├── views/            # View routes (return HTML)
@@ -144,7 +154,7 @@ src/
     │   └── tailwind.css  # Compiled Tailwind (build output)
     └── js/
         ├── nav.js         # Small client-side script for the nav
-        ├── contact-map.js # Leaflet map on the Contact page (mashup: products + location)
+        ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
         ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
         └── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)

@@ -98,3 +98,5 @@ Info.md
 
 # Design specs and implementation plans: working notes, not deliverables.
 documentation/superpowers/
+# Scratch workspace for plan execution (ledger, briefs, review packages).
+.superpowers/
