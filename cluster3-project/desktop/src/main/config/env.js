@@ -14,7 +14,9 @@
 
 const dotenv = require('dotenv');
 
-dotenv.config();
+// quiet: true suppresses dotenv's promotional banner, which would otherwise
+// print on every main-process launch and in every test run.
+dotenv.config({ quiet: true });
 
 /**
  * Environments the application recognises.
