@@ -76,7 +76,10 @@ export function ApiStatus() {
     check();
   }, [check]);
 
-  if (isChecking && envelope === null) {
+  // Guard on the envelope alone, not on isChecking: effects run after the first
+  // commit, so isChecking is still false on the initial render and a combined
+  // condition would fall through to describe(null) and throw.
+  if (envelope === null) {
     return (
       <section className="rounded-lg border border-slate-300 bg-white p-6">
         <p className="text-slate-600">Checking the API…</p>
