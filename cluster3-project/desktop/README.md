@@ -36,8 +36,8 @@ On Windows, set the variable separately before running `electron .`.
 See `.env.example` for the full list. Two of them are easy to confuse:
 
 - `NODE_ENV` decides **which API** the app talks to.
-- Whether the app is packaged decides **how the renderer is served** — Vite's
-  dev server or the compiled `index.html`.
+- `app.isPackaged || USE_BUILT_RENDERER` decides **how the renderer is
+  served** — Vite's dev server or the compiled `index.html`.
 
 They are independent, so a development build can point at staging.
 

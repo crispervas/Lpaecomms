@@ -97,7 +97,9 @@ function parseBoolean(raw, name) {
  * @property {string} nodeEnv - Active environment name.
  * @property {string} apiBaseUrl - Base URL of the REST API, including /api/v1.
  * @property {number} apiTimeoutMs - Request timeout in milliseconds.
- * @property {string} devServerUrl - Vite dev server URL, used when not packaged.
+ * @property {string} devServerUrl - Vite dev server URL. Used only when the
+ *   compiled renderer is not served, i.e. `app.isPackaged || useBuiltRenderer`
+ *   is false.
  * @property {boolean} useBuiltRenderer - Load the compiled renderer even when
  *   the app is not packaged. Testing aid for the production render path.
  * @property {boolean} isDevelopment - True when running in development.
