@@ -9,7 +9,7 @@
 const path = require('node:path');
 const { app, BrowserWindow, session } = require('electron');
 
-const { config } = require('./config/env.js');
+const { config } = require('./config/index.js');
 const { createApiClient } = require('./services/apiClient.js');
 const { registerHealthIpc } = require('./ipc/health.ipc.js');
 

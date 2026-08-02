@@ -1,22 +1,15 @@
 /**
- * @file Environment configuration for the main process.
+ * @file Environment variable parsing and validation.
  *
- * Reads and validates process environment variables and exposes a single frozen
- * configuration object. Validation runs at import time and throws when a
- * variable is missing or invalid, so the application fails fast instead of
- * starting half-configured. No value is hardcoded per environment and nothing
- * branches on a hostname.
+ * Exports createConfig(), a pure function with no side effects: it neither
+ * reads process.env nor loads a .env file, so tests can hand it a fabricated
+ * environment without touching the developer's machine or requiring a real
+ * .env to exist. Composing the application's actual configuration — loading
+ * dotenv, then calling createConfig(process.env) — is the job of ./index.js,
+ * which is what the running application imports; this module is not.
  *
- * The renderer never sees any of this. Everything here stays in the main
- * process, which is what allows an admin token to be added later without
- * exposing it to the page.
+ * No value is hardcoded per environment and nothing branches on a hostname.
  */
-
-const dotenv = require('dotenv');
-
-// quiet: true suppresses dotenv's promotional banner, which would otherwise
-// print on every main-process launch and in every test run.
-dotenv.config({ quiet: true });
 
 /**
  * Environments the application recognises.
@@ -143,10 +136,4 @@ function createConfig(source) {
   });
 }
 
-/**
- * The single source of configuration for the main process.
- * @type {Readonly<AppConfig>}
- */
-const config = createConfig(process.env);
-
-module.exports = { createConfig, config };
+module.exports = { createConfig };
