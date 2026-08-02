@@ -101,3 +101,20 @@ test('reports staging and production correctly', () => {
   assert.equal(production.isProduction, true);
   assert.equal(production.isDevelopment, false);
 });
+
+test('defaults USE_BUILT_RENDERER to false', () => {
+  const env = { ...VALID_ENV, USE_BUILT_RENDERER: undefined };
+
+  assert.equal(createConfig(env).useBuiltRenderer, false);
+});
+
+test('reads USE_BUILT_RENDERER when set to true', () => {
+  const env = { ...VALID_ENV, USE_BUILT_RENDERER: 'true' };
+
+  assert.equal(createConfig(env).useBuiltRenderer, true);
+});
+
+test('throws when USE_BUILT_RENDERER is not a boolean literal', () => {
+  assert.throws(() => createConfig({ ...VALID_ENV, USE_BUILT_RENDERER: '1' }), /USE_BUILT_RENDERER/);
+  assert.throws(() => createConfig({ ...VALID_ENV, USE_BUILT_RENDERER: 'yes' }), /USE_BUILT_RENDERER/);
+});

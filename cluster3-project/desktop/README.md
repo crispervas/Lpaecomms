@@ -24,9 +24,12 @@ cp .env.example .env
 | `pnpm dev` | Vite dev server plus Electron, in one process group |
 | `pnpm dev:renderer` | Vite dev server alone, on port 5173 |
 | `pnpm build` | Compile the renderer into `dist/` |
-| `pnpm start` | Run Electron against the compiled renderer |
+| `pnpm start` | Run Electron against the compiled renderer in `dist/` (run `pnpm build` first) |
 | `pnpm test` | Run the whole test suite |
 | `node --test tests/env.test.js` | Run a single test file |
+
+`pnpm start` sets `USE_BUILT_RENDERER=true` inline, which is POSIX shell syntax.
+On Windows, set the variable separately before running `electron .`.
 
 ## Environment variables
 

@@ -80,6 +80,24 @@ function parseTimeout(raw) {
 }
 
 /**
+ * Parse a strict boolean literal.
+ *
+ * Only "true" and "false" are accepted. Anything looser ("1", "yes", "") would
+ * make a typo silently mean false, and this flag decides which renderer the
+ * window loads — a wrong value shows a blank window with no error.
+ *
+ * @param {string} raw - Raw value from the environment.
+ * @param {string} name - Variable name, used in the error message.
+ * @returns {boolean} The parsed boolean.
+ * @throws {Error} When the value is not exactly "true" or "false".
+ */
+function parseBoolean(raw, name) {
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  throw new Error(`Invalid ${name} "${raw}". Expected "true" or "false".`);
+}
+
+/**
  * Application configuration derived from environment variables.
  *
  * @typedef {Object} AppConfig
@@ -87,6 +105,8 @@ function parseTimeout(raw) {
  * @property {string} apiBaseUrl - Base URL of the REST API, including /api/v1.
  * @property {number} apiTimeoutMs - Request timeout in milliseconds.
  * @property {string} devServerUrl - Vite dev server URL, used when not packaged.
+ * @property {boolean} useBuiltRenderer - Load the compiled renderer even when
+ *   the app is not packaged. Testing aid for the production render path.
  * @property {boolean} isDevelopment - True when running in development.
  * @property {boolean} isStaging - True when running in staging.
  * @property {boolean} isProduction - True when running in production.
@@ -116,6 +136,7 @@ function createConfig(source) {
     apiBaseUrl: parseUrl(required(source, 'API_BASE_URL'), 'API_BASE_URL'),
     apiTimeoutMs: parseTimeout(source.API_TIMEOUT_MS ?? String(DEFAULT_TIMEOUT_MS)),
     devServerUrl: parseUrl(source.DEV_SERVER_URL ?? DEFAULT_DEV_SERVER_URL, 'DEV_SERVER_URL'),
+    useBuiltRenderer: parseBoolean(source.USE_BUILT_RENDERER ?? 'false', 'USE_BUILT_RENDERER'),
     isDevelopment: nodeEnv === 'development',
     isStaging: nodeEnv === 'staging',
     isProduction: nodeEnv === 'production',

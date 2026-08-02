@@ -14,7 +14,7 @@
     "dev:renderer": "vite",
     "dev:main": "wait-on tcp:5173 && electron .",
     "build": "vite build",
-    "start": "electron .",
+    "start": "USE_BUILT_RENDERER=true electron .",
     "test": "node --test"
   },
   "dependencies": {

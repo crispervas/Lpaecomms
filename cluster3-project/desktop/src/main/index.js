@@ -14,6 +14,23 @@ const { createApiClient } = require('./services/apiClient.js');
 const { registerHealthIpc } = require('./ipc/health.ipc.js');
 
 /**
+ * Whether the window loads the compiled renderer rather than the dev server.
+ *
+ * `app.isPackaged` is the real signal, but it is true only in a packaged build.
+ * Until packaging exists, USE_BUILT_RENDERER is the only way to reach the
+ * compiled path at all. Both the load target and the CSP derive from this one
+ * predicate so they can never disagree — a file:// page served under the dev
+ * CSP would be a silent inconsistency.
+ *
+ * This says nothing about which API is targeted; that stays with NODE_ENV.
+ *
+ * @returns {boolean} True when the compiled renderer is served.
+ */
+function servesBuiltRenderer() {
+  return app.isPackaged || config.useBuiltRenderer;
+}
+
+/**
  * Content Security Policy for the renderer.
  *
  * The renderer performs no network requests of its own — everything goes over
@@ -24,7 +41,7 @@ const { registerHealthIpc } = require('./ipc/health.ipc.js');
  * @returns {string} The CSP header value for the current mode.
  */
 function contentSecurityPolicy() {
-  if (app.isPackaged) {
+  if (servesBuiltRenderer()) {
     return "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'";
   }
   return [
@@ -54,9 +71,9 @@ function applySecurityPolicy() {
 /**
  * Create the application window and load the renderer.
  *
- * Which renderer is loaded follows from `app.isPackaged`, not from NODE_ENV:
- * the two are independent axes. NODE_ENV decides which API the app targets, so
- * a development build can legitimately point at staging.
+ * Which renderer is loaded follows from `servesBuiltRenderer()`, not from
+ * NODE_ENV: the two are independent axes. NODE_ENV decides which API the app
+ * targets, so a development build can legitimately point at staging.
  *
  * @returns {BrowserWindow} The created window.
  */
@@ -76,7 +93,7 @@ function createWindow() {
   // Show only once the first paint is ready, to avoid a white flash.
   window.once('ready-to-show', () => window.show());
 
-  if (app.isPackaged) {
+  if (servesBuiltRenderer()) {
     window.loadFile(path.join(__dirname, '..', '..', 'dist', 'index.html'));
   } else {
     window.loadURL(config.devServerUrl);
