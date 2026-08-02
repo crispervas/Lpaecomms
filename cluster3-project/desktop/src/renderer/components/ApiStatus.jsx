@@ -67,9 +67,24 @@ export function ApiStatus() {
 
   const check = useCallback(async () => {
     setIsChecking(true);
-    const result = await window.api.getHealth();
-    setEnvelope(result);
-    setIsChecking(false);
+    try {
+      const result = await window.api.getHealth();
+      setEnvelope(result);
+    } catch {
+      // The preload's envelope never rejects (see preload.js), but invoke()
+      // itself can — e.g. window.api is undefined, or no handler is
+      // registered on the other end. That is a different failure with the
+      // same symptom, so it needs its own envelope rather than an unhandled
+      // rejection that leaves the panel stuck on "Checking the API…" forever.
+      setEnvelope({
+        ok: false,
+        status: null,
+        data: null,
+        error: 'The desktop bridge is unavailable.',
+      });
+    } finally {
+      setIsChecking(false);
+    }
   }, []);
 
   useEffect(() => {
