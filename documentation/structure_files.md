@@ -318,3 +318,37 @@ this order and update this document:
 | `views/**/*.ejs` | View (presentation) |
 | `*.routes.js` | Routing (URL → controller) |
 | `config/*.js` | Cross-cutting middleware / configuration |
+
+---
+
+## 6. The desktop platform (`cluster3-project/desktop`)
+
+```
+desktop/
+├── .env.example          # Documents every environment variable (no secrets)
+├── index.html            # Vite entry point for the renderer
+├── vite.config.mjs       # Renderer build; pinned dev port, relative asset base
+├── tailwind.config.js    # Content globs (index.html + src/renderer)
+├── postcss.config.js     # Tailwind + autoprefixer
+├── tests/
+│   ├── env.test.js               # Environment validation
+│   └── apiClient.test.js         # Result envelope for every failure mode
+└── src/
+    ├── main/             # The only process with configuration and network access
+    │   ├── index.js              # Lifecycle, CSP, BrowserWindow, dev/prod loading
+    │   ├── preload.js            # contextBridge surface — named functions only
+    │   ├── config/env.js         # Validated, frozen configuration
+    │   ├── services/apiClient.js # HTTP client returning result envelopes
+    │   └── ipc/health.ipc.js     # Registers the api:health channel
+    └── renderer/         # React; no Node, no network
+        ├── main.jsx              # React root
+        ├── App.jsx               # Page frame
+        ├── components/ApiStatus.jsx  # Health screen (five cases)
+        └── styles/tailwind.css   # Tailwind source
+```
+
+The renderer never learns the API's address. Every call crosses the preload
+bridge, which means an admin token added later stays in the main process.
+
+Vite compiles the renderer only: `src/main/` is CommonJS importing nothing
+beyond `electron` and Node builtins, so it needs no build step.
