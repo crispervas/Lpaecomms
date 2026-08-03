@@ -52,4 +52,4 @@ Three processes with one boundary:
 
 The window runs with `contextIsolation: true`, `nodeIntegration: false`,
 `sandbox: true`, and a Content Security Policy that forbids outbound
-connections in a packaged build.
+connections whenever the compiled renderer is served.
