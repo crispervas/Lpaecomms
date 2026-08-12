@@ -71,7 +71,12 @@ web/
 │   ├── errorHandler.test.js       # Error middleware: JSON for API, HTML for the browser
 │   ├── products.api.test.js       # Product catalogue endpoint, response shape, and caching
 │   ├── convert.api.test.js        # Currency conversion endpoint, validation order, and caching
-│   └── passwordBreaches.api.test.js # Breached password lookup endpoint (k-anonymity)
+│   ├── passwordBreaches.api.test.js # Breached password lookup endpoint (k-anonymity)
+│   ├── theme.test.js              # Tailwind theme tokens: palette, font families, content globs
+│   ├── layout.view.test.js        # Base layout: web fonts and the canvas/ink body classes
+│   ├── chrome.view.test.js        # Header and footer: brand, nav, inert search/cart, newsletter
+│   ├── home.view.test.js          # Home page: hero, categories, trending grid, feed-failure notice
+│   └── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
 └── src/                  # Application code — see section 3
 ```
 
