@@ -8,10 +8,6 @@
                heading always render regardless: the hero's "#trending" anchor
                targets this section unconditionally and must always have a
                destination.
-
-  Two mockup elements are deliberately absent. The star rating is not in the
-  feed, and the add-to-cart button would invite a click that no cart can
-  answer. Both return with the cart iteration.
 %>
 <%# scroll-mt-24 keeps the heading clear of the fixed header when the hero's
     "Shop trending" anchor lands here. %>
@@ -28,23 +24,7 @@
     %>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <% products.forEach((product) => { %>
-        <article class="flex flex-col gap-2.5">
-          <div class="h-48 w-full overflow-hidden rounded-2xl bg-tint">
-            <%# The feed does not always carry a usable image; the tinted block
-                stands in rather than a broken-image icon. %>
-            <% if (product.imageUrl) { %>
-              <img src="<%= product.imageUrl %>" alt="<%= product.name %>" loading="lazy"
-                class="h-full w-full object-cover" />
-            <% } %>
-          </div>
-          <% if (product.category) { %>
-            <span class="text-[11px] font-semibold uppercase tracking-wider text-muted">
-              <%= product.category %>
-            </span>
-          <% } %>
-          <span class="text-sm font-semibold text-ink"><%= product.name %></span>
-          <span class="text-sm font-bold text-ink"><%= priceFormatter.format(product.priceAud) %></span>
-        </article>
+        <%- include('../components/productCard', { product, priceFormatter }) %>
       <% }) %>
     </div>
   <% } else { %>
