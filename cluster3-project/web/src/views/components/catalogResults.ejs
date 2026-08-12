@@ -1,0 +1,40 @@
+<%#
+  Catalog results: the count label, the product grid, and the two empty states.
+
+  Expected locals:
+    products           — array of {id, name, category, priceAud, imageUrl}
+    catalogueAvailable — false when the feed could not be read
+
+  An empty `products` means two different things, and the page must not blur
+  them: a feed that fell over is not a category that happens to be empty.
+  Telling someone a category is empty when the catalogue is actually down is a
+  lie the page can easily avoid, which is why the flag exists.
+
+  The count label renders only alongside a populated grid: pairing
+  "Showing 0 products" with a notice that already explains the emptiness says
+  the same thing twice, once uselessly.
+%>
+<section class="pb-24 pt-9">
+  <% if (!catalogueAvailable) { %>
+    <p class="text-sm text-muted">Our catalogue is unavailable right now. Please check back shortly.</p>
+  <% } else if (!products.length) { %>
+    <p class="py-20 text-center text-sm text-muted">No products in this category yet.</p>
+  <% } else { %>
+    <%
+      // Built once per render rather than per card: constructing an Intl
+      // formatter is the expensive part, formatting with it is not.
+      const priceFormatter = new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+      });
+    %>
+    <p class="mb-7 text-sm text-muted">
+      Showing <%= products.length %> product<%= products.length === 1 ? '' : 's' %>
+    </p>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <% products.forEach((product) => { %>
+        <%- include('../components/productCard', { product, priceFormatter }) %>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
