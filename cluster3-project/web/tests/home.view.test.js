@@ -69,3 +69,18 @@ test('resolveHeroImage returns null when no asset was supplied', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('the home page lists the six mockup categories', async () => {
+  const response = await request(createApp()).get('/');
+
+  assert.match(response.text, /Shop by category/);
+  for (const name of ['Keyboards', 'Mice', 'Headsets', 'Monitors', 'Webcams', 'Docks']) {
+    assert.match(response.text, new RegExp(`>\\s*${name}\\s*<`));
+  }
+});
+
+test('category cards are not links while Catalog does not exist', async () => {
+  const response = await request(createApp()).get('/');
+
+  assert.doesNotMatch(response.text, /href="\/catalog"/);
+});
