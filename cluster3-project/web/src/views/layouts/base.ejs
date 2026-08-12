@@ -18,6 +18,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><%= typeof title !== 'undefined' ? title : 'Lpaecomms' %></title>
+    <%# Mockup typography. Loaded from the CDN because the project has no
+        bundler: the Tailwind CLI alone cannot rewrite font asset paths. %>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/css/tailwind.css" />
     <%# Optional per-page stylesheets, injected through the `styles` local
         (e.g. Leaflet on the Contact page). %>
@@ -25,7 +33,7 @@
     <link rel="stylesheet" href="<%= href %>" />
     <% }) %>
   </head>
-  <body class="flex min-h-screen flex-col bg-slate-50 text-slate-900">
+  <body class="flex min-h-screen flex-col bg-canvas font-sans text-ink">
     <%- include('../partials/header') %>
     <%# pt-20 clears the fixed header; flex-1 pushes the footer to the bottom. %>
     <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-10 pt-20">
