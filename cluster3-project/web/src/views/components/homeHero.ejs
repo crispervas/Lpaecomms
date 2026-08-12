@@ -1,10 +1,10 @@
 <%#
-  Home hero: headline, calls to action, and the product shot.
+  Home hero: headline, calls to action, and the hero image.
 
   Expected locals:
-    heroImage — public URL of the hero photograph, or null when none was
-                supplied. Without it the tinted block renders alone, which is
-                a deliberate composition rather than a hole in the page.
+    heroImage — public URL of the hero image, or null when none was supplied.
+                Without it the tinted block renders alone, which is a
+                deliberate composition rather than a hole in the page.
 %>
 <section class="grid items-center gap-10 py-14 lg:grid-cols-2 lg:py-20">
   <div>
@@ -33,8 +33,11 @@
   <div class="relative h-[320px] sm:h-[420px] lg:h-[520px]">
     <div class="absolute right-0 top-5 h-[88%] w-[88%] rounded-3xl bg-tint" aria-hidden="true"></div>
     <% if (heroImage) { %>
-      <img src="<%= heroImage %>" alt="Lpaecomms flagship desk peripheral"
-        class="absolute bottom-0 left-0 h-[90%] w-[92%] rounded-3xl object-cover" />
+      <%# object-contain, not object-cover: the supplied artwork is an
+          illustration with margin around it, and cover would fill the box by
+          cropping those edges away. %>
+      <img src="<%= heroImage %>" alt="An online storefront on a phone, with a shopping basket and a customer browsing"
+        class="absolute bottom-0 left-0 h-[90%] w-[92%] rounded-3xl object-contain" />
     <% } %>
   </div>
 </section>
