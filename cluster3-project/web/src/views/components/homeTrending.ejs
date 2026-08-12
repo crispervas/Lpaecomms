@@ -3,26 +3,29 @@
 
   Expected locals:
     products — array of {id, name, category, priceAud, imageUrl}. Empty when
-               the catalogue feed failed, in which case the section renders
-               nothing at all: no heading, no placeholder, no empty grid.
+               the catalogue feed failed, in which case the grid is replaced
+               by a short notice. The section, its scroll-mt-24 and its
+               heading always render regardless: the hero's "#trending" anchor
+               targets this section unconditionally and must always have a
+               destination.
 
   Two mockup elements are deliberately absent. The star rating is not in the
   feed, and the add-to-cart button would invite a click that no cart can
   answer. Both return with the cart iteration.
 %>
-<% if (products.length) { %>
-  <%
-    // Built once per render rather than per card: constructing an Intl
-    // formatter is the expensive part, formatting with it is not.
-    const priceFormatter = new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-    });
-  %>
-  <%# scroll-mt-24 keeps the heading clear of the fixed header when the hero's
-      "Shop trending" anchor lands here. %>
-  <section id="trending" class="scroll-mt-24 pb-20">
-    <h2 class="mb-7 font-display text-xl font-semibold">Trending now</h2>
+<%# scroll-mt-24 keeps the heading clear of the fixed header when the hero's
+    "Shop trending" anchor lands here. %>
+<section id="trending" class="scroll-mt-24 pb-20">
+  <h2 class="mb-7 font-display text-xl font-semibold">Trending now</h2>
+  <% if (products.length) { %>
+    <%
+      // Built once per render rather than per card: constructing an Intl
+      // formatter is the expensive part, formatting with it is not.
+      const priceFormatter = new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+      });
+    %>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <% products.forEach((product) => { %>
         <article class="flex flex-col gap-2.5">
@@ -44,5 +47,7 @@
         </article>
       <% }) %>
     </div>
-  </section>
-<% } %>
+  <% } else { %>
+    <p class="text-sm text-muted">Our catalogue is unavailable right now. Please check back shortly.</p>
+  <% } %>
+</section>

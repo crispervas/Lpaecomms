@@ -78,7 +78,8 @@ export class HomeController {
     } catch (error) {
       // The catalogue is a third party. Failing the whole page because a demo
       // feed is down would be worse than rendering one section short, so the
-      // failure is recorded and the template omits the section.
+      // failure is recorded and the template shows a notice in place of the
+      // grid instead of the products it could not fetch.
       console.error('🪵 Home: featured products unavailable:', {
         message: error.message,
       });

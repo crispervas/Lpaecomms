@@ -146,7 +146,7 @@ test('the trending section renders the featured products', async () => {
   assert.match(response.text, /\$10\.00/);
 });
 
-test('the home page drops the trending section when the feed fails', async () => {
+test('the home page shows a fallback notice when the feed fails', async () => {
   globalThis.fetch = async () => new Response('upstream is down', { status: 503 });
 
   const response = await request(createApp()).get('/');
@@ -154,7 +154,13 @@ test('the home page drops the trending section when the feed fails', async () =>
   // The page must still answer 200: a third-party feed being down is not a
   // reason for the storefront to fail.
   assert.equal(response.status, 200);
-  assert.doesNotMatch(response.text, /Trending now/);
+  // The section itself never disappears: the hero's "#trending" anchor must
+  // always have a destination to scroll to, feed or no feed.
+  assert.match(response.text, /id="trending"/);
+  assert.match(response.text, /Our catalogue is unavailable right now\. Please check back shortly\./);
+  // No product card renders — only a card produces an <article>, so its
+  // absence proves the grid gave way to the notice rather than an empty grid.
+  assert.doesNotMatch(response.text, /<article/);
   // The rest of the page is untouched.
   assert.match(response.text, /Peripherals engineered for focus\./);
 });
