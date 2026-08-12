@@ -1,6 +1,52 @@
-<%# Site footer shared by every page. %>
-<footer class="border-t border-slate-200 bg-white">
-  <div class="mx-auto max-w-5xl px-4 py-6 text-sm text-slate-500">
-    &copy; <%= new Date().getFullYear() %> Lpaecomms
+<%#
+  Site footer shared by every page, built from the home mockup.
+
+  Shop items and Careers/Press are plain text, exactly as in the mockup: those
+  destinations do not exist. About is a real link. The newsletter has no
+  backend, so it renders without a <form> and with both controls disabled —
+  the UI must never imply a submission the site cannot perform.
+%>
+<footer class="border-t border-line bg-surface">
+  <div class="mx-auto max-w-5xl px-4 pb-8 pt-16">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <span class="font-display text-xl font-bold text-ink">LPA Ecomms</span>
+        <p class="mt-3 max-w-[280px] text-sm leading-relaxed text-muted">
+          Desk peripherals designed for daily use, sold direct.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-2.5 text-sm text-muted">
+        <span class="mb-1 font-semibold text-ink">Shop</span>
+        <span>Keyboards</span>
+        <span>Mice</span>
+        <span>Headsets</span>
+        <span>Monitors</span>
+      </div>
+
+      <div class="flex flex-col gap-2.5 text-sm text-muted">
+        <span class="mb-1 font-semibold text-ink">Company</span>
+        <a href="/about" class="hover:text-ink">About</a>
+        <span>Careers</span>
+        <span>Press</span>
+      </div>
+
+      <div>
+        <span class="text-sm font-semibold text-ink">Stay in the loop</span>
+        <div class="mt-3 flex gap-2">
+          <input type="email" placeholder="you@email.com" disabled title="Coming soon"
+            class="w-full rounded-lg border border-line px-3.5 py-2.5 text-sm text-ink placeholder:text-muted" />
+          <button type="button" disabled title="Coming soon"
+            class="rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white">
+            Join
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 flex flex-col gap-2 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:justify-between">
+      <span>&copy; <%= new Date().getFullYear() %> LPA Ecomms</span>
+      <span>Privacy · Terms</span>
+    </div>
   </div>
 </footer>

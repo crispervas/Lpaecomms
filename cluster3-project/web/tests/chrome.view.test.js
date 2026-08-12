@@ -45,3 +45,21 @@ test('the header cart is not a link and is out of the tab order', async () => {
   assert.match(response.text, /aria-disabled="true"/);
   assert.doesNotMatch(response.text, /href="\/cart"/);
 });
+
+test('the footer renders the four mockup columns', async () => {
+  const response = await request(createApp()).get('/about');
+
+  assert.match(response.text, /Shop</);
+  assert.match(response.text, /Company</);
+  assert.match(response.text, /Stay in the loop</);
+  assert.match(response.text, /Desk peripherals designed for daily use/);
+});
+
+test('the newsletter is inert and submits nowhere', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // No <form> at all: a form element implies a submission this site cannot
+  // perform, and a disabled button alone would still leave the input enabled.
+  assert.doesNotMatch(response.text, /<form/);
+  assert.match(response.text, /<input[^>]*type="email"[^>]*disabled/);
+});
