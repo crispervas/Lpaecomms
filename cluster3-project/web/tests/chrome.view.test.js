@@ -37,12 +37,19 @@ test('the header search field is present but inert', async () => {
   const response = await request(createApp()).get('/about');
 
   assert.match(response.text, /<input[^>]*type="search"[^>]*disabled/);
+  // Harmless while disabled, and it is one attribute now versus a real defect
+  // the day search is switched on.
+  assert.match(response.text, /<input[^>]*type="search"[^>]*aria-label="Search products"/);
 });
 
-test('the header cart is not a link and is out of the tab order', async () => {
+test('the header cart is hidden from assistive technology and is not a link', async () => {
   const response = await request(createApp()).get('/about');
 
-  assert.match(response.text, /aria-disabled="true"/);
+  // aria-disabled is only honoured on elements with a widget role, which a
+  // <span> does not have, so the cart is hidden from assistive technology
+  // outright instead — the badge conveys nothing actionable yet.
+  assert.match(response.text, /<span aria-hidden="true" title="Coming soon"/);
+  assert.doesNotMatch(response.text, /aria-disabled/);
   assert.doesNotMatch(response.text, /href="\/cart"/);
 });
 
