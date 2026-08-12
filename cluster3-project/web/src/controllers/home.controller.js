@@ -6,6 +6,44 @@
  * queries — that is the model layer's responsibility.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/** Absolute path to the static image directory. */
+const IMAGE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'img');
+
+/**
+ * Hero photograph filenames, in preference order. Three extensions are accepted
+ * so the supplied asset can be dropped in whatever format it arrives without a
+ * rename.
+ */
+const HERO_IMAGE_CANDIDATES = ['hero-product.webp', 'hero-product.jpg', 'hero-product.png'];
+
+/**
+ * Find the hero photograph among the accepted filenames.
+ *
+ * The asset is supplied by hand and may not be in the tree yet. Returning null
+ * instead of a fixed path is what lets the hero fall back to its coloured block
+ * rather than rendering a broken-image icon.
+ *
+ * @param {string} [imageDir] - Directory to search; overridable for tests.
+ * @returns {string|null} A public URL, or null when no candidate exists.
+ */
+export function resolveHeroImage(imageDir = IMAGE_DIR) {
+  const filename = HERO_IMAGE_CANDIDATES.find((candidate) =>
+    fs.existsSync(path.join(imageDir, candidate)),
+  );
+
+  return filename ? `/img/${filename}` : null;
+}
+
+/**
+ * Resolved once at load: static assets ship with the application and cannot
+ * appear mid-process, so a per-request stat would buy nothing.
+ */
+const heroImage = resolveHeroImage();
+
 /**
  * Controller for the storefront home page.
  */
@@ -18,6 +56,10 @@ export class HomeController {
    * @returns {void}
    */
   index(req, res) {
-    res.render('layouts/base', { title: 'Lpaecomms — Home', page: 'home' });
+    res.render('layouts/base', {
+      title: 'Lpaecomms — Home',
+      page: 'home',
+      heroImage,
+    });
   }
 }
