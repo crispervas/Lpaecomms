@@ -35,27 +35,37 @@ test('the hero renders its headline and both calls to action', async () => {
 
 test('resolveHeroImage returns the first supplied asset', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hero-'));
-  fs.writeFileSync(path.join(dir, 'hero-product.jpg'), '');
 
-  assert.equal(resolveHeroImage(dir), '/img/hero-product.jpg');
+  try {
+    fs.writeFileSync(path.join(dir, 'hero-product.jpg'), '');
 
-  fs.rmSync(dir, { recursive: true, force: true });
+    assert.equal(resolveHeroImage(dir), '/img/hero-product.jpg');
+  } finally {
+    // Runs even when the assertion throws, so a failing test never leaks its
+    // temp directory into the OS temp folder.
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('resolveHeroImage prefers webp over the other formats', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hero-'));
-  fs.writeFileSync(path.join(dir, 'hero-product.png'), '');
-  fs.writeFileSync(path.join(dir, 'hero-product.webp'), '');
 
-  assert.equal(resolveHeroImage(dir), '/img/hero-product.webp');
+  try {
+    fs.writeFileSync(path.join(dir, 'hero-product.png'), '');
+    fs.writeFileSync(path.join(dir, 'hero-product.webp'), '');
 
-  fs.rmSync(dir, { recursive: true, force: true });
+    assert.equal(resolveHeroImage(dir), '/img/hero-product.webp');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('resolveHeroImage returns null when no asset was supplied', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hero-'));
 
-  assert.equal(resolveHeroImage(dir), null);
-
-  fs.rmSync(dir, { recursive: true, force: true });
+  try {
+    assert.equal(resolveHeroImage(dir), null);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
