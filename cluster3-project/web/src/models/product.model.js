@@ -2,16 +2,18 @@
  * @file Product model.
  *
  * Data access for the product catalogue. Lpaecomms has no product table yet, so
- * the catalogue comes from a public demo feed and this model serves it in two
- * shapes to two different callers: the map mashup's `listWithLocations`, which
- * pairs each product with a store location the feed does not carry, and the
+ * the catalogue comes from a public demo feed and this model serves it in three
+ * shapes to three different callers: the map mashup's `listWithLocations`, which
+ * pairs each product with a store location the feed does not carry; the
  * storefront home page's `listFeatured`, which needs a plain trending grid at
- * a different size. Caches the raw feed response for a short TTL, the same way
- * `CurrencyModel` caches rates: it protects the demo feed's quota and, because
- * both mashup scripts call this model's endpoint on every `/mashup` page load,
- * keeps them looking at one consistent catalogue instead of two responses that
- * could disagree. Knows nothing about HTTP responses: it returns products or
- * throws, and the controller decides what a failure means to a client.
+ * a different size; and the catalog page's `listByCategory`, which scopes the
+ * same records to one category. Caches the raw feed response for a short TTL,
+ * the same way `CurrencyModel` caches rates: it protects the demo feed's quota
+ * and, because both mashup scripts call this model's endpoint on every
+ * `/mashup` page load, keeps them looking at one consistent catalogue instead
+ * of two responses that could disagree. Knows nothing about HTTP responses: it
+ * returns products or throws, and the controller decides what a failure means
+ * to a client.
  */
 
 /**
@@ -23,6 +25,16 @@ const CATALOGUE_BASE_URL = 'https://api.escuelajs.co/api/v1/products';
 
 /** The mockup's "Trending now" grid holds eight cards. */
 const DEFAULT_FEATURED_LIMIT = 8;
+
+/**
+ * Category resource on the same feed. Kept as its own base rather than derived
+ * from the products URL: they are sibling resources, not one nested in the
+ * other, and deriving one from the other would break the moment either moves.
+ */
+const CATEGORIES_BASE_URL = 'https://api.escuelajs.co/api/v1/categories';
+
+/** The catalog's grid is three rows of four. */
+const DEFAULT_CATALOG_LIMIT = 12;
 
 /** Give up on a slow feed rather than holding a request open indefinitely. */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -103,13 +115,17 @@ function firstImageUrl(images) {
  */
 export class ProductModel {
   /**
-   * @param {string} [catalogueBaseUrl] - Feed base URL, without a query string;
-   *   overridable so tests and other environments are not tied to one
-   *   hardcoded host.
+   * @param {string} [catalogueBaseUrl] - Products feed base URL, without a
+   *   query string; overridable so tests and other environments are not tied to
+   *   one hardcoded host.
+   * @param {string} [categoriesBaseUrl] - Category resource base URL, onto
+   *   which `listByCategory` composes `/{id}/products`.
    */
-  constructor(catalogueBaseUrl = CATALOGUE_BASE_URL) {
+  constructor(catalogueBaseUrl = CATALOGUE_BASE_URL, categoriesBaseUrl = CATEGORIES_BASE_URL) {
     /** @type {string} */
     this.catalogueBaseUrl = catalogueBaseUrl;
+    /** @type {string} */
+    this.categoriesBaseUrl = categoriesBaseUrl;
   }
 
   /**
@@ -128,20 +144,28 @@ export class ProductModel {
   }
 
   /**
-   * Build the feed URL for a given number of products.
+   * Build the feed URL for a given number of products, optionally scoped to one
+   * category.
    *
-   * The size belongs in the URL rather than in a slice after the fact: it is
-   * what makes each caller's response a distinct cache entry, which is why the
-   * home page's eight products and the mashup's five can never overwrite one
-   * another.
+   * Both the size and the category belong in the URL rather than in a filter
+   * after the fact: together they are what make each caller's response a
+   * distinct cache entry, which is why the home page's eight products, the
+   * mashup's five, and each category's twelve can never overwrite one another.
    *
    * @param {number} limit - How many products to request.
+   * @param {number|null} [categoryId] - Category to scope to, or null for all.
    * @returns {string} The absolute feed URL.
    */
-  #catalogueUrl(limit) {
-    const url = new URL(this.catalogueBaseUrl);
+  #catalogueUrl(limit, categoryId = null) {
+    const url = new URL(
+      categoryId === null
+        ? this.catalogueBaseUrl
+        : `${this.categoriesBaseUrl}/${categoryId}/products`,
+    );
+
     url.searchParams.set('offset', '0');
     url.searchParams.set('limit', String(limit));
+
     return url.toString();
   }
 
@@ -154,11 +178,12 @@ export class ProductModel {
    * and caching a shaped result would hand one caller the other's output.
    *
    * @param {number} limit - How many products to request.
+   * @param {number|null} [categoryId] - Category to scope to, or null for all.
    * @returns {Promise<Array<Object>>} Raw feed records.
    * @throws {Error} When the feed is unreachable, times out, or answers non-2xx.
    */
-  async #fetchCatalogue(limit) {
-    const url = this.#catalogueUrl(limit);
+  async #fetchCatalogue(limit, categoryId = null) {
+    const url = this.#catalogueUrl(limit, categoryId);
 
     const cached = catalogueCache.get(url);
     if (cached && cached.expiresAt > Date.now()) {
@@ -207,20 +232,22 @@ export class ProductModel {
   }
 
   /**
-   * Fetch products for the storefront, without store locations.
+   * Fetch products for the storefront, optionally scoped to one category.
    *
-   * This is the seam the in-house product service will replace: the home page
-   * knows this shape and nothing about where it came from, so swapping the demo
-   * feed means rewriting this method alone.
+   * This is the seam the in-house product service will replace: the pages know
+   * this shape and nothing about where it came from, so swapping the demo feed
+   * means rewriting this method alone.
    *
+   * @param {number|null} categoryId - Category to scope to, or null for every
+   *   category.
    * @param {number} [limit] - How many products to return.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
    *   Products in feed order.
    * @throws {Error} When the feed is unreachable, times out, or answers a
    *   non-2xx status.
    */
-  async listFeatured(limit = DEFAULT_FEATURED_LIMIT) {
-    const products = await this.#fetchCatalogue(limit);
+  async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT) {
+    const products = await this.#fetchCatalogue(limit, categoryId);
 
     return products.slice(0, limit).map((product) => ({
       id: product.id,
@@ -231,5 +258,22 @@ export class ProductModel {
       priceAud: product.price,
       imageUrl: firstImageUrl(product.images),
     }));
+  }
+
+  /**
+   * Fetch products for the home page's trending grid.
+   *
+   * Delegates rather than repeating the unfiltered query, and keeps its own
+   * default: the home's trending row is eight cards where the catalog's grid is
+   * twelve, so neither page inherits the other's density.
+   *
+   * @param {number} [limit] - How many products to return.
+   * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
+   *   Products in feed order.
+   * @throws {Error} When the feed is unreachable, times out, or answers a
+   *   non-2xx status.
+   */
+  async listFeatured(limit = DEFAULT_FEATURED_LIMIT) {
+    return this.listByCategory(null, limit);
   }
 }
