@@ -2,18 +2,27 @@
  * @file Product model.
  *
  * Data access for the product catalogue. Lpaecomms has no product table yet, so
- * the catalogue comes from a public demo feed and the store locations — which
- * that feed does not carry — are merged in here. Caches the merged result for
- * a short TTL, the same way `CurrencyModel` caches rates: it protects the demo
- * feed's quota and, because both mashup scripts call this model's endpoint on
- * every `/mashup` page load, keeps them looking at one consistent catalogue
- * instead of two responses that could disagree. Knows nothing about HTTP
- * responses: it returns products or throws, and the controller decides what a
- * failure means to a client.
+ * the catalogue comes from a public demo feed and this model serves it in two
+ * shapes to two different callers: the map mashup's `listWithLocations`, which
+ * pairs each product with a store location the feed does not carry, and the
+ * storefront home page's `listFeatured`, which needs a plain trending grid at
+ * a different size. Caches the raw feed response for a short TTL, the same way
+ * `CurrencyModel` caches rates: it protects the demo feed's quota and, because
+ * both mashup scripts call this model's endpoint on every `/mashup` page load,
+ * keeps them looking at one consistent catalogue instead of two responses that
+ * could disagree. Knows nothing about HTTP responses: it returns products or
+ * throws, and the controller decides what a failure means to a client.
  */
 
-/** External catalogue feeding the mashups. Five products is the demo size. */
-const CATALOGUE_URL = 'https://api.escuelajs.co/api/v1/products?offset=0&limit=5';
+/**
+ * External catalogue feeding the storefront. Base URL only: the number of
+ * products is a per-caller decision (see `#catalogueUrl`), not a property of
+ * the feed.
+ */
+const CATALOGUE_BASE_URL = 'https://api.escuelajs.co/api/v1/products';
+
+/** The mockup's "Trending now" grid holds eight cards. */
+const DEFAULT_FEATURED_LIMIT = 8;
 
 /** Give up on a slow feed rather than holding a request open indefinitely. */
 const REQUEST_TIMEOUT_MS = 5000;
@@ -30,11 +39,16 @@ const REQUEST_TIMEOUT_MS = 5000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Merged catalogue responses, shared by every `ProductModel` instance and
- * keyed by catalogue URL rather than held per instance. Keying by URL is what
- * lets a test construct a model with an overridden `catalogueUrl` (see the
- * constructor) without ever reading or evicting the production URL's entry,
- * even though the cache itself lives at module scope.
+ * Raw feed responses, shared by every `ProductModel` instance and keyed by the
+ * full catalogue URL (base URL plus the requested size) rather than held per
+ * instance. Caching the feed's own JSON, instead of any caller's
+ * transformation of it, is what lets `listWithLocations` and `listFeatured`
+ * read the same base URL at different sizes without one overwriting the
+ * other's shape: each size is its own URL and therefore its own cache entry.
+ * Keying by URL is also what lets a test construct a model with an overridden
+ * `catalogueBaseUrl` (see the constructor) without ever reading or evicting
+ * the production URL's entry, even though the cache itself lives at module
+ * scope.
  * @type {Map<string, {products: Array<Object>, expiresAt: number}>}
  */
 const catalogueCache = new Map();
@@ -84,16 +98,18 @@ function firstImageUrl(images) {
 }
 
 /**
- * Reads the product catalogue and pairs each product with a store location.
+ * Reads the product catalogue: the mashup's five products paired with store
+ * locations, and the storefront's featured grid at whatever size it asks for.
  */
 export class ProductModel {
   /**
-   * @param {string} [catalogueUrl] - Feed URL; overridable so tests and other
-   *   environments are not tied to one hardcoded host.
+   * @param {string} [catalogueBaseUrl] - Feed base URL, without a query string;
+   *   overridable so tests and other environments are not tied to one
+   *   hardcoded host.
    */
-  constructor(catalogueUrl = CATALOGUE_URL) {
+  constructor(catalogueBaseUrl = CATALOGUE_BASE_URL) {
     /** @type {string} */
-    this.catalogueUrl = catalogueUrl;
+    this.catalogueBaseUrl = catalogueBaseUrl;
   }
 
   /**
@@ -112,25 +128,44 @@ export class ProductModel {
   }
 
   /**
-   * Fetch the catalogue and merge each product with its store location.
+   * Build the feed URL for a given number of products.
    *
-   * Serves a cached result when one is still fresh for this instance's
-   * `catalogueUrl`, so two calls within the TTL never make two upstream
-   * requests. A failed fetch is never written to the cache and never disturbs
-   * whatever entry is already there.
+   * The size belongs in the URL rather than in a slice after the fact: it is
+   * what makes each caller's response a distinct cache entry, which is why the
+   * home page's eight products and the mashup's five can never overwrite one
+   * another.
    *
-   * @returns {Promise<Array<{id: number, name: string, priceAud: number, imageUrl: string, store: string, latitude: number, longitude: number}>>}
-   *   Products in display order, at most one per known store location.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status.
+   * @param {number} limit - How many products to request.
+   * @returns {string} The absolute feed URL.
    */
-  async listWithLocations() {
-    const cached = catalogueCache.get(this.catalogueUrl);
+  #catalogueUrl(limit) {
+    const url = new URL(this.catalogueBaseUrl);
+    url.searchParams.set('offset', '0');
+    url.searchParams.set('limit', String(limit));
+    return url.toString();
+  }
+
+  /**
+   * Fetch the raw feed response, serving a still-fresh cached copy when there
+   * is one.
+   *
+   * Caches the feed's own JSON rather than any caller's transformation of it:
+   * `listWithLocations` and `listFeatured` shape the same records differently,
+   * and caching a shaped result would hand one caller the other's output.
+   *
+   * @param {number} limit - How many products to request.
+   * @returns {Promise<Array<Object>>} Raw feed records.
+   * @throws {Error} When the feed is unreachable, times out, or answers non-2xx.
+   */
+  async #fetchCatalogue(limit) {
+    const url = this.#catalogueUrl(limit);
+
+    const cached = catalogueCache.get(url);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.products;
     }
 
-    const response = await fetch(this.catalogueUrl, {
+    const response = await fetch(url, {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
@@ -142,20 +177,59 @@ export class ProductModel {
 
     const products = await response.json();
 
+    // Written only once the fetch succeeded, so a failure can never overwrite —
+    // and therefore can never evict — a still-valid entry.
+    catalogueCache.set(url, { products, expiresAt: Date.now() + CACHE_TTL_MS });
+
+    return products;
+  }
+
+  /**
+   * Fetch the catalogue and merge each product with its store location.
+   *
+   * @returns {Promise<Array<{id: number, name: string, priceAud: number, imageUrl: string, store: string, latitude: number, longitude: number}>>}
+   *   Products in display order, at most one per known store location.
+   * @throws {Error} When the feed is unreachable, times out, or answers a
+   *   non-2xx status.
+   */
+  async listWithLocations() {
+    const products = await this.#fetchCatalogue(STORE_LOCATIONS.length);
+
     // Never return more products than there are locations: a product without a
     // place on the map is not something the mashup can display.
-    const merged = products.slice(0, STORE_LOCATIONS.length).map((product, index) => ({
+    return products.slice(0, STORE_LOCATIONS.length).map((product, index) => ({
       id: product.id,
       name: product.title,
       priceAud: product.price,
       imageUrl: firstImageUrl(product.images),
       ...STORE_LOCATIONS[index],
     }));
+  }
 
-    // Written only once the fetch and merge both succeeded, so a failure can
-    // never overwrite — and therefore can never evict — a still-valid entry.
-    catalogueCache.set(this.catalogueUrl, { products: merged, expiresAt: Date.now() + CACHE_TTL_MS });
+  /**
+   * Fetch products for the storefront, without store locations.
+   *
+   * This is the seam the in-house product service will replace: the home page
+   * knows this shape and nothing about where it came from, so swapping the demo
+   * feed means rewriting this method alone.
+   *
+   * @param {number} [limit] - How many products to return.
+   * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
+   *   Products in feed order.
+   * @throws {Error} When the feed is unreachable, times out, or answers a
+   *   non-2xx status.
+   */
+  async listFeatured(limit = DEFAULT_FEATURED_LIMIT) {
+    const products = await this.#fetchCatalogue(limit);
 
-    return merged;
+    return products.slice(0, limit).map((product) => ({
+      id: product.id,
+      name: product.title,
+      // Empty string rather than undefined: the card omits the line instead of
+      // printing "undefined" when the feed carries no category.
+      category: product.category?.name ?? '',
+      priceAud: product.price,
+      imageUrl: firstImageUrl(product.images),
+    }));
   }
 }
