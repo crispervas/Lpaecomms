@@ -8,11 +8,13 @@
 
 import express from 'express';
 import { HomeController } from '../../controllers/home.controller.js';
+import { ProductModel } from '../../models/product.model.js';
 
 const router = express.Router();
-const homeController = new HomeController();
+const homeController = new HomeController(new ProductModel());
 
-// GET / -> render the storefront home page.
+// GET / -> render the storefront home page. Returning the controller's promise
+// lets Express 5 forward a rejection to the error middleware on its own.
 router.get('/', (req, res) => homeController.index(req, res));
 
 export default router;

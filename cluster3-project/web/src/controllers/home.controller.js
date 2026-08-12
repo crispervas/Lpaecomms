@@ -20,6 +20,9 @@ const IMAGE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 
  */
 const HERO_IMAGE_CANDIDATES = ['hero-product.webp', 'hero-product.jpg', 'hero-product.png'];
 
+/** The mockup's trending grid holds eight cards. */
+const FEATURED_LIMIT = 8;
+
 /**
  * Find the hero photograph among the accepted filenames.
  *
@@ -49,17 +52,43 @@ const heroImage = resolveHeroImage();
  */
 export class HomeController {
   /**
+   * @param {import('../models/product.model.js').ProductModel} productModel - Injected product model.
+   */
+  constructor(productModel) {
+    /** @type {import('../models/product.model.js').ProductModel} */
+    this.productModel = productModel;
+  }
+
+  /**
    * Render the home page.
+   *
+   * Reads the catalogue through the model rather than over HTTP: a view route
+   * that called the JSON route would tie the site's rendering to the API's
+   * response shape, which mobile and desktop must stay free to change.
    *
    * @param {import('express').Request} req - Incoming request.
    * @param {import('express').Response} res - Outgoing response.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  index(req, res) {
+  async index(req, res) {
+    let products = [];
+
+    try {
+      products = await this.productModel.listFeatured(FEATURED_LIMIT);
+    } catch (error) {
+      // The catalogue is a third party. Failing the whole page because a demo
+      // feed is down would be worse than rendering one section short, so the
+      // failure is recorded and the template omits the section.
+      console.error('🪵 Home: featured products unavailable:', {
+        message: error.message,
+      });
+    }
+
     res.render('layouts/base', {
       title: 'Lpaecomms — Home',
       page: 'home',
       heroImage,
+      products,
     });
   }
 }

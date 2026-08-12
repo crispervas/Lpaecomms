@@ -1,0 +1,48 @@
+<%#
+  "Trending now" product grid.
+
+  Expected locals:
+    products — array of {id, name, category, priceAud, imageUrl}. Empty when
+               the catalogue feed failed, in which case the section renders
+               nothing at all: no heading, no placeholder, no empty grid.
+
+  Two mockup elements are deliberately absent. The star rating is not in the
+  feed, and the add-to-cart button would invite a click that no cart can
+  answer. Both return with the cart iteration.
+%>
+<% if (products.length) { %>
+  <%
+    // Built once per render rather than per card: constructing an Intl
+    // formatter is the expensive part, formatting with it is not.
+    const priceFormatter = new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+    });
+  %>
+  <%# scroll-mt-24 keeps the heading clear of the fixed header when the hero's
+      "Shop trending" anchor lands here. %>
+  <section id="trending" class="scroll-mt-24 pb-20">
+    <h2 class="mb-7 font-display text-xl font-semibold">Trending now</h2>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <% products.forEach((product) => { %>
+        <article class="flex flex-col gap-2.5">
+          <div class="h-48 w-full overflow-hidden rounded-2xl bg-tint">
+            <%# The feed does not always carry a usable image; the tinted block
+                stands in rather than a broken-image icon. %>
+            <% if (product.imageUrl) { %>
+              <img src="<%= product.imageUrl %>" alt="<%= product.name %>" loading="lazy"
+                class="h-full w-full object-cover" />
+            <% } %>
+          </div>
+          <% if (product.category) { %>
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <%= product.category %>
+            </span>
+          <% } %>
+          <span class="text-sm font-semibold text-ink"><%= product.name %></span>
+          <span class="text-sm font-bold text-ink"><%= priceFormatter.format(product.priceAud) %></span>
+        </article>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
