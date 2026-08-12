@@ -88,6 +88,13 @@ the map container to its amber "unavailable" state) — those class names live
 nowhere else, so without this glob they would be stripped from the production
 build and the state would render unstyled.
 
+> **Design tokens.** `tailwind.config.js` names the home mockup's palette
+> (`canvas`, `surface`, `subtle`, `ink`, `muted`, `line`, `accent`, `tint`) and
+> its two families (`font-display`, `font-sans`). Templates use those names, not
+> raw hex values, so a brand change is one edit in the config. The mockup's
+> `#9A9C9A` is deliberately absent: it fails WCAG AA on the canvas, and `muted`
+> replaces it.
+
 ---
 
 ## 3. Inside `src/` — the application
@@ -126,7 +133,7 @@ src/
 │   └── password.controller.js
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
-│   ├── product.model.js  # External catalogue + Gold Coast store locations
+│   ├── product.model.js  # External catalogue: storefront list + store locations
 │   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
 │   └── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
 ├── lib/                  # Shared infrastructure helpers
@@ -138,6 +145,9 @@ src/
 │   │   ├── header.ejs    # Shared header / navigation
 │   │   └── footer.ejs    # Shared footer
 │   ├── components/       # Reusable page fragments, included by a page
+│   │   ├── homeHero.ejs      # Home hero: headline, CTAs, product shot
+│   │   ├── homeCategories.ejs # Home "Shop by category" grid (static markup)
+│   │   ├── homeTrending.ejs  # Home "Trending now" grid (products local)
 │   │   ├── mashupOne.ejs   # Products + Location card
 │   │   ├── mashupTwo.ejs   # Products + Currency Converter card
 │   │   └── mashupThree.ejs # Secure Password Checker card
@@ -152,6 +162,7 @@ src/
 └── public/               # Static assets served as-is
     ├── css/
     │   └── tailwind.css  # Compiled Tailwind (build output)
+    ├── img/              # Image assets (hero-product.webp|jpg|png, supplied by hand)
     └── js/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
