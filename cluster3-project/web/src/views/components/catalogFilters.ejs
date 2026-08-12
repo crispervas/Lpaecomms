@@ -1,0 +1,32 @@
+<%#
+  Catalog category filter bar.
+
+  Expected locals:
+    categories — array of {id, name, slug}
+    activeSlug — the slug in the URL, or null for the unfiltered view
+
+  The pills are links rather than buttons because the filter lives in the URL:
+  that is what makes a filtered view shareable and the back button work. The
+  active pill carries aria-current as well as the dark fill, so the selection is
+  not conveyed by colour alone.
+%>
+<nav aria-label="Product categories"
+  class="sticky top-20 z-30 border-b border-line bg-canvas pb-6 pt-1">
+  <ul class="flex flex-wrap gap-2.5">
+    <li>
+      <a href="/catalog" <% if (!activeSlug) { %>aria-current="page"<% } %>
+        class="<%= activeSlug ? 'border-line bg-surface text-ink' : 'border-ink bg-ink text-white' %> inline-block rounded-full border px-5 py-2.5 text-sm font-semibold">
+        All
+      </a>
+    </li>
+    <% categories.forEach((category) => { %>
+      <li>
+        <a href="/catalog?category=<%= encodeURIComponent(category.slug) %>"
+          <% if (activeSlug === category.slug) { %>aria-current="page"<% } %>
+          class="<%= activeSlug === category.slug ? 'border-ink bg-ink text-white' : 'border-line bg-surface text-ink' %> inline-block rounded-full border px-5 py-2.5 text-sm font-semibold">
+          <%= category.name %>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</nav>
