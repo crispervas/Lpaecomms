@@ -125,16 +125,22 @@ test('the home page lists the six mockup categories', async () => {
   }
 });
 
-test('category cards render as plain divs, not links, while category filtering does not exist', async () => {
+test('category cards render as plain divs, not links, because their names match no feed category', async () => {
   stubFeaturedFeed();
 
   const response = await request(createApp()).get('/');
 
-  // Scoped to the category grid itself: the header nav legitimately links to
-  // /catalog now that the page exists (Task 4), but the cards stay unlinked
-  // until Task 5 wires category filtering onto that page.
-  const categorySection = response.text.split('Shop by category')[1].split('Trending now')[0];
-  assert.doesNotMatch(categorySection, /<a\b/);
+  // Scoped to the category grid itself: the header nav and the catalog's own
+  // filter pills legitimately link to /catalog, but these six cards stay
+  // unlinked because the mockup's names match none of the feed's real
+  // categories, so there is no /catalog?category=… URL for them to point at.
+  const headingParts = response.text.split('Shop by category');
+  assert.equal(headingParts.length, 2, 'expected exactly one "Shop by category" heading');
+
+  const sectionParts = headingParts[1].split('Trending now');
+  assert.equal(sectionParts.length, 2, 'expected a "Trending now" heading after the category grid');
+
+  assert.doesNotMatch(sectionParts[0], /<a\b/);
 });
 
 test('the trending section renders the featured products', async () => {
