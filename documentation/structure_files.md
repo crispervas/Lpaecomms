@@ -76,7 +76,9 @@ web/
 │   ├── layout.view.test.js        # Base layout: web fonts and the canvas/ink body classes
 │   ├── chrome.view.test.js        # Header and footer: brand, nav, inert search/cart, newsletter
 │   ├── home.view.test.js          # Home page: hero, categories, trending grid, feed-failure notice
-│   └── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
+│   ├── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
+│   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
+│   └── catalog.view.test.js       # Catalog page: grid, filters, 404, feed failure
 └── src/                  # Application code — see section 3
 ```
 
@@ -100,6 +102,14 @@ build and the state would render unstyled.
 > `#9A9C9A` is deliberately absent: it fails WCAG AA on the canvas, and `muted`
 > replaces it.
 
+> **Catalog filtering.** The catalog's filter lives in the URL
+> (`/catalog?category=<slug>`), not in memory, so a filtered view is shareable
+> and the back button works. `CategoryModel.listCategories()` keeps only
+> categories that hold products: the demo feed accepts writes from anyone and
+> accumulates other people's test categories. An unknown slug answers 404 —
+> but only when the category list loaded, since otherwise a third party being
+> down would turn a valid URL dead.
+
 ---
 
 ## 3. Inside `src/` — the application
@@ -120,7 +130,8 @@ src/
 │   │   ├── about.routes.js
 │   │   ├── contact.routes.js
 │   │   ├── auth.routes.js
-│   │   └── mashup.routes.js
+│   │   ├── mashup.routes.js
+│   │   └── catalog.routes.js
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
 │       ├── product.routes.js
@@ -135,12 +146,14 @@ src/
 │   ├── health.controller.js
 │   ├── product.controller.js
 │   ├── currency.controller.js
-│   └── password.controller.js
+│   ├── password.controller.js
+│   └── catalog.controller.js  # Catalog page: category filter, product grid
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
 │   ├── product.model.js  # External catalogue: storefront list + store locations
 │   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
-│   └── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
+│   ├── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
+│   └── category.model.js  # Catalogue categories, empty ones filtered out
 ├── lib/                  # Shared infrastructure helpers
 │   └── prisma.js         # Single shared PrismaClient instance (a singleton)
 ├── views/                # VIEW: server-rendered EJS templates
@@ -155,13 +168,17 @@ src/
 │   │   ├── homeTrending.ejs  # Home "Trending now" grid (products local)
 │   │   ├── mashupOne.ejs   # Products + Location card
 │   │   ├── mashupTwo.ejs   # Products + Currency Converter card
-│   │   └── mashupThree.ejs # Secure Password Checker card
+│   │   ├── mashupThree.ejs # Secure Password Checker card
+│   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
+│   │   ├── catalogResults.ejs # Catalog grid, count label and empty states
+│   │   └── productCard.ejs    # One product card, shared by home and catalog
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
 │       ├── contact.ejs
 │       ├── login.ejs
 │       ├── mashup.ejs
+│       ├── catalog.ejs
 │       ├── 404.ejs       # Not Found page
 │       └── error.ejs     # Generic error page (any failed browser request)
 └── public/               # Static assets served as-is

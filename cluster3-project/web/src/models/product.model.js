@@ -52,8 +52,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Raw feed responses, shared by every `ProductModel` instance and keyed by the
- * full catalogue URL (base URL plus the requested size) rather than held per
- * instance. Caching the feed's own JSON, instead of any caller's
+ * full catalogue URL (base URL plus the requested size, and which base it was
+ * composed from — the products path or a category's path) rather than held
+ * per instance. Caching the feed's own JSON, instead of any caller's
  * transformation of it, is what lets `listWithLocations` and `listFeatured`
  * read the same base URL at different sizes without one overwriting the
  * other's shape: each size is its own URL and therefore its own cache entry.
@@ -111,7 +112,8 @@ function firstImageUrl(images) {
 
 /**
  * Reads the product catalogue: the mashup's five products paired with store
- * locations, and the storefront's featured grid at whatever size it asks for.
+ * locations, the storefront's featured grid at whatever size it asks for, and
+ * the catalog page's list scoped to one category.
  */
 export class ProductModel {
   /**
