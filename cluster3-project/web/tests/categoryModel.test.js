@@ -76,6 +76,19 @@ test('listCategories keeps a category whose probe answers non-2xx', async () => 
   assert.equal(categories.length, 1);
 });
 
+test('listCategories keeps a category whose probe answers with a malformed body', async () => {
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/categories')) return jsonResponse([feedCategory(1, 'clothes')]);
+    // A 200 that is not the array the feed is supposed to send back — this
+    // must not be read as a successful "no products" answer.
+    return jsonResponse({ error: 'not an array' });
+  };
+
+  const categories = await new CategoryModel('https://example.test/probe-malformed/categories').listCategories();
+
+  assert.equal(categories.length, 1);
+});
+
 test('listCategories probes each category once, with limit 1', async () => {
   const requested = [];
   globalThis.fetch = async (url) => {
@@ -110,6 +123,25 @@ test('listCategories serves a second call from cache', async () => {
 
   assert.deepEqual(second, first);
   assert.equal(upstreamCalls, 2, 'the list plus one probe, and nothing on the second call');
+});
+
+test('listCategories returns a fresh array each call, not the cache\'s own', async () => {
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/categories')) return jsonResponse([feedCategory(1, 'clothes')]);
+    return jsonResponse([{ id: 10 }]);
+  };
+
+  const model = new CategoryModel('https://example.test/copy-on-read/categories');
+
+  await model.listCategories();
+  const second = await model.listCategories(); // served from cache
+  second.push(feedCategory(99, 'planted'));
+
+  const third = await model.listCategories();
+
+  // Mutating what a cache hit handed back must never corrupt what the next
+  // caller receives within the same TTL window.
+  assert.equal(third.length, 1);
 });
 
 test('listCategories throws when the category list cannot be read', async () => {

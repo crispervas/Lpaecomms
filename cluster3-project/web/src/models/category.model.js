@@ -61,15 +61,19 @@ export class CategoryModel {
   /**
    * List the categories that currently hold at least one product.
    *
-   * @returns {Promise<Array<{id: number, name: string, slug: string}>>} Categories
-   *   in feed order, junk and empty ones removed.
+   * @returns {Promise<Array<{id: number, name: string, slug: string}>>} A
+   *   fresh array each call — never the cache's own array — in feed order,
+   *   junk and empty ones removed.
    * @throws {Error} When the category list is unreachable, times out, or
    *   answers a non-2xx status. A failing probe never throws — see `#hasProducts`.
    */
   async listCategories() {
     const cached = categoryCache.get(this.categoriesBaseUrl);
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.categories;
+      // A copy, not the cache's own array: a caller that sorted or otherwise
+      // mutated it in place would corrupt what every other request sees for
+      // the rest of the TTL window.
+      return cached.categories.slice();
     }
 
     const response = await fetch(this.categoriesBaseUrl, {
@@ -99,7 +103,7 @@ export class CategoryModel {
       expiresAt: Date.now() + CACHE_TTL_MS,
     });
 
-    return categories;
+    return categories.slice();
   }
 
   /**
@@ -108,24 +112,34 @@ export class CategoryModel {
    * Requests a single record because the count is irrelevant: the only question
    * is whether the category is worth offering as a filter.
    *
-   * Returns true on any failure rather than propagating it. Dropping a
-   * legitimate category because one request happened to fail would silently
-   * shrink the catalog's navigation during a network blip; showing one empty
-   * category is the smaller harm.
+   * Returns true on any failure rather than propagating it — a network
+   * failure, a non-2xx status, or a 200 whose body is not the array the feed
+   * is supposed to send back. Only a well-formed array can actually answer
+   * "no products"; anything else is a probe that could not answer, and
+   * dropping a legitimate category because one request happened to fail, or
+   * answered with something unreadable, would silently shrink the catalog's
+   * navigation during a network blip. Showing one empty category is the
+   * smaller harm.
    *
-   * @param {number} categoryId - Feed id of the category to probe.
+   * @param {number} categoryId - Feed id of the category to probe. The feed
+   *   supplies this value, so it is coerced to `Number` before it reaches the
+   *   URL rather than trusted as already being one.
    * @returns {Promise<boolean>} True when the category holds products, or when
    *   the probe could not answer.
    */
   async #hasProducts(categoryId) {
-    const url = `${this.categoriesBaseUrl}/${categoryId}/products?offset=0&limit=1`;
+    const url = `${this.categoriesBaseUrl}/${Number(categoryId)}/products?offset=0&limit=1`;
 
     try {
       const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
       if (!response.ok) return true;
 
       const products = await response.json();
-      return Array.isArray(products) && products.length > 0;
+      // A non-array body cannot mean "no products" — it means the probe
+      // could not answer, which keeps the category rather than dropping it.
+      if (!Array.isArray(products)) return true;
+
+      return products.length > 0;
     } catch {
       return true;
     }
