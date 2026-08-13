@@ -1,14 +1,22 @@
 <%#
-  Catalog results: the count label, the product grid, and the two empty states.
+  Catalog results: the count label, the product grid, and the empty states.
 
   Expected locals:
     products           — array of {id, name, category, priceAud, imageUrl}
     catalogueAvailable — false when the feed could not be read
+    activeCategory     — the selected category object, or null/undefined for
+                          the unfiltered view; only its presence is read here,
+                          to choose which empty-state wording applies
 
   An empty `products` means two different things, and the page must not blur
   them: a feed that fell over is not a category that happens to be empty.
   Telling someone a category is empty when the catalogue is actually down is a
-  lie the page can easily avoid, which is why the flag exists.
+  lie the page can easily avoid, which is why the `catalogueAvailable` flag
+  exists.
+
+  A legitimately empty result also reads differently depending on whether a
+  category was chosen: "No products in this category" is false when no
+  category was selected at all, so the unfiltered view gets its own wording.
 
   The count label renders only alongside a populated grid: pairing
   "Showing 0 products" with a notice that already explains the emptiness says
@@ -18,7 +26,9 @@
   <% if (!catalogueAvailable) { %>
     <p class="text-sm text-muted">Our catalogue is unavailable right now. Please check back shortly.</p>
   <% } else if (!products.length) { %>
-    <p class="py-20 text-center text-sm text-muted">No products in this category yet.</p>
+    <p class="py-20 text-center text-sm text-muted">
+      <%= activeCategory ? 'No products in this category yet.' : 'No products available yet.' %>
+    </p>
   <% } else { %>
     <%
       // Built once per render rather than per card: constructing an Intl

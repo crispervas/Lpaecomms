@@ -129,10 +129,35 @@ test('an empty catalogue reads as empty, not as a failure', async () => {
   const response = await request(createApp()).get('/catalog');
 
   assert.equal(response.status, 200);
-  assert.match(response.text, /No products in this category yet/);
+  // Unfiltered: "in this category" would be false when no category was
+  // ever chosen.
+  assert.match(response.text, /No products available yet/);
   // The two states must stay distinguishable: an outage and an empty category
   // look identical from the products array alone.
   assert.doesNotMatch(response.text, /Our catalogue is unavailable right now/);
+});
+
+test('an empty result within a chosen category keeps the category-scoped wording', async () => {
+  globalThis.fetch = async (url) => {
+    const body = url.endsWith('/categories')
+      ? [{ id: 2, name: 'Electronics', slug: 'electronics' }]
+      // `endsWith`, not `includes`: "limit=1" is a prefix of "limit=12", so a
+      // substring test would answer the grid's request with the probe's body.
+      : url.endsWith('limit=1')
+        ? [{ id: 1 }] // the probe: the category holds products elsewhere
+        : []; // the scoped grid request: this slice is empty
+
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  const response = await request(createApp()).get('/catalog?category=electronics');
+
+  assert.equal(response.status, 200);
+  assert.match(response.text, /No products in this category yet/);
+  assert.doesNotMatch(response.text, /No products available yet/);
 });
 
 test('the header offers Catalog and marks it active on the catalog page', async () => {
