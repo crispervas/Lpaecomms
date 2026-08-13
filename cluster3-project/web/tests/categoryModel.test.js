@@ -108,6 +108,26 @@ test('listCategories probes each category once, with limit 1', async () => {
   assert.ok(requested.some((url) => url === 'https://example.test/probe-shape/categories/2/products?offset=0&limit=1'));
 });
 
+test('listCategories probes no more than the category cap', async () => {
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+    if (url.endsWith('/categories')) {
+      // More categories than the model is willing to probe in one call.
+      return jsonResponse(Array.from({ length: 25 }, (_, i) => feedCategory(i + 1, `category-${i + 1}`)));
+    }
+    return jsonResponse([{ id: 10 }]);
+  };
+
+  await new CategoryModel('https://example.test/probe-cap/categories').listCategories();
+
+  const probeRequests = requested.filter((url) => url.includes('/products?offset=0&limit=1'));
+
+  // The feed offered 25 categories; the cap keeps a runaway list from firing
+  // a probe per entry.
+  assert.ok(probeRequests.length <= 20, `expected at most 20 probes, got ${probeRequests.length}`);
+});
+
 test('listCategories serves a second call from cache', async () => {
   let upstreamCalls = 0;
   globalThis.fetch = async (url) => {

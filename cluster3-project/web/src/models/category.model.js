@@ -21,8 +21,26 @@ const CATEGORIES_BASE_URL = 'https://api.escuelajs.co/api/v1/categories';
 /** Give up on a slow feed rather than holding a request open indefinitely. */
 const REQUEST_TIMEOUT_MS = 5000;
 
+/**
+ * Budget for one emptiness probe — far shorter than `REQUEST_TIMEOUT_MS`. A
+ * probe that cannot answer this fast fails open anyway (see `#hasProducts`),
+ * so waiting the list read's full 5s would only hold the page open for the
+ * worst case to reach an answer it was always going to reach for free.
+ */
+const PROBE_TIMEOUT_MS = 1000;
+
 /** Five minutes, matching the catalogue's policy for the same third party. */
 const CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * Upper bound on how many categories one `listCategories` call will probe.
+ * The feed is publicly writable and its category list can grow without
+ * limit, so probing every entry would turn a stranger's junk into a few
+ * hundred parallel requests at one origin, all timing out and all failing
+ * open. 20 comfortably clears the five categories the seeded feed actually
+ * carries.
+ */
+const MAX_PROBED_CATEGORIES = 20;
 
 /**
  * Filtered category lists, shared by every `CategoryModel` instance and keyed
@@ -88,11 +106,16 @@ export class CategoryModel {
 
     const raw = await response.json();
 
+    // Bounded before a single probe fires: the feed is publicly writable, so
+    // an unbounded list would mean an unbounded fan-out of parallel requests
+    // at one third-party origin.
+    const candidates = raw.slice(0, MAX_PROBED_CATEGORIES);
+
     // Probed in parallel: the answers are independent, and a serial loop would
     // multiply the page's cold-start latency by the number of categories.
-    const populated = await Promise.all(raw.map((category) => this.#hasProducts(category.id)));
+    const populated = await Promise.all(candidates.map((category) => this.#hasProducts(category.id)));
 
-    const categories = raw
+    const categories = candidates
       .filter((_, index) => populated[index])
       .map(({ id, name, slug }) => ({ id, name, slug }));
 
@@ -131,7 +154,7 @@ export class CategoryModel {
     const url = `${this.categoriesBaseUrl}/${Number(categoryId)}/products?offset=0&limit=1`;
 
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+      const response = await fetch(url, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
       if (!response.ok) return true;
 
       const products = await response.json();
