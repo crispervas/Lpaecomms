@@ -241,7 +241,22 @@ test('an unknown category answers 404 without asking the feed for products', asy
 });
 
 test('an unresolvable filter is a feed failure, not a 404', async () => {
-  globalThis.fetch = async () => new Response('upstream is down', { status: 503 });
+  const requested = [];
+  // The product endpoint succeeds here — only the category list fails. If the
+  // controller called `listByCategory` anyway, this stub would happily answer
+  // it, which is exactly what would hide a regressed guard: the stub has to
+  // let the product call succeed for skipping it to be an observable choice.
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+    if (url.endsWith('/categories')) return new Response('upstream is down', { status: 503 });
+
+    return new Response(
+      JSON.stringify([
+        { id: 1, title: 'Product 1', price: 10, images: [], category: { id: 2, name: 'Electronics' } },
+      ]),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  };
 
   const response = await request(createApp()).get('/catalog?category=electronics');
 
@@ -250,4 +265,9 @@ test('an unresolvable filter is a feed failure, not a 404', async () => {
   // was down.
   assert.equal(response.status, 200);
   assert.match(response.text, /Our catalogue is unavailable right now/);
+  // `limit=12` is `CATALOG_LIMIT`, which only ever appears on a product
+  // request — `limit=1` (the category probe) is a prefix of it, so this must
+  // check the full string, not merely that some request happened.
+  assert.ok(!requested.some((url) => url.includes('limit=12')));
+  assert.doesNotMatch(response.text, /<article/);
 });
