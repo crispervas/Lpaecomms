@@ -119,7 +119,13 @@ function imageUrls(images) {
  * Extract the first usable image URL from the feed's `images` field.
  *
  * The grids show one image per product; the detail page shows them all. Both
- * read the same parser so the feed's quirks are untangled in one place.
+ * read the same parser so the feed's quirks are untangled in one place. One
+ * shape reads differently than the parser this replaced: for a malformed
+ * JSON-encoded array such as `'[42, "https://a/real.jpg"]'`, the previous
+ * parser fell through to the raw encoded string — an `<img src>` that could
+ * never render — while filtering for strings here surfaces the real URL
+ * inside it instead, which is strictly more useful than a value nothing can
+ * display.
  *
  * @param {unknown} images - Raw `images` value from the feed.
  * @returns {string} A URL, or an empty string when none can be read.

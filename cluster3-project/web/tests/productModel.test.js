@@ -252,3 +252,52 @@ test('a non-2xx feed response carries its status on the error', async () => {
     },
   );
 });
+
+test('a malformed JSON-encoded array still surfaces the real URL inside it', async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify([
+        { id: 1, title: 'Product 1', price: 10, images: '[42, "https://example.test/real.jpg"]' },
+      ]),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  const model = new ProductModel('https://example.test/malformed-array');
+
+  const products = await model.listFeatured();
+
+  // The old parser fell through to the raw encoded string here — an <img src>
+  // that could never render. Filtering for strings surfaces the real URL
+  // instead; pinned so this improvement cannot be "fixed" back by accident.
+  assert.equal(products[0].imageUrl, 'https://example.test/real.jpg');
+});
+
+test('a JSON-encoded empty array yields no image URL', async () => {
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify([{ id: 1, title: 'Product 1', price: 10, images: '[]' }]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+  const model = new ProductModel('https://example.test/empty-encoded-array');
+
+  const products = await model.listFeatured();
+
+  assert.equal(products[0].imageUrl, '');
+});
+
+test('a JSON-encoded array nested inside a real array still resolves', async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify([
+        { id: 1, title: 'Product 1', price: 10, images: ['["https://example.test/nested.jpg"]'] },
+      ]),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+
+  const model = new ProductModel('https://example.test/nested-encoded-array');
+
+  const products = await model.listFeatured();
+
+  assert.equal(products[0].imageUrl, 'https://example.test/nested.jpg');
+});
