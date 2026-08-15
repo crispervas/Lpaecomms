@@ -174,3 +174,12 @@ test('the home page shows a fallback notice when the feed fails', async () => {
   // The rest of the page is untouched.
   assert.match(response.text, /Peripherals engineered for focus\./);
 });
+
+test('the trending cards open the product detail page', async () => {
+  stubFeaturedFeed();
+
+  const response = await request(createApp()).get('/');
+
+  // The card is the only route into the detail page from the home page.
+  assert.match(response.text, /href="\/product\/1"/);
+});

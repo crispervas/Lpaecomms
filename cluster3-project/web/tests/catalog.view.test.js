@@ -296,3 +296,12 @@ test('an unresolvable filter is a feed failure, not a 404', async () => {
   assert.ok(!requested.some((url) => url.includes('limit=12')));
   assert.doesNotMatch(response.text, /<article/);
 });
+
+test('the catalog cards open the product detail page', async () => {
+  stubCatalogFeed(12);
+
+  const response = await request(createApp()).get('/catalog');
+
+  assert.match(response.text, /href="\/product\/1"/);
+  assert.match(response.text, /href="\/product\/12"/);
+});

@@ -1,5 +1,6 @@
 <%#
-  One product card, shared by the home page's trending grid and the catalog.
+  One product card, shared by the home page's trending grid, the catalog, and
+  the detail page's related row.
 
   Expected locals:
     product        — {id, name, category, priceAud, imageUrl}
@@ -7,24 +8,27 @@
                      one formatter serves a whole grid: constructing it is the
                      expensive part, formatting with it is not.
 
-  Two mockup elements are deliberately absent. The star rating is not in the
-  feed, and the add-to-cart button would invite a click that no cart can
-  answer. Both return with the cart iteration.
+  The card is a link to the product's page. The mockup's star rating stays
+  absent — the feed carries none — and so does its add-to-cart button, which
+  would invite a click that no cart can answer; that one returns with the cart
+  iteration.
 %>
-<article class="flex flex-col gap-2.5">
-  <div class="h-48 w-full overflow-hidden rounded-2xl bg-tint">
-    <%# The feed does not always carry a usable image; the tinted block
-        stands in rather than a broken-image icon. %>
-    <% if (product.imageUrl) { %>
-      <img src="<%= product.imageUrl %>" alt="<%= product.name %>" loading="lazy"
-        class="h-full w-full object-cover" />
+<a href="/product/<%= product.id %>" class="group block">
+  <article class="flex flex-col gap-2.5">
+    <div class="h-48 w-full overflow-hidden rounded-2xl bg-tint">
+      <%# The feed does not always carry a usable image; the tinted block
+          stands in rather than a broken-image icon. %>
+      <% if (product.imageUrl) { %>
+        <img src="<%= product.imageUrl %>" alt="<%= product.name %>" loading="lazy"
+          class="h-full w-full object-cover" />
+      <% } %>
+    </div>
+    <% if (product.category) { %>
+      <span class="text-[11px] font-semibold uppercase tracking-wider text-muted">
+        <%= product.category %>
+      </span>
     <% } %>
-  </div>
-  <% if (product.category) { %>
-    <span class="text-[11px] font-semibold uppercase tracking-wider text-muted">
-      <%= product.category %>
-    </span>
-  <% } %>
-  <span class="text-sm font-semibold text-ink"><%= product.name %></span>
-  <span class="text-sm font-bold text-ink"><%= priceFormatter.format(product.priceAud) %></span>
-</article>
+    <span class="text-sm font-semibold text-ink group-hover:text-accent"><%= product.name %></span>
+    <span class="text-sm font-bold text-ink"><%= priceFormatter.format(product.priceAud) %></span>
+  </article>
+</a>
