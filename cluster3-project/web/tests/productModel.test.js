@@ -232,3 +232,23 @@ test('listFeatured still defaults to eight and reads the unfiltered URL', async 
   // delegation must not hand the home page the catalog's default.
   assert.equal(requested[0], 'https://example.test/featured-default/products?offset=0&limit=8');
 });
+
+test('a non-2xx feed response carries its status on the error', async () => {
+  globalThis.fetch = async () => new Response('upstream is down', { status: 503 });
+
+  const model = new ProductModel(
+    'https://example.test/error-status/products',
+    'https://example.test/error-status/categories',
+  );
+
+  await assert.rejects(
+    () => model.listFeatured(),
+    (error) => {
+      // The status travels as data, not inside the message: getById tells a
+      // product that does not exist from a feed that could not be read by
+      // reading this, and a reworded message must not break that.
+      assert.equal(error.status, 503);
+      return true;
+    },
+  );
+});

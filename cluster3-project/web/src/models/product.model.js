@@ -61,8 +61,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * Keying by URL is also what lets a test construct a model with an overridden
  * `catalogueBaseUrl` (see the constructor) without ever reading or evicting
  * the production URL's entry, even though the cache itself lives at module
- * scope.
- * @type {Map<string, {products: Array<Object>, expiresAt: number}>}
+ * scope. Holds whatever a feed URL returns — an array for the list endpoints,
+ * a single object for one product — not products specifically.
+ * @type {Map<string, {payload: Object|Array<Object>, expiresAt: number}>}
  */
 const catalogueCache = new Map();
 
@@ -80,34 +81,51 @@ const STORE_LOCATIONS = [
 ];
 
 /**
- * Extract a usable image URL from the feed's `images` field.
+ * Extract every usable image URL from the feed's `images` field.
  *
  * The feed is inconsistent: the field is usually an array of URLs, but some
- * records store that array JSON-encoded as a single string. Parsing it
+ * records store that array JSON-encoded as a single string, and the encoded
+ * form turns up both on its own and as an element of a real array. Parsing it
  * properly, rather than stripping leading/trailing brackets and quotes, is
  * what keeps a second URL in a multi-element JSON string from bleeding into
  * the first — character-stripping only worked by accident for a one-element
  * array.
  *
  * @param {unknown} images - Raw `images` value from the feed.
+ * @returns {Array<string>} URLs in feed order; empty when none can be read.
+ */
+function imageUrls(images) {
+  const entries = Array.isArray(images) ? images : [images];
+
+  return entries.flatMap((entry) => {
+    if (typeof entry !== 'string') return [];
+
+    // Only a JSON-encoded array looks like this; any other string (a bare URL,
+    // malformed JSON) falls through to the entry itself below.
+    if (entry.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(entry);
+        if (Array.isArray(parsed)) return parsed.filter((url) => typeof url === 'string');
+      } catch {
+        // Not actually JSON — treat it as a plain string instead.
+      }
+    }
+
+    return [entry];
+  });
+}
+
+/**
+ * Extract the first usable image URL from the feed's `images` field.
+ *
+ * The grids show one image per product; the detail page shows them all. Both
+ * read the same parser so the feed's quirks are untangled in one place.
+ *
+ * @param {unknown} images - Raw `images` value from the feed.
  * @returns {string} A URL, or an empty string when none can be read.
  */
 function firstImageUrl(images) {
-  const raw = Array.isArray(images) ? images[0] : images;
-  if (typeof raw !== 'string') return '';
-
-  // Only a JSON-encoded array looks like this; any other string (a bare URL,
-  // malformed JSON) falls through to the `return raw` fallback below.
-  if (raw.startsWith('[')) {
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && typeof parsed[0] === 'string') return parsed[0];
-    } catch {
-      // Not actually JSON — treat it as a plain string instead.
-    }
-  }
-
-  return raw;
+  return imageUrls(images)[0] ?? '';
 }
 
 /**
@@ -172,24 +190,26 @@ export class ProductModel {
   }
 
   /**
-   * Fetch the raw feed response, serving a still-fresh cached copy when there
-   * is one.
+   * Fetch a feed URL, serving a still-fresh cached copy when there is one.
    *
    * Caches the feed's own JSON rather than any caller's transformation of it:
-   * `listWithLocations` and `listFeatured` shape the same records differently,
-   * and caching a shaped result would hand one caller the other's output.
+   * the list methods shape the same records differently, and caching a shaped
+   * result would hand one caller another's output. The payload is whatever the
+   * URL returns — an array for the list endpoints, a single object for one
+   * product — which is why the cached field is named for its role rather than
+   * for one of its shapes.
    *
-   * @param {number} limit - How many products to request.
-   * @param {number|null} [categoryId] - Category to scope to, or null for all.
-   * @returns {Promise<Array<Object>>} Raw feed records.
-   * @throws {Error} When the feed is unreachable, times out, or answers non-2xx.
+   * @param {string} url - Absolute feed URL.
+   * @returns {Promise<Object|Array<Object>>} The feed's parsed JSON.
+   * @throws {Error} When the feed is unreachable, times out, or answers a
+   *   non-2xx status. A non-2xx error carries the response's `status` as a
+   *   property so a caller can tell "this does not exist" from "this could not
+   *   be read" without parsing the message.
    */
-  async #fetchCatalogue(limit, categoryId = null) {
-    const url = this.#catalogueUrl(limit, categoryId);
-
+  async #fetchFromFeed(url) {
     const cached = catalogueCache.get(url);
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.products;
+      return cached.payload;
     }
 
     const response = await fetch(url, {
@@ -199,16 +219,18 @@ export class ProductModel {
     // fetch only rejects on a network failure: a 4xx/5xx arrives as a resolved
     // response, so without this check an error body would be parsed as products.
     if (!response.ok) {
-      throw new Error(`Catalogue source responded ${response.status}`);
+      const error = new Error(`Catalogue source responded ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
-    const products = await response.json();
+    const payload = await response.json();
 
     // Written only once the fetch succeeded, so a failure can never overwrite —
     // and therefore can never evict — a still-valid entry.
-    catalogueCache.set(url, { products, expiresAt: Date.now() + CACHE_TTL_MS });
+    catalogueCache.set(url, { payload, expiresAt: Date.now() + CACHE_TTL_MS });
 
-    return products;
+    return payload;
   }
 
   /**
@@ -220,7 +242,7 @@ export class ProductModel {
    *   non-2xx status.
    */
   async listWithLocations() {
-    const products = await this.#fetchCatalogue(STORE_LOCATIONS.length);
+    const products = await this.#fetchFromFeed(this.#catalogueUrl(STORE_LOCATIONS.length));
 
     // Never return more products than there are locations: a product without a
     // place on the map is not something the mashup can display.
@@ -249,7 +271,7 @@ export class ProductModel {
    *   non-2xx status.
    */
   async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT) {
-    const products = await this.#fetchCatalogue(limit, categoryId);
+    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId));
 
     return products.slice(0, limit).map((product) => ({
       id: product.id,
