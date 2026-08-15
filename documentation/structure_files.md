@@ -78,7 +78,8 @@ web/
 │   ├── home.view.test.js          # Home page: hero, categories, trending grid, feed-failure notice
 │   ├── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
 │   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
-│   └── catalog.view.test.js       # Catalog page: grid, filters, 404, feed failure
+│   ├── catalog.view.test.js       # Catalog page: grid, filters, 404, feed failure
+│   └── productDetail.view.test.js # Product page: gallery, breadcrumb, 404, feed failure
 └── src/                  # Application code — see section 3
 ```
 
@@ -110,6 +111,19 @@ build and the state would render unstyled.
 > but only when the category list loaded, since otherwise a third party being
 > down would turn a valid URL dead.
 
+> **`productDetail` vs `product`.** `controllers/product.controller.js` belongs
+> to the **API** — it serves `GET /api/v1/products` to the mobile and desktop
+> clients. The view controller for the product page is therefore
+> `productDetail.controller.js`, with matching route and page names. Renaming
+> the API's controller for symmetry would move a file two other platforms
+> depend on, to buy nothing.
+
+> **The detail page fails outright.** The home and catalog pages own content of
+> their own, so a catalogue they cannot read costs them one section. The product
+> page *is* the product: a feed it cannot read reaches the error page, and a
+> product that does not exist reaches the 404 page. Only its "You might also
+> like" row degrades, because that row is an extra.
+
 ---
 
 ## 3. Inside `src/` — the application
@@ -131,7 +145,8 @@ src/
 │   │   ├── contact.routes.js
 │   │   ├── auth.routes.js
 │   │   ├── mashup.routes.js
-│   │   └── catalog.routes.js
+│   │   ├── catalog.routes.js
+│   │   └── productDetail.routes.js
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
 │       ├── product.routes.js
@@ -147,7 +162,8 @@ src/
 │   ├── product.controller.js
 │   ├── currency.controller.js
 │   ├── password.controller.js
-│   └── catalog.controller.js  # Catalog page: category filter, product grid
+│   ├── catalog.controller.js  # Catalog page: category filter, product grid
+│   └── productDetail.controller.js # One product's page: gallery, price, related
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
 │   ├── product.model.js  # External catalogue: storefront list + store locations
@@ -171,7 +187,10 @@ src/
 │   │   ├── mashupThree.ejs # Secure Password Checker card
 │   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
 │   │   ├── catalogResults.ejs # Catalog grid, count label and empty states
-│   │   └── productCard.ejs    # One product card, shared by home and catalog
+│   │   ├── productCard.ejs    # One product card, shared by home and catalog
+│   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
+│   │   ├── productPurchase.ejs # Quantity and add-to-cart, disabled until a cart exists
+│   │   └── productRelated.ejs  # "You might also like": same category, current excluded
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
@@ -179,6 +198,7 @@ src/
 │       ├── login.ejs
 │       ├── mashup.ejs
 │       ├── catalog.ejs
+│       ├── productDetail.ejs
 │       ├── 404.ejs       # Not Found page
 │       └── error.ejs     # Generic error page (any failed browser request)
 └── public/               # Static assets served as-is
