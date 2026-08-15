@@ -305,3 +305,17 @@ test('the catalog cards open the product detail page', async () => {
   assert.match(response.text, /href="\/product\/1"/);
   assert.match(response.text, /href="\/product\/12"/);
 });
+
+test('the product card image has an empty alt: the link text already names the product', async () => {
+  stubCatalogFeed(1);
+
+  const response = await request(createApp()).get('/catalog');
+
+  // The card is a single link wrapping image, name, category, and price. The
+  // image's alt computes into the link's accessible name, so including the
+  // product name there would repeat it. An empty alt signals this was intentional,
+  // not an omitted required attribute.
+  assert.match(response.text, /<img[^>]*alt=""[^>]*>/);
+  // Verify the product name is still in the card's text content, not removed.
+  assert.match(response.text, />Product 1</);
+});

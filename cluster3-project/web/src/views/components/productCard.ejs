@@ -17,9 +17,14 @@
   <article class="flex flex-col gap-2.5">
     <div class="h-48 w-full overflow-hidden rounded-2xl bg-tint">
       <%# The feed does not always carry a usable image; the tinted block
-          stands in rather than a broken-image icon. %>
+          stands in rather than a broken-image icon.
+
+          The card is a single link wrapping image, category, name, and price.
+          The image's alt computes into the link's accessible name, so including
+          the product name there would repeat it. An empty alt is deliberate,
+          signaling this is not a forgotten required attribute. %>
       <% if (product.imageUrl) { %>
-        <img src="<%= product.imageUrl %>" alt="<%= product.name %>" loading="lazy"
+        <img src="<%= product.imageUrl %>" alt="" loading="lazy"
           class="h-full w-full object-cover" />
       <% } %>
     </div>
