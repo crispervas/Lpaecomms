@@ -10,6 +10,7 @@
 import express from 'express';
 import homeRoutes from './views/home.routes.js';
 import catalogRoutes from './views/catalog.routes.js';
+import productDetailRoutes from './views/productDetail.routes.js';
 import aboutRoutes from './views/about.routes.js';
 import contactRoutes from './views/contact.routes.js';
 import authRoutes from './views/auth.routes.js';
@@ -32,6 +33,7 @@ export function registerRoutes(app) {
   // View routes (HTML).
   viewRouter.use('/', homeRoutes);
   viewRouter.use('/', catalogRoutes);
+  viewRouter.use('/', productDetailRoutes);
   viewRouter.use('/', aboutRoutes);
   viewRouter.use('/', contactRoutes);
   viewRouter.use('/', authRoutes);

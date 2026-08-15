@@ -1,0 +1,27 @@
+<%#
+  Purchase controls: the quantity stepper and the priced add-to-cart button.
+
+  Expected locals:
+    priceAud       — the product's price, for the button's label.
+    priceFormatter — an Intl.NumberFormat, passed in so one price never renders
+                     two ways on the same page.
+
+  Every control is disabled: there is no cart yet, and `disabled` already keeps
+  them out of the tab order, so nothing else is needed to stop the block
+  offering something the site cannot do. It becomes real with the cart
+  iteration.
+%>
+<div class="mt-9 flex gap-3.5">
+  <div class="flex items-center rounded-lg border border-line">
+    <button type="button" disabled title="Coming soon" aria-label="Decrease quantity"
+      class="h-12 w-10 text-base text-ink">−</button>
+    <span class="w-9 text-center text-sm font-semibold">1</span>
+    <button type="button" disabled title="Coming soon" aria-label="Increase quantity"
+      class="h-12 w-10 text-base text-ink">+</button>
+  </div>
+
+  <button type="button" disabled title="Coming soon"
+    class="flex-1 rounded-lg bg-ink px-8 py-4 text-sm font-semibold text-white">
+    Add to cart — <%= priceFormatter.format(priceAud) %>
+  </button>
+</div>
