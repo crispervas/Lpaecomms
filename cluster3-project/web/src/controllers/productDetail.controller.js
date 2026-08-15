@@ -14,6 +14,15 @@
  */
 
 /**
+ * Ask for five to show four: the product being viewed is usually among its own
+ * category's first results, and filtering it out of four would leave three.
+ */
+const RELATED_FETCH_LIMIT = 5;
+
+/** The mockup's "You might also like" row holds four cards. */
+const RELATED_COUNT = 4;
+
+/**
  * Controller for the storefront's product detail page.
  */
 export class ProductDetailController {
@@ -49,10 +58,32 @@ export class ProductDetailController {
     const product = await this.productModel.getById(id);
     if (!product) return next();
 
+    let related = [];
+
+    // Related products are an extra: unlike the product itself, losing them
+    // costs a section rather than the page.
+    if (product.category.id !== null) {
+      try {
+        const sameCategory = await this.productModel.listByCategory(
+          product.category.id,
+          RELATED_FETCH_LIMIT,
+        );
+
+        related = sameCategory
+          .filter((candidate) => candidate.id !== product.id)
+          .slice(0, RELATED_COUNT);
+      } catch (error) {
+        console.error('🪵 Product detail: related products unavailable:', {
+          message: error.message,
+        });
+      }
+    }
+
     res.render('layouts/base', {
       title: `${product.name} — Lpaecomms`,
       page: 'productDetail',
       product,
+      related,
     });
   }
 }

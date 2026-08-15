@@ -158,3 +158,104 @@ test('an unreadable feed reaches the error page, not an empty product', async ()
   assert.equal(response.status, 500);
   assert.doesNotMatch(response.text, /<h1[^>]*>\s*Wireless Keyboard/);
 });
+
+/**
+ * Answer the single-product request with product 7, and the category listing
+ * with `count` products — one of which is product 7 itself, which the page must
+ * filter out of its own "related" list.
+ *
+ * @param {number} [count] - How many records the category listing returns.
+ * @returns {Array<string>} The URLs requested, for assertions.
+ */
+const stubProductAndCategory = (count = 5) => {
+  const requested = [];
+
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+
+    const body = url.includes('/categories/')
+      ? Array.from({ length: count }, (_, i) => ({
+          id: i + 5,
+          title: `Related ${i + 5}`,
+          price: 20,
+          images: [`https://example.test/r${i + 5}.jpg`],
+          category: { id: 2, name: 'Electronics', slug: 'electronics' },
+        }))
+      : {
+          id: 7,
+          title: 'Wireless Keyboard',
+          slug: 'wireless-keyboard',
+          price: 120,
+          description: 'A keyboard, wirelessly.',
+          category: { id: 2, name: 'Electronics', slug: 'electronics' },
+          images: ['https://example.test/a.jpg'],
+        };
+
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  return requested;
+};
+
+test('the page shows four related products and never the one being viewed', async () => {
+  // The listing returns ids 5..9, which includes 7 — the product on screen.
+  const requested = stubProductAndCategory(5);
+
+  const response = await request(createApp()).get('/product/7');
+
+  assert.equal(response.status, 200);
+  assert.match(response.text, /You might also like/);
+  assert.ok(requested.some((url) => url.includes('/categories/2/products?offset=0&limit=5')));
+
+  // Four cards, and the product being viewed is not among them.
+  assert.equal(response.text.match(/<article/g).length, 4);
+  assert.doesNotMatch(response.text, /Related 7/);
+  assert.match(response.text, /Related 5/);
+});
+
+test('the page still renders when the related products cannot be fetched', async () => {
+  globalThis.fetch = async (url) => {
+    if (url.includes('/categories/')) return new Response('upstream is down', { status: 503 });
+
+    return new Response(
+      JSON.stringify({
+        id: 7,
+        title: 'Wireless Keyboard',
+        price: 120,
+        description: 'A keyboard, wirelessly.',
+        category: { id: 2, name: 'Electronics', slug: 'electronics' },
+        images: ['https://example.test/a.jpg'],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  };
+
+  const response = await request(createApp()).get('/product/7');
+
+  // Related products are an extra; the product itself is not.
+  assert.equal(response.status, 200);
+  assert.match(response.text, /<h1[^>]*>\s*Wireless Keyboard/);
+  assert.doesNotMatch(response.text, /You might also like/);
+});
+
+test('a product with no category asks for no related products', async () => {
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+    return new Response(
+      JSON.stringify({ id: 7, title: 'Bare', price: 10, images: [] }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    );
+  };
+
+  const response = await request(createApp()).get('/product/7');
+
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(response.text, /You might also like/);
+  // Without a category there is nothing to be related to, so the request is
+  // not worth making.
+  assert.ok(!requested.some((url) => url.includes('/categories/')));
+});

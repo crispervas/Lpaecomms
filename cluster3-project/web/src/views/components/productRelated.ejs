@@ -1,0 +1,23 @@
+<%#
+  "You might also like": other products from the same category.
+
+  Expected locals:
+    products       — array of {id, name, category, priceAud, imageUrl}, never
+                     containing the product being viewed. Empty when the
+                     category listing could not be fetched, or when the product
+                     has no category to be related to.
+    priceFormatter — an Intl.NumberFormat, shared with the rest of the page.
+
+  Renders nothing at all when the list is empty: a heading over an empty row
+  would promise something the section cannot deliver.
+%>
+<% if (products.length) { %>
+  <section class="pb-20">
+    <h2 class="mb-7 font-display text-xl font-semibold">You might also like</h2>
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <% products.forEach((product) => { %>
+        <%- include('../components/productCard', { product, priceFormatter }) %>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
