@@ -16,7 +16,7 @@
  */
 
 /** Category resource on the external demo feed. */
-const CATEGORIES_BASE_URL = 'https://api.escuelajs.co/api/v1/categories';
+const CATEGORIES_BASE_URL = 'https://api.escuelajs.co/api/v1/categories?limit=5';
 
 /** Give up on a slow feed rather than holding a request open indefinitely. */
 const REQUEST_TIMEOUT_MS = 5000;
