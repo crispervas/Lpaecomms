@@ -2,12 +2,13 @@
  * @file Product model.
  *
  * Data access for the product catalogue. Lpaecomms has no product table yet, so
- * the catalogue comes from a public demo feed and this model serves it in three
- * shapes to three different callers: the map mashup's `listWithLocations`, which
+ * the catalogue comes from a public demo feed and this model serves it in four
+ * shapes to four different callers: the map mashup's `listWithLocations`, which
  * pairs each product with a store location the feed does not carry; the
  * storefront home page's `listFeatured`, which needs a plain trending grid at
- * a different size; and the catalog page's `listByCategory`, which scopes the
- * same records to one category. Caches the raw feed response for a short TTL,
+ * a different size; the catalog page's `listByCategory`, which scopes the same
+ * records to one category; and the product detail page's `getById`, which reads
+ * one product instead of a list. Caches the raw feed response for a short TTL,
  * the same way `CurrencyModel` caches rates: it protects the demo feed's quota
  * and, because both mashup scripts call this model's endpoint on every
  * `/mashup` page load, keeps them looking at one consistent catalogue instead
@@ -196,6 +197,20 @@ export class ProductModel {
   }
 
   /**
+   * Build the feed URL for one product.
+   *
+   * The id is coerced rather than interpolated as given: this feed accepts
+   * writes from anyone, and a value that is not a number has no business
+   * shaping a URL path.
+   *
+   * @param {number|string} id - Feed id of the product.
+   * @returns {string} The absolute feed URL.
+   */
+  #productUrl(id) {
+    return new URL(`${this.catalogueBaseUrl}/${Number(id)}`).toString();
+  }
+
+  /**
    * Fetch a feed URL, serving a still-fresh cached copy when there is one.
    *
    * Caches the feed's own JSON rather than any caller's transformation of it:
@@ -288,6 +303,51 @@ export class ProductModel {
       priceAud: product.price,
       imageUrl: firstImageUrl(product.images),
     }));
+  }
+
+  /**
+   * Fetch one product by its feed id.
+   *
+   * Returns null rather than throwing when the feed says the product does not
+   * exist, so the controller can answer 404 for a missing product while an
+   * unreadable feed still reaches the error page. Those are different answers
+   * and the page shows a different thing for each.
+   *
+   * A product that does not exist is never cached, for the same reason a
+   * failure is not: the answer changes the moment someone creates it.
+   *
+   * @param {number|string} id - Feed id of the product.
+   * @returns {Promise<{id: number, name: string, category: {id: number|null, name: string, slug: string}, priceAud: number, description: string, imageUrls: Array<string>}|null>}
+   *   The product, or null when it does not exist.
+   * @throws {Error} When the feed is unreachable, times out, or answers any
+   *   other non-2xx status.
+   */
+  async getById(id) {
+    let product;
+
+    try {
+      product = await this.#fetchFromFeed(this.#productUrl(id));
+    } catch (error) {
+      // The feed answers 400 for an unknown id; 404 is accepted alongside it so
+      // a future service using the conventional status needs no change here.
+      if (error.status === 400 || error.status === 404) return null;
+      throw error;
+    }
+
+    return {
+      id: product.id,
+      name: product.title,
+      category: {
+        id: product.category?.id ?? null,
+        // Empty strings rather than undefined: the badge and the breadcrumb
+        // omit their line instead of printing "undefined".
+        name: product.category?.name ?? '',
+        slug: product.category?.slug ?? '',
+      },
+      priceAud: product.price,
+      description: product.description ?? '',
+      imageUrls: imageUrls(product.images),
+    };
   }
 
   /**

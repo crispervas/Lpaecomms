@@ -301,3 +301,121 @@ test('a JSON-encoded array nested inside a real array still resolves', async () 
 
   assert.equal(products[0].imageUrl, 'https://example.test/nested.jpg');
 });
+
+/** One product record in the shape the feed's single-product endpoint returns. */
+const feedProduct = () => ({
+  id: 7,
+  title: 'Wireless Keyboard',
+  slug: 'wireless-keyboard',
+  price: 120,
+  description: 'A keyboard, wirelessly.',
+  category: { id: 2, name: 'Electronics', slug: 'electronics' },
+  images: ['https://example.test/a.jpg', 'https://example.test/b.jpg'],
+});
+
+test('getById maps every field the detail page renders', async () => {
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+    return new Response(JSON.stringify(feedProduct()), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  const model = new ProductModel(
+    'https://example.test/by-id/products',
+    'https://example.test/by-id/categories',
+  );
+
+  const product = await model.getById(7);
+
+  assert.equal(requested[0], 'https://example.test/by-id/products/7');
+  assert.deepEqual(product, {
+    id: 7,
+    name: 'Wireless Keyboard',
+    category: { id: 2, name: 'Electronics', slug: 'electronics' },
+    priceAud: 120,
+    description: 'A keyboard, wirelessly.',
+    // Every image, not just the first: the gallery shows the rest.
+    imageUrls: ['https://example.test/a.jpg', 'https://example.test/b.jpg'],
+  });
+});
+
+test('getById returns null when the feed says the product does not exist', async () => {
+  // The feed answers 400 for an unknown id rather than the conventional 404.
+  globalThis.fetch = async () => new Response('no such product', { status: 400 });
+
+  const model = new ProductModel(
+    'https://example.test/missing-400/products',
+    'https://example.test/missing-400/categories',
+  );
+
+  assert.equal(await model.getById(999), null);
+});
+
+test('getById treats a 404 as "does not exist" too', async () => {
+  // Accepted alongside 400 so a future service using the conventional status
+  // needs no change here.
+  globalThis.fetch = async () => new Response('no such product', { status: 404 });
+
+  const model = new ProductModel(
+    'https://example.test/missing-404/products',
+    'https://example.test/missing-404/categories',
+  );
+
+  assert.equal(await model.getById(999), null);
+});
+
+test('getById throws when the feed could not be read', async () => {
+  globalThis.fetch = async () => new Response('upstream is down', { status: 503 });
+
+  const model = new ProductModel(
+    'https://example.test/unreadable/products',
+    'https://example.test/unreadable/categories',
+  );
+
+  // A missing product and an unreadable feed are different answers, and the
+  // page shows a different thing for each.
+  await assert.rejects(() => model.getById(1));
+});
+
+test('getById does not cache a product that does not exist', async () => {
+  let upstreamCalls = 0;
+  globalThis.fetch = async () => {
+    upstreamCalls += 1;
+    return new Response('no such product', { status: 400 });
+  };
+
+  const model = new ProductModel(
+    'https://example.test/missing-uncached/products',
+    'https://example.test/missing-uncached/categories',
+  );
+
+  assert.equal(await model.getById(999), null);
+  assert.equal(await model.getById(999), null);
+  // The answer changes the moment someone creates it, so a five-minute memory
+  // of an absence is not worth holding.
+  assert.equal(upstreamCalls, 2);
+});
+
+test('getById falls back when the feed omits a category or a description', async () => {
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ id: 3, title: 'Bare', price: 10, images: [] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+  const model = new ProductModel(
+    'https://example.test/bare/products',
+    'https://example.test/bare/categories',
+  );
+
+  const product = await model.getById(3);
+
+  // Empty strings rather than undefined: the badge, the breadcrumb and the
+  // description omit their line instead of printing "undefined".
+  assert.deepEqual(product.category, { id: null, name: '', slug: '' });
+  assert.equal(product.description, '');
+  assert.deepEqual(product.imageUrls, []);
+});
