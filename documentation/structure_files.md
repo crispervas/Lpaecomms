@@ -178,22 +178,28 @@ src/
 │   ├── partials/
 │   │   ├── header.ejs    # Shared header / navigation
 │   │   └── footer.ejs    # Shared footer
-│   ├── components/       # Reusable page fragments, included by a page
-│   │   ├── homeHero.ejs      # Home hero: headline, CTAs, product shot
-│   │   ├── homeCategories.ejs # Home "Shop by category" grid (static markup)
-│   │   ├── homeTrending.ejs  # Home "Trending now" grid (products local)
-│   │   ├── mashupOne.ejs   # Products + Location card
-│   │   ├── mashupTwo.ejs   # Products + Currency Converter card
-│   │   ├── mashupThree.ejs # Secure Password Checker card
-│   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
-│   │   ├── catalogResults.ejs # Catalog grid, count label and empty states
-│   │   ├── productCard.ejs    # One product card, shared by home and catalog
-│   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
-│   │   ├── productPurchase.ejs # Quantity and add-to-cart, disabled until a cart exists
-│   │   ├── productRelated.ejs  # "You might also like": same category, current excluded
-│   │   ├── aboutMission.ejs  # About mission block: eyebrow and headline (static markup)
-│   │   ├── aboutStory.ejs    # About story: platform panel and prose, two columns
-│   │   └── aboutVideo.ejs    # About "What does Mashup mean?" explainer embed
+│   ├── components/       # Page fragments, one folder per page that owns them
+│   │   ├── home/
+│   │   │   ├── homeHero.ejs      # Home hero: headline, CTAs, product shot
+│   │   │   ├── homeCategories.ejs # Home "Shop by category" grid (static markup)
+│   │   │   └── homeTrending.ejs  # Home "Trending now" grid (products local)
+│   │   ├── catalog/
+│   │   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
+│   │   │   └── catalogResults.ejs # Catalog grid, count label and empty states
+│   │   ├── product/
+│   │   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
+│   │   │   ├── productPurchase.ejs # Quantity and add-to-cart, disabled until a cart exists
+│   │   │   └── productRelated.ejs  # "You might also like": same category, current excluded
+│   │   ├── about/
+│   │   │   ├── aboutMission.ejs  # About mission block: eyebrow and headline (static markup)
+│   │   │   ├── aboutStory.ejs    # About story: platform panel and prose, two columns
+│   │   │   └── aboutVideo.ejs    # About "What does Mashup mean?" explainer embed
+│   │   ├── mashup/
+│   │   │   ├── mashupOne.ejs   # Products + Location card
+│   │   │   ├── mashupTwo.ejs   # Products + Currency Converter card
+│   │   │   └── mashupThree.ejs # Secure Password Checker card
+│   │   └── shared/           # Fragments no single page owns
+│   │       └── productCard.ejs # One product card, used by home, catalog and product
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
@@ -229,9 +235,18 @@ src/
 > parent's scope — so two conventions keep it manageable: **write literal include
 > paths** (a name built by concatenation only fails at render time and cannot be
 > grepped), and **pass what the component needs as the second argument**
-> (`include('../components/mashupOne', { products })`) instead of relying on the
-> parent's locals leaking in. Each component states its expected locals in its
-> header comment.
+> (`include('../components/mashup/mashupOne', { products })`) instead of relying
+> on the parent's locals leaking in. Each component states its expected locals in
+> its header comment.
+
+> **One folder per page inside `components/`.** A component lives in the folder
+> named after the page that includes it (`catalog/`, `product/`, `home/`,
+> `about/`, `mashup/`), so the fragments of a page are found together instead of
+> by reading a flat list of fifteen names. `shared/` is the exception and holds
+> what no single page owns — `productCard.ejs` is included by the home grid, the
+> catalog grid and the related row. **A component belongs in `shared/` the moment
+> a second page includes it**; leaving it under the first page's folder makes an
+> unrelated page depend on that page's directory.
 
 ### Why `server.js` and `app.js` are separate
 

@@ -8,9 +8,9 @@
 <%# Nothing to filter by when the category list could not be read; the grid
     still renders on its own. %>
 <% if (categories.length) { %>
-  <%- include('../components/catalogFilters', {
+  <%- include('../components/catalog/catalogFilters', {
     categories,
     activeSlug: activeCategory ? activeCategory.slug : null,
   }) %>
 <% } %>
-<%- include('../components/catalogResults', { products, catalogueAvailable, activeCategory }) %>
+<%- include('../components/catalog/catalogResults', { products, catalogueAvailable, activeCategory }) %>

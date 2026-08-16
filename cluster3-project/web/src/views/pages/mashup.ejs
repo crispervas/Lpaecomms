@@ -10,12 +10,12 @@
     service, live.
   </p>
 
-  <%# Each mashup is its own component under views/components. The paths are
+  <%# Each mashup is its own component under views/components/mashup. The paths are
       literal so a wrong name fails loudly at include time and stays greppable.
       None of them takes locals: their data arrives over the API. %>
   <div class="mt-10 space-y-8">
-    <%- include('../components/mashupOne') %>
-    <%- include('../components/mashupTwo') %>
-    <%- include('../components/mashupThree') %>
+    <%- include('../components/mashup/mashupOne') %>
+    <%- include('../components/mashup/mashupTwo') %>
+    <%- include('../components/mashup/mashupThree') %>
   </div>
 </section>

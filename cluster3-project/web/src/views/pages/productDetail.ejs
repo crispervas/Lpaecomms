@@ -28,7 +28,7 @@
 </nav>
 
 <section class="grid gap-12 pb-16 pt-8 lg:grid-cols-2 lg:gap-16">
-  <%- include('../components/productGallery', {
+  <%- include('../components/product/productGallery', {
     imageUrls: product.imageUrls,
     name: product.name,
   }) %>
@@ -46,8 +46,8 @@
     <% if (product.description) { %>
       <p class="mt-6 text-base leading-relaxed text-muted"><%= product.description %></p>
     <% } %>
-    <%- include('../components/productPurchase', { priceAud: product.priceAud, priceFormatter }) %>
+    <%- include('../components/product/productPurchase', { priceAud: product.priceAud, priceFormatter }) %>
   </div>
 </section>
 
-<%- include('../components/productRelated', { products: related, priceFormatter }) %>
+<%- include('../components/product/productRelated', { products: related, priceFormatter }) %>

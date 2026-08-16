@@ -86,7 +86,7 @@ This mashup is live on the Mashups page (`/mashup`), the "Products + Location" c
 | File | Role |
 |---|---|
 | `src/public/js/mashup-map.js` | Initialises the Leaflet map, fetches the catalogue, and renders markers/popups |
-| `src/views/components/mashupOne.ejs` | Provides the `#mashup-map` container the script renders into |
+| `src/views/components/mashup/mashupOne.ejs` | Provides the `#mashup-map` container the script renders into |
 | `src/models/product.model.js` | Merges the external catalogue with Gold Coast store coordinates |
 
 **Store locations.** The external demo feed carries no coordinates, so store locations are merged in server-side from a fixed Gold Coast table (`STORE_LOCATIONS` in `product.model.js`) rather than invented in the browser.
@@ -151,7 +151,7 @@ This mashup is live on the Mashups page (`/mashup`), the "Products + Currency Co
 | File | Role |
 |---|---|
 | `src/public/js/mashup-currency.js` | Populates the product and currency selectors, requests conversions, and renders the result |
-| `src/views/components/mashupTwo.ejs` | Provides the `#mashup-product`, `#mashup-currency`, `#mashup-base-price`, `#mashup-converted-price`, and `#mashup-convert-status` elements the script binds to |
+| `src/views/components/mashup/mashupTwo.ejs` | Provides the `#mashup-product`, `#mashup-currency`, `#mashup-base-price`, `#mashup-converted-price`, and `#mashup-convert-status` elements the script binds to |
 | `src/controllers/currency.controller.js` / `src/models/currency.model.js` | Server-side proxy to API Ninjas — keeps `NINJA_API_KEY` out of the browser entirely, since the client never calls the provider directly |
 
 **Debounce.** Changing either selector schedules a 300ms timer (`DEBOUNCE_MS`) before the conversion request fires; a second change within that window cancels the pending timer instead of adding a second in-flight request, so rapid switching between currencies settles into one call.
@@ -225,7 +225,7 @@ This mashup is live on the Mashups page (`/mashup`), the "Secure Password Checke
 | File | Role |
 |---|---|
 | `src/public/js/mashup-password.js` | Scores strength locally, computes the SHA-1 in the browser, and drives the breach lookup |
-| `src/views/components/mashupThree.ejs` | Provides the `#mashup-password`, `#mashup-strength-bar`, `#mashup-strength-label`, and `#mashup-breach-status` elements the script binds to |
+| `src/views/components/mashup/mashupThree.ejs` | Provides the `#mashup-password`, `#mashup-strength-bar`, `#mashup-strength-label`, and `#mashup-breach-status` elements the script binds to |
 | `src/controllers/password.controller.js` / `src/models/breach.model.js` | Server-side proxy to Have I Been Pwned — validates the prefix is exactly five hex characters and strips the plain-text response's padding decoys before returning `{ prefix, count, suffixes }` |
 
 **Strength scoring.** Scored entirely client-side against four local rules (length ≥ 8, mixed case, a digit, a symbol) and never touches the network — a weak password is flagged without a single byte leaving the browser.
