@@ -1,0 +1,53 @@
+<%# One labelled field of the contact form: label, control, error line.
+
+    This is the seam between the server and the browser. The control carries its
+    rules as native HTML attributes and its messages as `data-error-*`, so
+    public/js/contact-form.js can report a problem without holding a copy of any
+    message. Adding a rule in lib/contactValidation.js means adding it here too,
+    or the browser will stay silent about it while the server rejects.
+
+    The error line is always rendered, even when empty: the script fills it in
+    place rather than creating nodes, so `aria-describedby` can point at it from
+    the first paint and does not have to be wired up later.
+
+    Expected locals:
+      field       — the name attribute, and the key into CONTACT_FIELDS
+      label       — visible label text
+      rules       — that field's entry from CONTACT_FIELDS
+      value       — what to show in the control
+      error       — server-side error message, or undefined
+      type        — 'text', 'email' or 'textarea'
+      placeholder — placeholder text
+      rows        — textarea rows; ignored for inputs %>
+<%
+  const control = type === 'textarea' ? 'textarea' : 'input';
+  // Written out as whole class names: Tailwind cannot see a class built by
+  // concatenation, and contact-form.js swaps between exactly these two.
+  const borderClass = error ? 'border-red-400' : 'border-line-strong';
+%>
+<div>
+  <label for="<%= field %>" class="block text-[13px] font-semibold text-ink">
+    <%= label %><% if (!rules.required) { %><span class="font-normal text-muted"> (optional)</span><% } %>
+  </label>
+
+  <<%= control %>
+    id="<%= field %>"
+    name="<%= field %>"
+    <% if (control === 'input') { %>type="<%= type %>" value="<%= value %>"<% } %>
+    <% if (control === 'textarea') { %>rows="<%= rows %>"<% } %>
+    placeholder="<%= placeholder %>"
+    maxlength="<%= rules.maxLength %>"
+    <% if (rules.htmlPattern) { %>pattern="<%= rules.htmlPattern %>"<% } %>
+    <% if (rules.required) { %>required<% } %>
+    <% if (rules.messages.required) { %>data-error-required="<%= rules.messages.required %>"<% } %>
+    <% if (rules.messages.invalid) { %>data-error-invalid="<%= rules.messages.invalid %>"<% } %>
+    data-error-too-long="<%= rules.messages.tooLong %>"
+    <% if (error) { %>aria-invalid="true"<% } %>
+    aria-describedby="<%= field %>-error"
+    class="mt-2 w-full rounded-[10px] border <%= borderClass %> bg-surface px-4 py-3.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none<% if (control === 'textarea') { %> resize-y<% } %>"
+  <% if (control === 'input') { %>/><% } else { %>><%= value %></textarea><% } %>
+
+  <p id="<%= field %>-error" class="mt-1.5 text-[13px] text-red-600<% if (!error) { %> hidden<% } %>">
+    <%= error || '' %>
+  </p>
+</div>

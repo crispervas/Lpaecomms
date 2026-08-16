@@ -1,0 +1,53 @@
+<%# "Visit the workshop": the Leaflet map beside the address and opening hours.
+
+    The address here must agree with the coordinates in public/js/contact-map.js
+    (-27.9685, 153.4144 — Australia Fair, Southport), which is also one of the
+    catalogue's store locations. The mockup this layout comes from says 441
+    Harrison St, San Francisco; following it would caption the pin with an
+    address a hemisphere away.
+
+    Included by pages/contact.ejs. Takes no locals: the map fetches nothing and
+    the details are static. %>
+<section class="pb-24">
+  <h2 class="font-display text-[22px] font-semibold">Visit the workshop</h2>
+
+  <div class="mt-6 grid overflow-hidden rounded-[20px] border border-line bg-surface lg:grid-cols-[1.4fr_1fr]">
+    <%# Leaflet renders into this container. It needs an explicit height, and
+        `isolate` keeps Leaflet's internal z-indexes from covering the fixed
+        header. Initialised by /js/contact-map.js, which finds it by id. %>
+    <div id="contact-map" role="region" aria-label="Map of the Lpaecomms location"
+      class="isolate z-0 h-[300px] w-full lg:h-[340px]"></div>
+
+    <div class="flex flex-col justify-center gap-4 border-t border-line p-8 lg:border-l lg:border-t-0">
+      <div>
+        <div class="text-[15px] font-semibold">Lpaecomms Workshop</div>
+        <div class="mt-1.5 text-sm leading-relaxed text-muted">
+          Australia Fair, Marine Parade<br />Southport QLD 4215
+        </div>
+      </div>
+
+      <div class="h-px bg-line"></div>
+
+      <div>
+        <div class="text-[13px] font-semibold">Hours</div>
+        <div class="mt-1 text-[13px] leading-relaxed text-muted">
+          Tue–Fri, 10am–4pm AEST<br />By appointment only
+        </div>
+      </div>
+
+      <%# The mockup draws this as a button. A button that does nothing is the
+          same promise the retired About cards made, so it is a real link to the
+          same coordinates the map is centred on. %>
+      <a href="https://www.openstreetmap.org/?mlat=-27.9685485&amp;mlon=153.4144003#map=17/-27.9685485/153.4144003"
+        target="_blank" rel="noopener noreferrer"
+        class="mt-1 inline-flex w-fit items-center gap-1.5 rounded-lg bg-ink px-5 py-3 text-[13px] font-semibold text-white hover:bg-black">
+        Get directions
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" />
+        </svg>
+        <span class="sr-only">(opens OpenStreetMap in a new tab)</span>
+      </a>
+    </div>
+  </div>
+</section>

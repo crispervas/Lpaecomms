@@ -1,28 +1,44 @@
 /**
  * @file Contact controller.
  *
- * Handles the Contact page: it shows the form and processes submissions with
- * server-side validation. On success it confirms receipt without sending an
- * email yet — email delivery is a separate integration.
+ * Handles the Contact page: it shows the form and processes submissions. The
+ * rules themselves live in lib/contactValidation.js, shared with the template
+ * and — through the data attributes the template renders — with the browser
+ * script, so all three describe the same form.
+ *
+ * This validation runs whatever happened in the browser. `contact-form.js`
+ * catches the same mistakes sooner and more pleasantly, but it is a convenience
+ * for people using a browser, not a gate: a POST can arrive from anywhere.
+ *
+ * On success it confirms receipt without sending an email yet — delivery is a
+ * separate integration.
  */
 
-/** Basic email shape check: something@something.something. */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import {
+  CONTACT_FIELDS,
+  normaliseContact,
+  validateContact,
+} from '../lib/contactValidation.js';
 
-/** Page title reused by both actions. */
+/** Page title reused by every action. */
 const PAGE_TITLE = 'Lpaecomms — Contact us';
 
 /**
- * Front-end assets for the Contact page map. Leaflet is pinned and loaded from
- * a CDN; the init script is served from public/. Order matters — Leaflet must
- * load before the init script that uses it. Passed to the layout via the
- * `styles`/`scripts` locals.
+ * Front-end assets for the Contact page. Leaflet is pinned and loaded from a
+ * CDN; the init scripts are served from public/. Order matters — Leaflet must
+ * load before the map script that uses it. `contact-form.js` depends on
+ * neither. Passed to the layout via the `styles`/`scripts` locals so no other
+ * page downloads Leaflet.
  */
-const MAP_STYLES = ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'];
-const MAP_SCRIPTS = [
+const CONTACT_STYLES = ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'];
+const CONTACT_SCRIPTS = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   '/js/contact-map.js',
+  '/js/contact-form.js',
 ];
+
+/** An untouched form. */
+const EMPTY_VALUES = { name: '', email: '', orderNumber: '', message: '' };
 
 /**
  * Controller for the Contact page.
@@ -36,79 +52,56 @@ export class ContactController {
    * @returns {void}
    */
   show(req, res) {
-    res.render('layouts/base', {
-      title: PAGE_TITLE,
-      page: 'contact',
-      styles: MAP_STYLES,
-      scripts: MAP_SCRIPTS,
-      errors: {},
-      values: { name: '', email: '', message: '' },
-      success: false,
-    });
+    this.#render(res, { values: EMPTY_VALUES });
   }
 
   /**
-   * Validate and process a contact submission. Re-renders the form with errors
-   * and the submitted values when invalid (HTTP 422), or a confirmation when
-   * valid.
+   * Validate and process a contact submission. Re-renders the form with the
+   * errors and the submitted values when invalid (HTTP 422), or a confirmation
+   * when valid.
    *
    * @param {import('express').Request} req - Incoming request with form body.
    * @param {import('express').Response} res - Outgoing response.
    * @returns {void}
    */
   submit(req, res) {
-    const values = {
-      name: (req.body.name ?? '').trim(),
-      email: (req.body.email ?? '').trim(),
-      message: (req.body.message ?? '').trim(),
-    };
-    const errors = this.#validate(values);
+    const values = normaliseContact(req.body);
+    const errors = validateContact(values);
 
     if (Object.keys(errors).length > 0) {
-      res.status(422).render('layouts/base', {
-        title: PAGE_TITLE,
-        page: 'contact',
-      styles: MAP_STYLES,
-      scripts: MAP_SCRIPTS,
-        errors,
-        values,
-        success: false,
-      });
+      // 422 rather than 400: the body parsed fine, it just failed the rules.
+      res.status(422);
+      this.#render(res, { values, errors });
       return;
     }
 
     // No email is sent yet; delivery is a separate integration. Confirm receipt
-    // and clear the form.
-    res.render('layouts/base', {
-      title: PAGE_TITLE,
-      page: 'contact',
-      styles: MAP_STYLES,
-      scripts: MAP_SCRIPTS,
-      errors: {},
-      values: { name: '', email: '', message: '' },
-      success: true,
-    });
+    // and clear the form — re-offering the sent message invites sending it
+    // twice.
+    this.#render(res, { values: EMPTY_VALUES, success: true });
   }
 
   /**
-   * Validate submitted contact values.
+   * Render the Contact page with a full set of locals.
    *
-   * @param {{ name: string, email: string, message: string }} values - Trimmed input.
-   * @returns {Record<string, string>} Map of field name to error message; empty when valid.
+   * Every action renders the same template with the same shape, and a missing
+   * local is a template crash rather than a quiet omission, so the defaults are
+   * filled in here instead of at each call site.
+   *
+   * @param {import('express').Response} res - Outgoing response.
+   * @param {{ values: object, errors?: object, success?: boolean }} state - What to show.
+   * @returns {void}
    */
-  #validate(values) {
-    const errors = {};
-    if (!values.name) {
-      errors.name = 'Please enter your name.';
-    }
-    if (!values.email) {
-      errors.email = 'Please enter your email.';
-    } else if (!EMAIL_PATTERN.test(values.email)) {
-      errors.email = 'Please enter a valid email address.';
-    }
-    if (!values.message) {
-      errors.message = 'Please enter a message.';
-    }
-    return errors;
+  #render(res, { values, errors = {}, success = false }) {
+    res.render('layouts/base', {
+      title: PAGE_TITLE,
+      page: 'contact',
+      styles: CONTACT_STYLES,
+      scripts: CONTACT_SCRIPTS,
+      fields: CONTACT_FIELDS,
+      values,
+      errors,
+      success,
+    });
   }
 }

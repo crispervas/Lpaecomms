@@ -80,7 +80,9 @@ web/
 │   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
 │   ├── catalog.view.test.js       # Catalog page: grid, filters, 404, feed failure
 │   ├── productDetail.view.test.js # Product page: gallery, breadcrumb, 404, feed failure
-│   └── mashup.view.test.js        # Mashups page: card layout, data sources, script element ids
+│   ├── mashup.view.test.js        # Mashups page: card layout, data sources, script element ids
+│   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
+│   └── contact.view.test.js       # Contact page: layout, field attributes, rejection, ARIA wiring
 └── src/                  # Application code — see section 3
 ```
 
@@ -136,6 +138,19 @@ build and the state would render unstyled.
 > types. `tests/mashup.view.test.js` pins the ids; the class strings have to be
 > kept in step by hand, which is why both files say so at the point of use.
 
+> **The contact form is validated twice, from one set of rules.**
+> `lib/contactValidation.js` owns what the form accepts. The controller
+> validates with it; `components/contact/formField.ejs` renders each rule as a
+> native HTML attribute (`required`, `maxlength`, `pattern`) and each message
+> into a `data-error-*` attribute; `public/js/contact-form.js` reads those
+> attributes back out of the DOM. **The browser therefore holds no copy of any
+> message or rule** — a new rule is added in one file and reaches all three.
+> Two consequences worth keeping: the client script is a convenience and never
+> a gate, because a POST can arrive from anywhere and the server re-checks
+> everything; and **a field's pattern must carry no regex flag**, since the HTML
+> `pattern` attribute cannot express one and a `/i` would have the two
+> validators disagree about the same order number. A test pins that invariant.
+
 ---
 
 ## 3. Inside `src/` — the application
@@ -183,7 +198,8 @@ src/
 │   ├── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
 │   └── category.model.js  # Catalogue categories, empty ones filtered out
 ├── lib/                  # Shared infrastructure helpers
-│   └── prisma.js         # Single shared PrismaClient instance (a singleton)
+│   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
+│   └── contactValidation.js # Contact form rules, shared by controller, view and browser
 ├── views/                # VIEW: server-rendered EJS templates
 │   ├── layouts/
 │   │   └── base.ejs      # HTML document shell; wraps every page
@@ -211,6 +227,11 @@ src/
 │   │   │   ├── mashupTwo.ejs   # Products + Currency Converter card
 │   │   │   ├── mashupThree.ejs # Secure Password Checker card
 │   │   │   └── dataSource.ejs  # One row of a card's "Data sources" panel
+│   │   ├── contact/
+│   │   │   ├── contactChannels.ejs # Email / phone / studio cards (static markup)
+│   │   │   ├── contactForm.ejs     # The form card: success notice and the four fields
+│   │   │   ├── contactWorkshop.ejs # "Visit the workshop": map, address, hours, directions
+│   │   │   └── formField.ejs       # One label + control + error line, driven by CONTACT_FIELDS
 │   │   └── shared/           # Fragments no single page owns
 │   │       └── productCard.ejs # One product card, used by home, catalog and product
 │   └── pages/            # Page bodies, injected into the layout
@@ -230,6 +251,7 @@ src/
     └── js/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
+        ├── contact-form.js # Inline contact form validation (a convenience; the server still decides)
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
         ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
         └── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)

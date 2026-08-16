@@ -1,0 +1,75 @@
+<%# The contact form, in the mockup's white card.
+
+    `novalidate` is deliberate and is not the same as "unvalidated": it suppresses
+    the browser's own bubbles so that contact-form.js can show the server's exact
+    wording inline instead. With JavaScript off, nothing validates here and the
+    POST is judged by the server, which is the only check that ever counted.
+
+    Expected locals:
+      fields  — CONTACT_FIELDS from lib/contactValidation.js
+      values  — what to put back in each control
+      errors  — field name to message, empty when there is nothing to report
+      success — true once a submission has been accepted %>
+<div class="rounded-[20px] border border-line bg-surface p-6 sm:p-10">
+  <% if (success) { %>
+    <%# role="status" rather than a plain div: submitting moves focus nowhere,
+        so without it a screen reader user is given no sign it worked. %>
+    <div role="status"
+      class="mb-7 rounded-xl border border-accent/30 bg-tint p-4 text-sm text-ink">
+      Thanks for reaching out — we have received your message and will reply
+      within one business day.
+    </div>
+  <% } %>
+
+  <form method="post" action="/contact" novalidate class="flex flex-col gap-5">
+    <div class="grid gap-5 sm:grid-cols-2">
+      <%- include('./formField', {
+        field: 'name',
+        label: 'Name',
+        rules: fields.name,
+        value: values.name,
+        error: errors.name,
+        type: 'text',
+        placeholder: 'Jordan Kim',
+        rows: null,
+      }) %>
+      <%- include('./formField', {
+        field: 'email',
+        label: 'Email',
+        rules: fields.email,
+        value: values.email,
+        error: errors.email,
+        type: 'email',
+        placeholder: 'you@email.com',
+        rows: null,
+      }) %>
+    </div>
+
+    <%- include('./formField', {
+      field: 'orderNumber',
+      label: 'Order number',
+      rules: fields.orderNumber,
+      value: values.orderNumber,
+      error: errors.orderNumber,
+      type: 'text',
+      placeholder: 'LPA-00248',
+      rows: null,
+    }) %>
+
+    <%- include('./formField', {
+      field: 'message',
+      label: 'Message',
+      rules: fields.message,
+      value: values.message,
+      error: errors.message,
+      type: 'textarea',
+      placeholder: 'How can we help?',
+      rows: 5,
+    }) %>
+
+    <button type="submit"
+      class="mt-1 w-full rounded-[10px] bg-ink px-4 py-4 text-[15px] font-semibold text-white hover:bg-black">
+      Send message
+    </button>
+  </form>
+</div>
