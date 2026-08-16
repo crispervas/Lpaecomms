@@ -1,52 +1,74 @@
 <%# ── MASHUP 3 — Secure Password Checker ───────────────────────────
-    Card previewing the breach-check integration. Included by
-    pages/mashup.ejs. Static layout, so it takes no locals. %>
-<article aria-labelledby="mashup-3" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div class="flex items-start gap-4">
-    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-      </svg>
-    </span>
-    <div class="min-w-0 flex-1">
-      <div class="flex items-start justify-between gap-3">
-        <h2 id="mashup-3" class="text-lg font-semibold">Secure Password Checker</h2>
-        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Live</span>
+    Breach-check integration, in the Marshup mockup's card: copy and sources on
+    top, the live widget across the full width below. Included by
+    pages/mashup.ejs. Takes no locals: the checker fetches its own data. %>
+<article aria-labelledby="mashup-3" class="rounded-[20px] border border-line bg-surface p-6 sm:p-9">
+  <div class="grid gap-8 lg:grid-cols-[1fr_280px]">
+    <div class="flex flex-col gap-5 sm:flex-row sm:gap-6">
+      <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-tint text-accent sm:h-24 sm:w-24">
+        <svg class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+        </svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-block rounded-md bg-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent">
+            Registration + Breach data
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true"></span>Live
+          </span>
+        </div>
+        <h2 id="mashup-3" class="mt-3.5 font-display text-2xl font-semibold">Secure Password Checker</h2>
+        <p class="mt-2.5 text-sm leading-relaxed text-muted">
+          Warns at registration when a chosen password has appeared in a known
+          breach, and rates its strength. Only the first five characters of the
+          hash ever leave the browser, so the password itself is never sent.
+        </p>
       </div>
-      <p class="mt-1 text-sm text-slate-600">
-        Warn users at registration if their chosen password has appeared in
-        a known data breach, and rate its strength.
-      </p>
-      <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Combines: LPA registration + Have I Been Pwned
-      </p>
+    </div>
+
+    <div class="flex flex-col gap-2.5 lg:border-l lg:border-line lg:pl-8">
+      <span class="text-xs font-semibold uppercase tracking-wide text-muted">Data sources</span>
+      <%- include('./dataSource', { endpoint: 'GET /api/v1/password/breaches', source: 'Lpaecomms REST API' }) %>
+      <%- include('./dataSource', { endpoint: 'Have I Been Pwned', source: 'Range search, k-anonymity' }) %>
     </div>
   </div>
 
-  <%# The four strength segments carry no meaning on their own — colour alone
-      is not an accessible signal — so they are aria-hidden and the label below
+  <%# The four strength segments carry no meaning on their own — colour alone is
+      not an accessible signal — so they are aria-hidden and the label below
       states the level in words. The status line is a live region so the breach
-      result is announced as it arrives. %>
-  <div class="mt-5 max-w-md rounded-lg border border-slate-200 bg-slate-50 p-5">
-    <label for="mashup-password" class="block text-sm font-medium text-slate-700">Password</label>
-    <input id="mashup-password" name="password" type="password" autocomplete="new-password"
-      class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-700 focus:border-slate-500 focus:outline-none" />
+      result is announced as it arrives. mashup-password.js rewrites the
+      className of the segments, the label and the status line, so their classes
+      here and there must be changed together. %>
+  <%# The panel spans the card like the map and the converter do, so the three
+      cards share one rhythm. The field itself stays capped: a password input
+      stretched to the full width would read as a search bar. %>
+  <div class="mt-8 border-t border-line pt-8">
+    <div class="rounded-2xl bg-canvas p-5 sm:p-6">
+      <div class="max-w-md">
+        <label for="mashup-password" class="block text-sm font-medium text-ink">Password</label>
+        <input id="mashup-password" name="password" type="password" autocomplete="new-password"
+          class="mt-1.5 w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-ink focus:border-accent focus:outline-none" />
 
-    <div class="mt-3">
-      <div id="mashup-strength-bar" class="flex gap-1.5" aria-hidden="true">
-        <span class="h-1.5 flex-1 rounded-full bg-slate-200"></span>
-        <span class="h-1.5 flex-1 rounded-full bg-slate-200"></span>
-        <span class="h-1.5 flex-1 rounded-full bg-slate-200"></span>
-        <span class="h-1.5 flex-1 rounded-full bg-slate-200"></span>
+        <div class="mt-3">
+          <div id="mashup-strength-bar" class="flex gap-1.5" aria-hidden="true">
+            <span class="h-1.5 flex-1 rounded-full bg-line-strong"></span>
+            <span class="h-1.5 flex-1 rounded-full bg-line-strong"></span>
+            <span class="h-1.5 flex-1 rounded-full bg-line-strong"></span>
+            <span class="h-1.5 flex-1 rounded-full bg-line-strong"></span>
+          </div>
+          <p id="mashup-strength-label" class="mt-1.5 text-xs font-semibold text-muted">
+            Strength: enter a password
+          </p>
+        </div>
       </div>
-      <p id="mashup-strength-label" class="mt-1.5 text-xs font-semibold text-slate-500">
-        Strength: enter a password
+
+      <p id="mashup-breach-status" role="status"
+        class="mt-3 border-t border-line pt-3 text-sm text-muted">
+        Type a password to check it against known data breaches.
       </p>
     </div>
-
-    <p id="mashup-breach-status" role="status"
-      class="mt-3 border-t border-slate-200 pt-3 text-sm text-slate-500">
-      Type a password to check it against known data breaches.
-    </p>
   </div>
 </article>

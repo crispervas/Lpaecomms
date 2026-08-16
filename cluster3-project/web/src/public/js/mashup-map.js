@@ -69,7 +69,7 @@
   const showNotice = (message) => {
     map.remove();
     container.className =
-      'mt-5 flex h-[300px] w-full items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-4 text-center text-sm text-amber-800 md:h-[400px]';
+      'flex h-[320px] w-full items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-4 text-center text-sm text-amber-800 md:h-[420px]';
     container.textContent = message;
   };
 

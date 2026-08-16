@@ -1,21 +1,30 @@
-<%# Mashups page: three live integrations, each combining Lpaecomms' own page
-    with an external service. The page itself carries no data — every card
-    fetches from /api/v1 in the browser, which is the same contract the mobile
-    and desktop clients use. Wrapped by layouts/base.ejs. %>
-<section class="mx-auto max-w-4xl">
-  <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Mashups</h1>
-  <p class="mt-4 max-w-2xl text-slate-600">
-    A mashup blends data or services from more than one source into a single
-    view. Each integration below combines Lpaecomms' own page with an external
-    service, live.
-  </p>
+<%# Mashups page: three live integrations, each combining Lpaecomms' own
+    catalogue or forms with an external service. The page itself carries no
+    data — every card fetches from /api/v1 in the browser, which is the same
+    contract the mobile and desktop clients use. Wrapped by layouts/base.ejs. %>
 
-  <%# Each mashup is its own component under views/components/mashup. The paths are
-      literal so a wrong name fails loudly at include time and stays greppable.
-      None of them takes locals: their data arrives over the API. %>
-  <div class="mt-10 space-y-8">
-    <%- include('../components/mashup/mashupOne') %>
-    <%- include('../components/mashup/mashupTwo') %>
-    <%- include('../components/mashup/mashupThree') %>
-  </div>
+<%# Centred hero, from the Marshup mockup. The mockup spells it "Marshup";
+    the nav, the routes and the docs all say Mashups, so the page keeps the
+    spelling the rest of the site uses. %>
+<section class="mx-auto max-w-3xl pb-14 pt-10 text-center sm:pb-16 sm:pt-16">
+  <span class="text-[13px] font-semibold uppercase tracking-[0.12em] text-accent">
+    Integrations, built on one API
+  </span>
+  <h1 class="mt-5 font-display text-4xl font-bold leading-[1.15] tracking-tight sm:text-5xl">
+    Mashups
+  </h1>
+  <p class="mt-5 text-[17px] leading-relaxed text-muted">
+    A mashup blends data or services from more than one source into a single
+    view. Each card below combines the Lpaecomms catalogue with an external
+    service, live in your browser.
+  </p>
+</section>
+
+<%# Each mashup is its own component under views/components/mashup. The paths
+    are literal so a wrong name fails loudly at include time and stays
+    greppable. None of them takes locals: their data arrives over the API. %>
+<section class="flex flex-col gap-7 pb-24">
+  <%- include('../components/mashup/mashupOne') %>
+  <%- include('../components/mashup/mashupTwo') %>
+  <%- include('../components/mashup/mashupThree') %>
 </section>

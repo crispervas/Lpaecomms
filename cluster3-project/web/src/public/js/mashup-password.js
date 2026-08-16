@@ -37,6 +37,16 @@
     { name: 'Very strong', segment: 'bg-emerald-500', text: 'text-emerald-700' },
   ];
 
+  /**
+   * Chrome shared by every state of the status line — only the tone appended to
+   * it changes. Held in one place so the six states cannot drift apart in
+   * spacing or border, and written whole for the same reason as LEVELS above.
+   */
+  const STATUS_BASE = 'mt-3 border-t border-line pt-3 text-sm';
+
+  /** A strength segment the score has not reached. */
+  const SEGMENT_EMPTY = 'h-1.5 flex-1 rounded-full bg-line-strong';
+
   /** @type {number|undefined} */
   let debounceTimer;
 
@@ -72,7 +82,7 @@
 
     [...bar.children].forEach((segment, index) => {
       segment.className =
-        index < score ? `h-1.5 flex-1 rounded-full ${level.segment}` : 'h-1.5 flex-1 rounded-full bg-slate-200';
+        index < score ? `h-1.5 flex-1 rounded-full ${level.segment}` : SEGMENT_EMPTY;
     });
 
     label.className = `mt-1.5 text-xs font-semibold ${level.text}`;
@@ -86,11 +96,11 @@
    */
   const renderEmpty = () => {
     [...bar.children].forEach((segment) => {
-      segment.className = 'h-1.5 flex-1 rounded-full bg-slate-200';
+      segment.className = SEGMENT_EMPTY;
     });
-    label.className = 'mt-1.5 text-xs font-semibold text-slate-500';
+    label.className = 'mt-1.5 text-xs font-semibold text-muted';
     label.textContent = 'Strength: enter a password';
-    status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm text-slate-500';
+    status.className = `${STATUS_BASE} text-muted`;
     status.textContent = 'Type a password to check it against known data breaches.';
   };
 
@@ -117,7 +127,7 @@
   const checkBreaches = async (password) => {
     const requestId = (latestRequestId += 1);
 
-    status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm text-slate-500';
+    status.className = `${STATUS_BASE} text-muted`;
     status.textContent = 'Checking password security…';
 
     try {
@@ -139,10 +149,10 @@
       const breaches = result.suffixes[suffix];
 
       if (breaches) {
-        status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm font-medium text-red-700';
+        status.className = `${STATUS_BASE} font-medium text-red-700`;
         status.textContent = `This password has appeared in ${breaches.toLocaleString()} data breaches. Please choose another.`;
       } else {
-        status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm font-medium text-emerald-700';
+        status.className = `${STATUS_BASE} font-medium text-emerald-700`;
         status.textContent = '✓ This password was not found in known breaches';
       }
     } catch {
@@ -150,7 +160,7 @@
 
       // The check is advisory. A third party being down is not a reason to
       // block someone from choosing a password.
-      status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm text-amber-700';
+      status.className = `${STATUS_BASE} text-amber-700`;
       status.textContent = 'The breach check is unavailable right now — choose a strong password.';
     }
   };
@@ -173,7 +183,7 @@
     // crypto.subtle only exists in a secure context (HTTPS or localhost).
     // Without it the strength meter still works; only the lookup is disabled.
     if (!globalThis.crypto?.subtle) {
-      status.className = 'mt-3 border-t border-slate-200 pt-3 text-sm text-amber-700';
+      status.className = `${STATUS_BASE} text-amber-700`;
       status.textContent = 'The breach check needs a secure connection (HTTPS) and is disabled here.';
       return;
     }

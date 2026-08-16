@@ -1,36 +1,54 @@
 <%# ── MASHUP 1 — Products + Location ───────────────────────────────
-    Card previewing the catalogue-on-a-map integration. Included by
+    Catalogue-on-a-map integration, in the Marshup mockup's card: copy and
+    sources on top, the live widget across the full width below. Included by
     pages/mashup.ejs. Takes no locals: the map fetches its own data. %>
-<article aria-labelledby="mashup-1" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div class="flex items-start gap-4">
-    <%# Purpose icon: a coloured chip makes each mashup scannable at a
-        glance. Decorative, so the SVG is aria-hidden. %>
-    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-      </svg>
-    </span>
-    <div class="min-w-0 flex-1">
-      <div class="flex items-start justify-between gap-3">
-        <h2 id="mashup-1" class="text-lg font-semibold">Products + Location</h2>
-        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Live</span>
+<article aria-labelledby="mashup-1" class="rounded-[20px] border border-line bg-surface p-6 sm:p-9">
+  <div class="grid gap-8 lg:grid-cols-[1fr_280px]">
+    <div class="flex flex-col gap-5 sm:flex-row sm:gap-6">
+      <%# The mockup puts a bundle photo here. There is no photo for an
+          integration, so the column holds the purpose icon instead — sized to
+          read as a deliberate plate rather than a gap where an image failed. %>
+      <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-tint text-accent sm:h-24 sm:w-24">
+        <svg class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+        </svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-block rounded-md bg-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent">
+            Catalogue + Maps
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true"></span>Live
+          </span>
+        </div>
+        <h2 id="mashup-1" class="mt-3.5 font-display text-2xl font-semibold">Products + Location</h2>
+        <p class="mt-2.5 text-sm leading-relaxed text-muted">
+          Shows customers where products are physically available, on a map they
+          can pan and zoom. Store coordinates are merged into the catalogue
+          server-side, because the feed carries none of its own.
+        </p>
       </div>
-      <p class="mt-1 text-sm text-slate-600">
-        Show customers where products are physically available on an
-        interactive map they can pan and zoom.
-      </p>
-      <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Combines: LPA catalogue + Leaflet + OpenStreetMap
-      </p>
+    </div>
+
+    <div class="flex flex-col gap-2.5 lg:border-l lg:border-line lg:pl-8">
+      <span class="text-xs font-semibold uppercase tracking-wide text-muted">Data sources</span>
+      <%- include('./dataSource', { endpoint: 'GET /api/v1/products', source: 'Lpaecomms REST API' }) %>
+      <%- include('./dataSource', { endpoint: 'Leaflet 1.9.4', source: 'Map rendering' }) %>
+      <%- include('./dataSource', { endpoint: 'OpenStreetMap', source: 'Map tiles' }) %>
     </div>
   </div>
 
   <%# Leaflet renders into this container. The explicit height matters: an
-      element with no height gives Leaflet nothing to draw into. `isolate`
-      and `z-0` keep Leaflet's internal z-indexes from painting over the
-      fixed site header. %>
-  <div id="mashup-map" role="region" aria-label="Map of stores holding these products"
-    class="isolate z-0 mt-5 h-[300px] w-full rounded-lg border border-slate-200 md:h-[400px]"></div>
-  <p class="mt-2 text-xs text-slate-500">Map data © OpenStreetMap contributors</p>
+      element with no height gives Leaflet nothing to draw into. `isolate` and
+      `z-0` keep Leaflet's internal z-indexes from painting over the fixed site
+      header. mashup-map.js replaces this className wholesale when the
+      catalogue cannot be read, so the two must be changed together. %>
+  <div class="mt-8 border-t border-line pt-8">
+    <div id="mashup-map" role="region" aria-label="Map of stores holding these products"
+      class="isolate z-0 h-[320px] w-full rounded-2xl border border-line md:h-[420px]"></div>
+    <p class="mt-2.5 text-xs text-muted">Map data © OpenStreetMap contributors</p>
+  </div>
 </article>

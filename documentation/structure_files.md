@@ -79,7 +79,8 @@ web/
 │   ├── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
 │   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
 │   ├── catalog.view.test.js       # Catalog page: grid, filters, 404, feed failure
-│   └── productDetail.view.test.js # Product page: gallery, breadcrumb, 404, feed failure
+│   ├── productDetail.view.test.js # Product page: gallery, breadcrumb, 404, feed failure
+│   └── mashup.view.test.js        # Mashups page: card layout, data sources, script element ids
 └── src/                  # Application code — see section 3
 ```
 
@@ -123,6 +124,17 @@ build and the state would render unstyled.
 > page *is* the product: a feed it cannot read reaches the error page, and a
 > product that does not exist reaches the 404 page. Only its "You might also
 > like" row degrades, because that row is an extra.
+
+> **The mashup cards are shared between a template and a script.** Each card
+> reads top-down: what the mashup is and what it consumes, then the live widget
+> below a rule. The widget half is driven from `public/js/`, and the coupling
+> runs both ways. The scripts find their elements **by id** — rename
+> `#mashup-strength-bar` and the page still renders while the meter silently
+> dies — and they **overwrite `className` wholesale** on the map container, the
+> strength segments, the strength label and the breach status line. A palette
+> change applied only to the template therefore reverts the moment the user
+> types. `tests/mashup.view.test.js` pins the ids; the class strings have to be
+> kept in step by hand, which is why both files say so at the point of use.
 
 ---
 
@@ -197,7 +209,8 @@ src/
 │   │   ├── mashup/
 │   │   │   ├── mashupOne.ejs   # Products + Location card
 │   │   │   ├── mashupTwo.ejs   # Products + Currency Converter card
-│   │   │   └── mashupThree.ejs # Secure Password Checker card
+│   │   │   ├── mashupThree.ejs # Secure Password Checker card
+│   │   │   └── dataSource.ejs  # One row of a card's "Data sources" panel
 │   │   └── shared/           # Fragments no single page owns
 │   │       └── productCard.ejs # One product card, used by home, catalog and product
 │   └── pages/            # Page bodies, injected into the layout

@@ -1,0 +1,18 @@
+<%# One row of a mashup card's "Data sources" panel. Reuses the file-row shape
+    the mockup used for "Included files": icon, a strong first line, a quiet
+    second one. Included by the three mashup cards.
+
+    Expected locals:
+      endpoint — what the browser calls, or the library it loads
+      source   — who serves it %>
+<div class="flex items-center gap-2.5 rounded-lg bg-canvas px-3 py-2.5">
+  <svg class="h-4 w-4 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <path d="M14 2v6h6" />
+  </svg>
+  <div class="min-w-0 flex-1">
+    <div class="text-[13px] font-medium text-ink"><%= endpoint %></div>
+    <div class="text-[11px] text-muted"><%= source %></div>
+  </div>
+</div>

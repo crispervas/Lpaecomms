@@ -1,25 +1,38 @@
 <%# ── MASHUP 2 — Products + Currency Converter ─────────────────────
-    Card previewing the price-conversion integration. Included by
+    Price-conversion integration, in the Marshup mockup's card: copy and
+    sources on top, the live widget across the full width below. Included by
     pages/mashup.ejs. Takes no locals: the converter fetches its own data. %>
-<article aria-labelledby="mashup-2" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-  <div class="flex items-start gap-4">
-    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-      <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-      </svg>
-    </span>
-    <div class="min-w-0 flex-1">
-      <div class="flex items-start justify-between gap-3">
-        <h2 id="mashup-2" class="text-lg font-semibold">Products + Currency Converter</h2>
-        <span class="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">Live</span>
+<article aria-labelledby="mashup-2" class="rounded-[20px] border border-line bg-surface p-6 sm:p-9">
+  <div class="grid gap-8 lg:grid-cols-[1fr_280px]">
+    <div class="flex flex-col gap-5 sm:flex-row sm:gap-6">
+      <span class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-tint text-accent sm:h-24 sm:w-24">
+        <svg class="h-8 w-8 sm:h-10 sm:w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-block rounded-md bg-tint px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent">
+            Catalogue + Exchange rates
+          </span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+            <span class="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true"></span>Live
+          </span>
+        </div>
+        <h2 id="mashup-2" class="mt-3.5 font-display text-2xl font-semibold">Products + Currency Converter</h2>
+        <p class="mt-2.5 text-sm leading-relaxed text-muted">
+          Converts a product's price into the customer's currency beside the
+          price, without reloading the page. Rates are fetched once per pair and
+          cached, so changing product does not spend a new call.
+        </p>
       </div>
-      <p class="mt-1 text-sm text-slate-600">
-        Convert a product's price into the customer's currency right next to
-        the price, without reloading the page.
-      </p>
-      <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-        Combines: Lpaecomms catalogue + API Ninjas exchange rates
-      </p>
+    </div>
+
+    <div class="flex flex-col gap-2.5 lg:border-l lg:border-line lg:pl-8">
+      <span class="text-xs font-semibold uppercase tracking-wide text-muted">Data sources</span>
+      <%- include('./dataSource', { endpoint: 'GET /api/v1/products', source: 'Lpaecomms REST API' }) %>
+      <%- include('./dataSource', { endpoint: 'GET /api/v1/convert', source: 'API Ninjas exchange rates' }) %>
     </div>
   </div>
 
@@ -27,40 +40,42 @@
       /api/v1/products in the browser. The status line is a live region so a
       screen reader announces the converted price without the user re-reading
       the block. %>
-  <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label for="mashup-product" class="block text-xs font-medium text-slate-600">Product</label>
-        <select id="mashup-product" name="product"
-          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
-          <option value="">Loading products…</option>
-        </select>
+  <div class="mt-8 border-t border-line pt-8">
+    <div class="rounded-2xl bg-canvas p-5 sm:p-6">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="mashup-product" class="block text-xs font-medium text-muted">Product</label>
+          <select id="mashup-product" name="product"
+            class="mt-1.5 w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-sm text-ink">
+            <option value="">Loading products…</option>
+          </select>
+        </div>
+        <div>
+          <label for="mashup-currency" class="block text-xs font-medium text-muted">Display currency</label>
+          <select id="mashup-currency" name="currency"
+            class="mt-1.5 w-full rounded-lg border border-line-strong bg-surface px-3 py-2.5 text-sm text-ink">
+            <option value="AUD">AUD</option>
+            <option value="USD">USD</option>
+            <option value="GBP">GBP</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label for="mashup-currency" class="block text-xs font-medium text-slate-600">Display currency</label>
-        <select id="mashup-currency" name="currency"
-          class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
-          <option value="AUD">AUD</option>
-          <option value="USD">USD</option>
-          <option value="GBP">GBP</option>
-          <option value="EUR">EUR</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-xs uppercase tracking-wide text-slate-500">Base price</p>
-        <p id="mashup-base-price" class="mt-1 text-lg font-medium text-slate-700">—</p>
+      <div class="mt-5 flex flex-col gap-4 border-t border-line pt-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-muted">Base price</p>
+          <p id="mashup-base-price" class="mt-1 text-lg font-medium text-muted">—</p>
+        </div>
+        <div class="sm:text-right">
+          <p class="text-xs uppercase tracking-wide text-muted">Converted</p>
+          <p id="mashup-converted-price" class="mt-1 font-display text-3xl font-bold tracking-tight text-ink">—</p>
+        </div>
       </div>
-      <div class="sm:text-right">
-        <p class="text-xs uppercase tracking-wide text-slate-500">Converted</p>
-        <p id="mashup-converted-price" class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">—</p>
-      </div>
-    </div>
 
-    <p id="mashup-convert-status" role="status" class="mt-3 text-sm text-slate-500">
-      Choose a product to see its price converted.
-    </p>
+      <p id="mashup-convert-status" role="status" class="mt-3 text-sm text-muted">
+        Choose a product to see its price converted.
+      </p>
+    </div>
   </div>
 </article>
