@@ -1,10 +1,15 @@
 <%#
-  Story: the platform panel and the prose, two columns from lg up. No locals.
+  Story: the prose and the platform panel, two columns from lg up. No locals.
 
-  The mockup fills the left column with a workshop photograph that does not
-  exist. An empty tinted rectangle 440px tall reads as a hole rather than as a
-  composition, so the column carries the one fact that is both true and
-  particular to this product: three clients, one REST API.
+  The mockup fills one column with a workshop photograph that does not exist.
+  An empty tinted rectangle 440px tall reads as a hole rather than as a
+  composition, so that column carries the shape of the system instead.
+
+  What the panel must not do is overstate it. This site does not read its own
+  REST API: view routes render from the models directly, and the project's rules
+  forbid a view route from depending on a JSON route. The API exists for the
+  clients that are not this site. An earlier draft of this panel claimed every
+  platform read the catalogue over the API, which was false in all three.
 
   A <dl> rather than a grid of divs — each row genuinely is a term and its
   description, and it linearises correctly for a screen reader.
@@ -12,32 +17,12 @@
   "Apps in progress" is deliberate. cluster3-project/mobile is still an empty
   directory, and announcing a shipped app would be the same invention the
   mockup's team section was dropped for.
+
+  The prose comes first in the DOM and the panel is moved back into place with
+  lg:order-first: a screen reader reaching the panel's heading before the
+  heading of the section it supports reads backwards.
 %>
 <section class="grid items-center gap-10 py-12 lg:grid-cols-2">
-  <div class="rounded-3xl bg-subtle p-8">
-    <h2 class="font-display text-lg font-semibold text-ink">One API, three front doors</h2>
-    <dl class="mt-6 flex flex-col gap-5">
-      <div>
-        <dt class="text-sm font-semibold text-ink">One REST API</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
-          Every client reads the same catalogue from the same place.
-        </dd>
-      </div>
-      <div>
-        <dt class="text-sm font-semibold text-ink">Web</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
-          This site, rendered on the server.
-        </dd>
-      </div>
-      <div>
-        <dt class="text-sm font-semibold text-ink">Mobile and desktop</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
-          Apps in progress on that same API.
-        </dd>
-      </div>
-    </dl>
-  </div>
-
   <div>
     <h2 class="font-display text-2xl font-semibold text-ink">
       A catalogue that stays the same everywhere
@@ -48,9 +33,39 @@
       compare, and decide without guessing.
     </p>
     <p class="mt-4 leading-relaxed text-muted">
-      It is one store, not three. Every platform reads the same catalogue over
-      the same REST API, so a product that changes shows up the same way
-      wherever you opened it.
+      It is one store, not three. The site and the API the other platforms use read
+      the same catalogue from the same place, so a product that changes shows up the
+      same way wherever you opened it.
     </p>
+  </div>
+
+  <div class="rounded-3xl bg-subtle p-8 lg:order-first">
+    <h2 class="font-display text-lg font-semibold text-ink">One catalogue behind every platform</h2>
+    <dl class="mt-6 flex flex-col gap-5">
+      <div>
+        <dt class="text-sm font-semibold text-ink">The catalogue</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          One source of products, shared by everything below.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-semibold text-ink">Web</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          This site, rendered on the server straight from that source.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-semibold text-ink">The REST API</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          The same products over HTTP, for clients that are not this site.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-semibold text-ink">Mobile and desktop</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          Apps in progress on that API.
+        </dd>
+      </div>
+    </dl>
   </div>
 </section>

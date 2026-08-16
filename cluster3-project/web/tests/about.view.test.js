@@ -35,6 +35,11 @@ test('the About page keeps the Mashup explainer video', async () => {
   // the quiet way this embed would degrade.
   assert.match(response.text, /<iframe[^>]*title="What does Mashup mean\?"/);
   assert.match(response.text, /<iframe[^>]*loading="lazy"/);
+  assert.match(
+    response.text,
+    /<iframe[^>]*referrerpolicy="strict-origin-when-cross-origin"/,
+  );
+  assert.match(response.text, /<iframe[^>]*allowfullscreen/);
 });
 
 test('the video section leads on to the Mashups page', async () => {
@@ -65,16 +70,16 @@ test('the story explains the store and the shared catalogue', async () => {
   assert.match(response.text, /It is one store, not three\./);
 });
 
-test('the platform panel lists the API and its clients', async () => {
+test('the platform panel lists the catalogue and what reads it', async () => {
   const response = await request(createApp()).get('/about');
 
-  // A description list, not a grid of divs: each row is a term and its
-  // description, which is what they are, and it linearises correctly.
-  assert.match(response.text, /<dl/);
-  assert.match(response.text, /One REST API/);
+  // Bound to the rows themselves: a bare /<dl/ would pass against an empty
+  // description list with the rows rebuilt as paragraphs beside it.
+  assert.match(response.text, /<dt[^>]*>The catalogue<\/dt>/);
+  assert.match(response.text, /<dt[^>]*>The REST API<\/dt>/);
   // The mobile app does not exist yet. Saying so is deliberate, and this
   // assertion is what stops a later edit from quietly announcing a shipped app.
-  assert.match(response.text, /Apps in progress on that same API\./);
+  assert.match(response.text, /Apps in progress on that API\./);
 });
 
 test('the retired feature cards are gone', async () => {
@@ -85,6 +90,7 @@ test('the retired feature cards are gone', async () => {
   // three cards with statements that are true today.
   assert.doesNotMatch(response.text, /Simple checkout/);
   assert.doesNotMatch(response.text, /Live stock/);
+  assert.doesNotMatch(response.text, /Curated peripherals/);
 });
 
 test('the page carries no class from the retired slate palette', async () => {
@@ -93,4 +99,16 @@ test('the page carries no class from the retired slate palette', async () => {
   // The header, footer and base layout are already free of it, so this covers
   // the whole rendered document and not just this page's body.
   assert.doesNotMatch(response.text, /slate-/);
+});
+
+test('the page renders mission, story and video in that order', async () => {
+  const response = await request(createApp()).get('/about');
+
+  const mission = response.text.indexOf('Our mission');
+  const story = response.text.indexOf('A catalogue that stays the same everywhere');
+  const video = response.text.indexOf('What does Mashup mean?');
+
+  assert.ok(mission > -1 && story > -1 && video > -1, 'all three sections render');
+  assert.ok(mission < story, 'the mission comes before the story');
+  assert.ok(story < video, 'the story comes before the video');
 });
