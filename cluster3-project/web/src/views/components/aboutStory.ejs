@@ -1,0 +1,56 @@
+<%#
+  Story: the platform panel and the prose, two columns from lg up. No locals.
+
+  The mockup fills the left column with a workshop photograph that does not
+  exist. An empty tinted rectangle 440px tall reads as a hole rather than as a
+  composition, so the column carries the one fact that is both true and
+  particular to this product: three clients, one REST API.
+
+  A <dl> rather than a grid of divs — each row genuinely is a term and its
+  description, and it linearises correctly for a screen reader.
+
+  "Apps in progress" is deliberate. cluster3-project/mobile is still an empty
+  directory, and announcing a shipped app would be the same invention the
+  mockup's team section was dropped for.
+%>
+<section class="grid items-center gap-10 py-12 lg:grid-cols-2">
+  <div class="rounded-3xl bg-subtle p-8">
+    <h2 class="font-display text-lg font-semibold text-ink">One API, three front doors</h2>
+    <dl class="mt-6 flex flex-col gap-5">
+      <div>
+        <dt class="text-sm font-semibold text-ink">One REST API</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          Every client reads the same catalogue from the same place.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-semibold text-ink">Web</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          This site, rendered on the server.
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-semibold text-ink">Mobile and desktop</dt>
+        <dd class="mt-1 text-sm leading-relaxed text-muted">
+          Apps in progress on that same API.
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <div>
+    <h2 class="font-display text-2xl font-semibold text-ink">
+      A catalogue that stays the same everywhere
+    </h2>
+    <p class="mt-5 leading-relaxed text-muted">
+      Lpaecomms sells the peripherals people use all day: keyboards, mice, headsets, webcams,
+      and the things around them. The whole catalogue is online, so you can browse it,
+      compare, and decide without guessing.
+    </p>
+    <p class="mt-4 leading-relaxed text-muted">
+      It is one store, not three. Every platform reads the same catalogue over
+      the same REST API, so a product that changes shows up the same way
+      wherever you opened it.
+    </p>
+  </div>
+</section>

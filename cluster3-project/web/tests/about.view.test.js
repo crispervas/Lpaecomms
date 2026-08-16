@@ -56,3 +56,41 @@ test('the About page opens with the mission statement', async () => {
     /<h1[^>]*>\s*The hardware between you and your work should get out of the way\./,
   );
 });
+
+test('the story explains the store and the shared catalogue', async () => {
+  const response = await request(createApp()).get('/about');
+
+  assert.match(response.text, /A catalogue that stays the same everywhere/);
+  assert.match(response.text, /keyboards, mice, headsets, webcams/);
+  assert.match(response.text, /It is one store, not three\./);
+});
+
+test('the platform panel lists the API and its clients', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // A description list, not a grid of divs: each row is a term and its
+  // description, which is what they are, and it linearises correctly.
+  assert.match(response.text, /<dl/);
+  assert.match(response.text, /One REST API/);
+  // The mobile app does not exist yet. Saying so is deliberate, and this
+  // assertion is what stops a later edit from quietly announcing a shipped app.
+  assert.match(response.text, /Apps in progress on that same API\./);
+});
+
+test('the retired feature cards are gone', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // "Simple checkout" promised a checkout this site does not have, and
+  // "Live stock" a synchronisation it does not perform. The panel replaced all
+  // three cards with statements that are true today.
+  assert.doesNotMatch(response.text, /Simple checkout/);
+  assert.doesNotMatch(response.text, /Live stock/);
+});
+
+test('the page carries no class from the retired slate palette', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // The header, footer and base layout are already free of it, so this covers
+  // the whole rendered document and not just this page's body.
+  assert.doesNotMatch(response.text, /slate-/);
+});

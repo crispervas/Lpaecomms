@@ -190,7 +190,10 @@ src/
 │   │   ├── productCard.ejs    # One product card, shared by home and catalog
 │   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
 │   │   ├── productPurchase.ejs # Quantity and add-to-cart, disabled until a cart exists
-│   │   └── productRelated.ejs  # "You might also like": same category, current excluded
+│   │   ├── productRelated.ejs  # "You might also like": same category, current excluded
+│   │   ├── aboutMission.ejs  # About mission block: eyebrow and headline (static markup)
+│   │   ├── aboutStory.ejs    # About story: platform panel and prose, two columns
+│   │   └── aboutVideo.ejs    # About "What does Mashup mean?" explainer embed
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
