@@ -31,19 +31,5 @@
     </div>
   </div>
 
-  <div class="mt-12">
-    <h2 class="text-2xl font-bold tracking-tight">What does Mashup mean?</h2>
-    <%# Responsive YouTube embed. `aspect-video` (16:9) keeps the ratio at any
-        width; the iframe fills the box. `title` names the frame for assistive
-        tech. %>
-    <div class="mt-6 aspect-video w-full overflow-hidden rounded-lg border border-slate-200">
-      <iframe class="h-full w-full"
-        src="https://www.youtube.com/embed/ZRcP2CZ8DS8"
-        title="What does Mashup mean?"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerpolicy="strict-origin-when-cross-origin"
-        loading="lazy"
-        allowfullscreen></iframe>
-    </div>
-  </div>
+  <%- include('../components/aboutVideo') %>
 </section>

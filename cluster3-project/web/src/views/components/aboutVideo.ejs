@@ -1,0 +1,33 @@
+<%#
+  The Mashup explainer video. No locals.
+
+  The <iframe> is a verbatim carry-over from the pre-redesign About page: same
+  video, same accessible name, same permissions. It is the one element the owner
+  asked to keep through the redesign, so it is preserved rather than modernised,
+  and a test pins its source, title and lazy loading. Only its frame changed,
+  from a slate border to the token palette.
+
+  The lead-in and the link are new. The video used to sit with no context and no
+  way onward; the three mashups it names are the three /mashup actually renders.
+%>
+<section class="pb-16">
+  <h2 class="font-display text-2xl font-semibold text-ink">What does Mashup mean?</h2>
+  <p class="mt-3 max-w-2xl leading-relaxed text-muted">
+    The Mashups page pairs our products with a store map, a currency converter,
+    and a password checker — this is the idea they are built on.
+  </p>
+  <%# aspect-video (16:9) holds the ratio at any width; the iframe fills the box. %>
+  <div class="mt-6 aspect-video w-full overflow-hidden rounded-3xl border border-line">
+    <iframe class="h-full w-full"
+      src="https://www.youtube.com/embed/ZRcP2CZ8DS8"
+      title="What does Mashup mean?"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      loading="lazy"
+      allowfullscreen></iframe>
+  </div>
+  <a href="/mashup"
+    class="mt-6 inline-block text-sm font-semibold text-accent hover:text-accent-strong">
+    See the Mashups
+  </a>
+</section>
