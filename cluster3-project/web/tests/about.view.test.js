@@ -45,3 +45,14 @@ test('the video section leads on to the Mashups page', async () => {
   // existing at all.
   assert.match(response.text, /href="\/mashup"[^>]*>\s*See the Mashups/);
 });
+
+test('the About page opens with the mission statement', async () => {
+  const response = await request(createApp()).get('/about');
+
+  assert.equal(response.status, 200);
+  assert.match(response.text, /Our mission/);
+  assert.match(
+    response.text,
+    /<h1[^>]*>\s*The hardware between you and your work should get out of the way\./,
+  );
+});
