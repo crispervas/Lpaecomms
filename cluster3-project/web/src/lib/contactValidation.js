@@ -6,15 +6,27 @@
  * controller:
  *
  *   1. `contact.controller.js` validates submissions with `validateContact`.
- *   2. `components/contact/formField.ejs` renders each field's limit as native
+ *   2. `components/shared/formField.ejs` renders each field's limit as native
  *      HTML attributes and each message into a `data-error-*` attribute.
- *   3. `public/js/contact-form.js` reads those attributes back out of the DOM.
+ *   3. `public/js/form-validation.js` reads those attributes back out.
  *
  * The browser therefore never holds a copy of a message, and cannot drift from
  * the server. Rules the browser can enforce natively (required, maximum length,
  * shape) are expressed so they map onto HTML attributes; the script only has to
  * decide which of a field's messages applies.
+ *
+ * Applying the rules is lib/formRules.js's job, shared with the login form.
+ * This file is the table and the wording, nothing else.
  */
+
+import {
+  attachHtmlPatterns,
+  normaliseFields,
+  toHtmlPattern,
+  validateFields,
+} from './formRules.js';
+
+export { toHtmlPattern };
 
 /** Basic email shape check: something@something.something. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,10 +60,11 @@ const tooLong = (maxLength) => `Please keep this to ${maxLength} characters or f
  *   required: boolean,
  *   maxLength: number,
  *   pattern?: RegExp,
+ *   htmlPattern?: string,
  *   messages: { required?: string, invalid?: string, tooLong: string },
  * }>}
  */
-export const CONTACT_FIELDS = {
+export const CONTACT_FIELDS = attachHtmlPatterns({
   name: {
     required: true,
     maxLength: 100,
@@ -88,81 +101,24 @@ export const CONTACT_FIELDS = {
       tooLong: tooLong(2000),
     },
   },
-};
-
-// Derive each field's HTML `pattern` attribute from the regular expression the
-// server validates with, so the template never restates a rule. Done here
-// rather than in the template because an EJS view cannot import a module
-// without switching the whole render to async.
-for (const rules of Object.values(CONTACT_FIELDS)) {
-  if (rules.pattern) rules.htmlPattern = toHtmlPattern(rules.pattern);
-}
-
-/**
- * Render a rule's pattern for an HTML `pattern` attribute.
- *
- * Lets the browser enforce the same shape the server does, from the same
- * regular expression, instead of a second copy written by hand in the template.
- *
- * @param {RegExp} pattern - A field's pattern. Must carry no flags: the HTML
- *   attribute cannot express one, so a flagged pattern would mean the two
- *   validators disagree.
- * @returns {string} The pattern source without its anchors.
- */
-export function toHtmlPattern(pattern) {
-  // HTML anchors the attribute implicitly, so the anchors are redundant here
-  // and only make the attribute harder to read.
-  return pattern.source.replace(/^\^/, '').replace(/\$$/, '');
-}
+});
 
 /**
  * Reduce a request body to the form's own fields, trimmed.
  *
- * Only the four known fields survive: `req.body` is whatever the client chose
- * to send, and passing it onward wholesale is how an unexpected key ends up
- * somewhere it was never meant to reach.
- *
  * @param {Record<string, unknown>} body - Parsed request body.
  * @returns {{ name: string, email: string, orderNumber: string, message: string }} Trimmed values, missing fields as empty strings.
  */
-export function normaliseContact(body = {}) {
-  const values = {};
-  for (const field of Object.keys(CONTACT_FIELDS)) {
-    values[field] = String(body[field] ?? '').trim();
-  }
-  return values;
+export function normaliseContact(body) {
+  return normaliseFields(CONTACT_FIELDS, body);
 }
 
 /**
  * Validate normalised contact values.
  *
- * Each field stops at its first failure, checked in the order a person would
- * want to hear about them: whether it is there, whether it is a sane length,
- * and only then whether it is well formed. Reporting "that address looks
- * invalid" about a 300-character string sends the reader hunting for a typo
- * that is not the problem.
- *
  * @param {{ name: string, email: string, orderNumber: string, message: string }} values - Trimmed input, as returned by `normaliseContact`.
  * @returns {Record<string, string>} Field name to error message; empty when everything passes.
  */
 export function validateContact(values) {
-  const errors = {};
-
-  for (const [field, rules] of Object.entries(CONTACT_FIELDS)) {
-    const value = (values[field] ?? '').trim();
-
-    if (!value) {
-      if (rules.required) errors[field] = rules.messages.required;
-      continue;
-    }
-    if (value.length > rules.maxLength) {
-      errors[field] = rules.messages.tooLong;
-      continue;
-    }
-    if (rules.pattern && !rules.pattern.test(value)) {
-      errors[field] = rules.messages.invalid;
-    }
-  }
-
-  return errors;
+  return validateFields(CONTACT_FIELDS, values);
 }

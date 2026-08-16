@@ -1,28 +1,30 @@
-<%# One labelled field of the contact form: label, control, error line.
+<%# One labelled field of a validated form: label, control, error line. Used by
+    the contact form and the login/sign-up form.
 
     This is the seam between the server and the browser. The control carries its
     rules as native HTML attributes and its messages as `data-error-*`, so
-    public/js/contact-form.js can report a problem without holding a copy of any
-    message. Adding a rule in lib/contactValidation.js means adding it here too,
-    or the browser will stay silent about it while the server rejects.
+    public/js/form-validation.js can report a problem without holding a copy of
+    any message. A rule added to a table in lib/ must be rendered here too, or
+    the browser stays silent about it while the server rejects.
 
     The error line is always rendered, even when empty: the script fills it in
     place rather than creating nodes, so `aria-describedby` can point at it from
     the first paint and does not have to be wired up later.
 
     Expected locals:
-      field       — the name attribute, and the key into CONTACT_FIELDS
+      field       — the name attribute, and the key into the rule table
       label       — visible label text
-      rules       — that field's entry from CONTACT_FIELDS
+      rules       — that field's entry from the rule table
       value       — what to show in the control
       error       — server-side error message, or undefined
-      type        — 'text', 'email' or 'textarea'
+      type        — an <input> type, or 'textarea'
       placeholder — placeholder text
-      rows        — textarea rows; ignored for inputs %>
+      rows        — textarea rows; ignored for inputs
+      autocomplete — optional autocomplete token %>
 <%
   const control = type === 'textarea' ? 'textarea' : 'input';
   // Written out as whole class names: Tailwind cannot see a class built by
-  // concatenation, and contact-form.js swaps between exactly these two.
+  // concatenation, and form-validation.js swaps between exactly these two.
   const borderClass = error ? 'border-red-400' : 'border-line-strong';
 %>
 <div>
@@ -35,12 +37,18 @@
     name="<%= field %>"
     <% if (control === 'input') { %>type="<%= type %>" value="<%= value %>"<% } %>
     <% if (control === 'textarea') { %>rows="<%= rows %>"<% } %>
+    <% if (typeof autocomplete !== 'undefined' && autocomplete) { %>autocomplete="<%= autocomplete %>"<% } %>
     placeholder="<%= placeholder %>"
     maxlength="<%= rules.maxLength %>"
+    <% if (rules.minLength) { %>minlength="<%= rules.minLength %>"<% } %>
     <% if (rules.htmlPattern) { %>pattern="<%= rules.htmlPattern %>"<% } %>
     <% if (rules.required) { %>required<% } %>
+    <%# Marks the controls the script must not trim, matching the server: a
+        password may legitimately begin or end with a space. %>
+    <% if (rules.preserveWhitespace) { %>data-preserve-whitespace<% } %>
     <% if (rules.messages.required) { %>data-error-required="<%= rules.messages.required %>"<% } %>
     <% if (rules.messages.invalid) { %>data-error-invalid="<%= rules.messages.invalid %>"<% } %>
+    <% if (rules.messages.tooShort) { %>data-error-too-short="<%= rules.messages.tooShort %>"<% } %>
     data-error-too-long="<%= rules.messages.tooLong %>"
     <% if (error) { %>aria-invalid="true"<% } %>
     aria-describedby="<%= field %>-error"

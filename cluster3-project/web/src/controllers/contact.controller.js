@@ -34,7 +34,7 @@ const CONTACT_STYLES = ['https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'];
 const CONTACT_SCRIPTS = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   '/js/contact-map.js',
-  '/js/contact-form.js',
+  '/js/form-validation.js',
 ];
 
 /** An untouched form. */

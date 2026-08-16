@@ -1,24 +1,20 @@
 /**
- * @file Inline validation for the contact form.
+ * @file Inline validation for any form that opts in with `data-validate`.
  *
- * A convenience, never a gate. `contact.controller.js` validates every
+ * A convenience, never a gate. The controller behind each form validates every
  * submission again with the same rules, because a POST can arrive from anywhere
  * and nothing here is reachable by the server. Removing this file costs the
  * reader a round trip and costs the site no safety at all.
  *
- * It holds no messages of its own. The template renders each field's wording
- * into `data-error-*` attributes from lib/contactValidation.js, and this script
- * reads them back out, so the sentence shown before submitting is the same
- * sentence the server would have sent afterwards.
- *
- * The rules likewise come from the markup: `required`, `maxlength`, `pattern`
- * and `type="email"` are enforced by the browser's own constraint validation,
- * and this file only decides which message that verdict deserves.
+ * It knows nothing about any particular form. The rules come from the markup —
+ * `required`, `maxlength`, `minlength`, `pattern` and `type="email"`, enforced
+ * by the browser's own constraint validation — and the wording comes from the
+ * `data-error-*` attributes that `components/shared/formField.ejs` renders out
+ * of the server's own rule tables. So the sentence shown before submitting is
+ * the same sentence the server would have sent afterwards, and adding a form
+ * means marking it `data-validate`, not editing this file.
  */
-(() => {
-  const form = document.querySelector('form[action="/contact"]');
-  if (!form) return;
-
+document.querySelectorAll('form[data-validate]').forEach((form) => {
   // Every control the template gave messages to. Fields without them are not
   // this script's business.
   const controls = [...form.querySelectorAll('[data-error-too-long]')];
@@ -38,12 +34,16 @@
    */
   const messageFor = (control) => {
     const { validity, dataset } = control;
-    const value = control.value.trim();
+    // Passwords are marked to keep their whitespace, matching the server: one
+    // may legitimately begin or end with a space, and trimming here would call
+    // a password of three spaces empty while the server accepted it.
+    const value = dataset.preserveWhitespace === '' ? control.value : control.value.trim();
 
     if (!value) return validity.valueMissing || control.required ? dataset.errorRequired ?? '' : '';
     // `validity.tooLong` only reports on a value the user did not type, since
     // maxlength blocks typing past the limit — a paste still gets here.
     if (value.length > Number(control.maxLength)) return dataset.errorTooLong ?? '';
+    if (control.minLength > 0 && value.length < control.minLength) return dataset.errorTooShort ?? '';
     if (validity.typeMismatch || validity.patternMismatch) return dataset.errorInvalid ?? '';
     return '';
   };
@@ -117,4 +117,4 @@
     invalid[0].focus();
     invalid[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
-})();
+});
