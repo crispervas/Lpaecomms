@@ -19,8 +19,13 @@
     { href: '/about', label: 'About' },
     { href: '/mashup', label: 'Mashups' },
     { href: '/contact', label: 'Contact us' },
-    { href: '/login', label: 'Login' },
   ];
+  // Login is deliberately not in navLinks: the mockup keeps the page links on
+  // the left and puts the account control on the right, beside the cart. It is
+  // rendered separately in both places below — the desktop cluster is
+  // `sm:flex`, so the collapsed menu needs its own copy or Login disappears on
+  // a phone.
+  const loginHref = '/login';
   // Home matches only "/"; other links match their path and anything below it.
   const isActive = (href) =>
     href === '/' ? currentPath === '/' : currentPath.startsWith(href);
@@ -67,6 +72,14 @@
         </svg>
         <span class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-semibold text-white">0</span>
       </span>
+
+      <%# Unlike the two controls beside it, this one goes somewhere: /login is
+          a real page, so it carries no "Coming soon" and stays in the tab
+          order. %>
+      <a href="<%= loginHref %>"
+        class="text-sm font-semibold <%= isActive(loginHref) ? 'border-b-2 border-accent pb-1 text-ink' : 'text-ink hover:text-accent' %>">
+        Login
+      </a>
     </div>
 
     <button type="button" id="nav-toggle" aria-controls="mobile-nav" aria-expanded="false"
@@ -86,6 +99,12 @@
           <%= link.label %>
         </a>
       <% }) %>
+
+      <%# Login again, because the cluster it joined on desktop is hidden here. %>
+      <a href="<%= loginHref %>"
+        class="block rounded-md px-3 py-2 text-sm <%= isActive(loginHref) ? 'bg-subtle font-medium text-ink' : 'font-semibold text-ink hover:bg-subtle' %>">
+        Login
+      </a>
     </div>
   </nav>
 </header>

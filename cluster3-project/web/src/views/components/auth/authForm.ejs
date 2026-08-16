@@ -1,0 +1,83 @@
+<%# The login / sign-up form.
+
+    One <form> serves both modes. The hidden `mode` field is what carries the
+    choice through a submission: the tabs are links, so without it a rejected
+    sign-up would come back rendered as the log in tab and throw away what was
+    typed. The controller resolves it through the same whitelist as the query
+    string, since it arrives from the client like any other field.
+
+    `novalidate` suppresses the browser's own bubbles so form-validation.js can
+    show the server's exact wording inline instead. With JavaScript off nothing
+    validates here and the POST is judged by the server, which is the only check
+    that ever counted.
+
+    Expected locals:
+      mode   — 'login' or 'signup'
+      fields — that mode's table from AUTH_FIELDS
+      values — what to put back in each control (never the password)
+      errors — field name to message, empty when there is nothing to report
+      notice — a sentence to show above the form, or null %>
+<%
+  const isSignup = mode === 'signup';
+  const layout = isSignup
+    ? [
+        { field: 'name', label: 'Full name', type: 'text', placeholder: 'Jordan Kim', autocomplete: 'name' },
+        { field: 'email', label: 'Email', type: 'email', placeholder: 'you@email.com', autocomplete: 'email' },
+        { field: 'password', label: 'Password', type: 'password', placeholder: '••••••••', autocomplete: 'new-password' },
+      ]
+    : [
+        { field: 'email', label: 'Email', type: 'email', placeholder: 'you@email.com', autocomplete: 'email' },
+        { field: 'password', label: 'Password', type: 'password', placeholder: '••••••••', autocomplete: 'current-password' },
+      ];
+%>
+<h1 class="font-display text-[28px] font-bold tracking-tight">
+  <%= isSignup ? 'Create your account' : 'Welcome back' %>
+</h1>
+<p class="mt-2 text-sm text-muted">
+  <%= isSignup
+    ? 'Join to save builds and track orders.'
+    : 'Log in to manage orders and Mashup builds.' %>
+</p>
+
+<% if (notice) { %>
+  <%# role="status": submitting moves focus nowhere, so without it a screen
+      reader user is given no sign anything happened. %>
+  <div role="status" class="mt-6 rounded-xl border border-accent/30 bg-tint p-4 text-sm text-ink">
+    <%= notice %>
+  </div>
+<% } %>
+
+<form method="post" action="/login" novalidate data-validate class="mt-8 flex flex-col gap-5">
+  <input type="hidden" name="mode" value="<%= mode %>" />
+
+  <% layout.forEach((item) => { %>
+    <%- include('../shared/formField', {
+      field: item.field,
+      label: item.label,
+      rules: fields[item.field],
+      value: values[item.field] || '',
+      error: errors[item.field],
+      type: item.type,
+      placeholder: item.placeholder,
+      autocomplete: item.autocomplete,
+      rows: null,
+    }) %>
+  <% }) %>
+
+  <button type="submit"
+    class="mt-1 w-full rounded-[10px] bg-ink px-4 py-4 text-[15px] font-semibold text-white hover:bg-black">
+    <%= isSignup ? 'Create account' : 'Log in' %>
+  </button>
+</form>
+
+<%# The mockup closes with the same switch as the tabs above. Kept because it
+    is where the eye lands after the button, and it is the same link. %>
+<p class="mt-6 text-center text-[13px] text-muted">
+  <% if (isSignup) { %>
+    Already have an account?
+    <a href="/login" class="font-semibold text-accent hover:text-accent-strong">Log in</a>
+  <% } else { %>
+    Don't have an account?
+    <a href="/login?tab=signup" class="font-semibold text-accent hover:text-accent-strong">Sign up</a>
+  <% } %>
+</p>

@@ -82,7 +82,9 @@ web/
 │   ├── productDetail.view.test.js # Product page: gallery, breadcrumb, 404, feed failure
 │   ├── mashup.view.test.js        # Mashups page: card layout, data sources, script element ids
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
-│   └── contact.view.test.js       # Contact page: layout, field attributes, rejection, ARIA wiring
+│   ├── contact.view.test.js       # Contact page: layout, field attributes, rejection, ARIA wiring
+│   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
+│   └── login.view.test.js         # Login page: both tabs, mode surviving a POST, password never echoed
 └── src/                  # Application code — see section 3
 ```
 
@@ -138,18 +140,37 @@ build and the state would render unstyled.
 > types. `tests/mashup.view.test.js` pins the ids; the class strings have to be
 > kept in step by hand, which is why both files say so at the point of use.
 
-> **The contact form is validated twice, from one set of rules.**
-> `lib/contactValidation.js` owns what the form accepts. The controller
-> validates with it; `components/contact/formField.ejs` renders each rule as a
-> native HTML attribute (`required`, `maxlength`, `pattern`) and each message
-> into a `data-error-*` attribute; `public/js/contact-form.js` reads those
-> attributes back out of the DOM. **The browser therefore holds no copy of any
-> message or rule** — a new rule is added in one file and reaches all three.
-> Two consequences worth keeping: the client script is a convenience and never
-> a gate, because a POST can arrive from anywhere and the server re-checks
-> everything; and **a field's pattern must carry no regex flag**, since the HTML
+> **Forms are validated twice, from one set of rules.** A form declares itself
+> as a table of fields — `lib/contactValidation.js` for Contact,
+> `lib/authValidation.js` for the login page — and `lib/formRules.js` applies
+> it. The controller validates with the table;
+> `components/shared/formField.ejs` renders each rule as a native HTML attribute
+> (`required`, `maxlength`, `minlength`, `pattern`) and each message into a
+> `data-error-*` attribute; `public/js/form-validation.js` reads those
+> attributes back out of the DOM for any form marked `data-validate`. **The
+> browser therefore holds no copy of any rule or message** — a new rule is added
+> in one file and reaches all three, and a new form is a new table rather than a
+> second copy of the script.
+>
+> Three things worth keeping in mind. The client script is a convenience and
+> never a gate, because a POST can arrive from anywhere and the server re-checks
+> everything. **A field's pattern must carry no regex flag**, since the HTML
 > `pattern` attribute cannot express one and a `/i` would have the two
-> validators disagree about the same order number. A test pins that invariant.
+> validators disagree about the same input; a test pins that invariant. And a
+> field marked `preserveWhitespace` — passwords — must not be trimmed on either
+> side, or a password of spaces is empty to one validator and valid to the
+> other.
+
+> **The login page carries two modes on one URL.** `?tab=signup` selects
+> sign-up, and the tabs are **links, not buttons**, so the page works with no
+> JavaScript. That is also why the form posts a hidden `mode` field: a rejected
+> sign-up has to come back rendered as sign-up, and a client-only tab would drop
+> the reader onto Log in and discard what they typed. Both `?tab=` and the
+> posted `mode` go through the same whitelist, since both arrive from the
+> client. The controller strips the password out of every render — echoing it
+> back would write it into the browser cache, any proxy log, and view-source.
+> None of this authenticates anyone: there is no user model yet, and every
+> well-formed submission says so.
 
 ---
 
@@ -199,7 +220,9 @@ src/
 │   └── category.model.js  # Catalogue categories, empty ones filtered out
 ├── lib/                  # Shared infrastructure helpers
 │   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
-│   └── contactValidation.js # Contact form rules, shared by controller, view and browser
+│   ├── formRules.js      # Applies a field table: normalise, validate, derive HTML patterns
+│   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
+│   └── authValidation.js # Login and sign-up rules, keyed by mode
 ├── views/                # VIEW: server-rendered EJS templates
 │   ├── layouts/
 │   │   └── base.ejs      # HTML document shell; wraps every page
@@ -230,10 +253,14 @@ src/
 │   │   ├── contact/
 │   │   │   ├── contactChannels.ejs # Email / phone / studio cards (static markup)
 │   │   │   ├── contactForm.ejs     # The form card: success notice and the four fields
-│   │   │   ├── contactWorkshop.ejs # "Visit the workshop": map, address, hours, directions
-│   │   │   └── formField.ejs       # One label + control + error line, driven by CONTACT_FIELDS
+│   │   │   └── contactWorkshop.ejs # "Visit the workshop": map, address, hours, directions
+│   │   ├── auth/
+│   │   │   ├── authPanel.ejs  # Tinted left half: illustration and the account promise
+│   │   │   ├── authTabs.ejs   # Log in / Sign up switch, rendered as links
+│   │   │   └── authForm.ejs   # The form itself, both modes, with the hidden mode field
 │   │   └── shared/           # Fragments no single page owns
-│   │       └── productCard.ejs # One product card, used by home, catalog and product
+│   │       ├── productCard.ejs # One product card, used by home, catalog and product
+│   │       └── formField.ejs   # One label + control + error line, driven by a rule table
 │   └── pages/            # Page bodies, injected into the layout
 │       ├── home.ejs
 │       ├── about.ejs
@@ -251,7 +278,7 @@ src/
     └── js/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
-        ├── contact-form.js # Inline contact form validation (a convenience; the server still decides)
+        ├── form-validation.js # Inline validation for any form[data-validate] (the server still decides)
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
         ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
         └── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)

@@ -35,8 +35,14 @@
   </head>
   <body class="flex min-h-screen flex-col bg-canvas font-sans text-ink">
     <%- include('../partials/header') %>
-    <%# pt-20 clears the fixed header; flex-1 pushes the footer to the bottom. %>
-    <main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-10 pt-20">
+    <%# pt-20 clears the fixed header; flex-1 pushes the footer to the bottom.
+
+        The optional `bleed` local drops the shared container so a page can run
+        edge to edge — the login page's split screen, which the mockup draws
+        filling the viewport. Every page that omits it renders exactly as
+        before, and chrome.view.test.js pins both containers so a change here
+        cannot quietly reflow the rest of the site. %>
+    <main class="<%= typeof bleed !== 'undefined' && bleed ? 'flex-1 pt-20' : 'mx-auto w-full max-w-5xl flex-1 px-4 pb-10 pt-20' %>">
       <%- include('../pages/' + page) %>
     </main>
     <%- include('../partials/footer') %>

@@ -1,0 +1,24 @@
+<%# The Log in / Sign up switch, as the mockup's segmented control.
+
+    Rendered as links rather than buttons, and that is the whole point: the
+    server decides the mode, so the switch works with no JavaScript at all. A
+    pair of buttons would need a script to do anything, and without one the
+    sign-up form would be unreachable.
+
+    Expected locals:
+      mode — 'login' or 'signup', the tab currently shown %>
+<%
+  const tabs = [
+    { key: 'login', href: '/login', label: 'Log in' },
+    { key: 'signup', href: '/login?tab=signup', label: 'Sign up' },
+  ];
+%>
+<div class="mb-9 flex gap-1 rounded-[10px] bg-subtle p-1">
+  <% tabs.forEach((tab) => { %>
+    <a href="<%= tab.href %>"
+      <% if (tab.key === mode) { %>aria-current="page"<% } %>
+      class="flex-1 rounded-lg py-3 text-center text-sm font-semibold <%= tab.key === mode ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink' %>">
+      <%= tab.label %>
+    </a>
+  <% }) %>
+</div>

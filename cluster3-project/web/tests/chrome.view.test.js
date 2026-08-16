@@ -70,3 +70,50 @@ test('the newsletter is inert and submits nowhere', async () => {
   assert.doesNotMatch(response.text, /<form/);
   assert.match(response.text, /<input[^>]*type="email"[^>]*disabled/);
 });
+
+test('Login sits with the cart, not among the page links', async () => {
+  const response = await request(createApp()).get('/about');
+
+  const nav = response.text.match(/<nav class="hidden gap-8[\s\S]*?<\/nav>/)[0];
+
+  // The mockup puts the page links on the left and the account control on the
+  // right, beside the cart.
+  assert.doesNotMatch(nav, /href="\/login"/);
+  assert.match(response.text, /href="\/login"/);
+});
+
+test('Login is still reachable on a phone', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // The cart cluster Login now sits in is `hidden … sm:flex`, so moving Login
+  // there without adding it back to the collapsed menu would take it off small
+  // screens entirely.
+  const mobileNav = response.text.match(/<nav id="mobile-nav"[\s\S]*?<\/nav>/)[0];
+
+  assert.match(mobileNav, /href="\/login"/);
+});
+
+test('Login is a real link, unlike the search and the cart', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // /login exists and is worth visiting, so it must not pick up the
+  // "Coming soon" treatment its two neighbours carry.
+  const link = response.text.match(/<a[^>]*href="\/login"[^>]*>/)[0];
+
+  assert.doesNotMatch(link, /disabled|aria-hidden|Coming soon/);
+});
+
+test('the page container is unchanged for ordinary pages', async () => {
+  const response = await request(createApp()).get('/about');
+
+  // The login page opts out of the shared container to run edge to edge. That
+  // switch lives in the base layout, so it can reach every other page.
+  assert.match(response.text, /<main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-10 pt-20">/);
+});
+
+test('the login page opts out of that container', async () => {
+  const response = await request(createApp()).get('/login');
+
+  assert.doesNotMatch(response.text, /<main class="mx-auto w-full max-w-5xl/);
+  assert.match(response.text, /<main class="flex-1 pt-20">/);
+});
