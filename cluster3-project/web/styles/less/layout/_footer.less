@@ -1,0 +1,110 @@
+/*
+ * The site footer: brand blurb, three link columns, and the newsletter block.
+ *
+ * Most of what looks like a link here is a <span>. Those destinations do not
+ * exist, and the markup must not imply otherwise — see the template's comment.
+ */
+
+.site-footer {
+  background-color: @surface;
+  border-top: 1px solid @line;
+}
+
+.site-footer__inner {
+  max-width: @container-width;
+  margin: 0 auto;
+  padding: 4rem 1rem 2rem;
+}
+
+.site-footer__columns {
+  display: grid;
+  gap: 2.5rem;
+  .sm({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+  .lg({ grid-template-columns: repeat(4, minmax(0, 1fr)); });
+}
+
+.site-footer__brand {
+  font-family: @font-display;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  color: @ink;
+}
+
+.site-footer__blurb {
+  margin-top: .75rem;
+  max-width: 280px;
+  font-size: .875rem;
+  // Relaxed leading, not the 1.25rem that would come with this size.
+  line-height: 1.625;
+  color: @muted;
+}
+
+.footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+.footer-column__heading {
+  margin-bottom: .25rem;
+  font-weight: 600;
+  color: @ink;
+}
+
+.footer-column__link:hover { color: @ink; }
+
+.newsletter__heading {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @ink;
+}
+
+.newsletter__controls {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+}
+
+.newsletter__input {
+  width: 100%;
+  padding: .625rem .875rem;
+  // Deliberately no background: the control is disabled, and the browser's own
+  // greyed fill is what signals that. Painting it @surface would make a field
+  // nobody can type in look ready for input.
+  border: 1px solid @line;
+  border-radius: @radius-lg;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @ink;
+
+  &::placeholder { color: @muted; }
+}
+
+.newsletter__button {
+  padding: .625rem 1rem;
+  background-color: @ink;
+  border-radius: @radius-lg;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @white;
+}
+
+.site-footer__legal {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid @line;
+  font-size: .75rem;
+  line-height: 1rem;
+  color: @muted;
+
+  .sm({ flex-direction: row; justify-content: space-between; });
+}
