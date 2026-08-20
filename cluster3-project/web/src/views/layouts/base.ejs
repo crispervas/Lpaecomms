@@ -27,6 +27,12 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/css/tailwind.css" />
+    <%# The hand-authored stylesheet, compiled from styles/less. Loaded after
+        Tailwind for the duration of the migration so a page that has been
+        ported wins over the utilities it used to carry, and a page that has not
+        renders exactly as before. Tailwind and this link go away together in
+        the final step of the migration. %>
+    <link rel="stylesheet" href="/css/main.css" />
     <%# Optional per-page stylesheets, injected through the `styles` local
         (e.g. Leaflet on the Contact page). %>
     <% (typeof styles !== 'undefined' ? styles : []).forEach((href) => { %>

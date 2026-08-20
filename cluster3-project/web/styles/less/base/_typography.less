@@ -1,0 +1,23 @@
+/*
+ * Page-level typography.
+ *
+ * Sets the family, colour, and ground the whole document sits on. Component
+ * type sizes live with their components; only what every page shares is here.
+ */
+
+html {
+  font-family: @font-sans;
+}
+
+body {
+  background-color: @canvas;
+  color: @ink;
+  font-family: @font-sans;
+}
+
+// Every control in the design shows its placeholder in the muted tone. Set once
+// here rather than repeated on each control.
+::placeholder {
+  opacity: 1;
+  color: @muted;
+}

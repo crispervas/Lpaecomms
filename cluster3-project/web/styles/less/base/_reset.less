@@ -1,0 +1,133 @@
+/*
+ * Document baseline, replacing Tailwind's preflight.
+ *
+ * This is not a matter of taste. The templates were written on top of these
+ * rules and silently depend on them: headings and paragraphs carry no margin of
+ * their own, lists carry no bullets or padding, form controls inherit the page
+ * font, and every box measures border-box. Dropping any of it shifts pages in
+ * ways that look like dozens of unrelated bugs.
+ *
+ * Transcribed from styles/reference/tailwind-reference.css, restricted to the
+ * elements these templates actually use.
+ */
+
+// The default border colour is the project's line token rather than Tailwind's
+// grey. Every border in the markup names its own colour, so this is only ever a
+// fallback — but when it is reached, it should be a project colour.
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border: 0 solid @line;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  line-height: inherit;
+}
+
+// The templates size and weight every heading themselves. Left at browser
+// defaults, an <h1> would arrive 2em and bold before any rule of ours applies.
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+blockquote, dd, dl, figure,
+h1, h2, h3, h4, h5, h6,
+hr, p, pre {
+  margin: 0;
+}
+
+// Every list in these templates is a structural grouping — the breadcrumb, the
+// catalog filter pills, the footer columns — never a bulleted list.
+menu, ol, ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+b, strong { font-weight: bolder; }
+
+code, kbd, pre, samp {
+  font-family: @font-mono;
+  font-size: 1em;
+}
+
+// Form controls do not inherit the page font on their own; without this the
+// header search field and every form control fall back to the system UI font.
+button, input, optgroup, select, textarea {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+button, select { text-transform: none; }
+
+button,
+input:where([type="button"]),
+input:where([type="reset"]),
+input:where([type="submit"]) {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+}
+
+// The header's search field. Without this Safari draws its own rounded chrome
+// over the pill the header already provides.
+[type="search"] {
+  -webkit-appearance: textfield;
+  outline-offset: -2px;
+}
+
+::-webkit-search-decoration { -webkit-appearance: none; }
+
+::-webkit-inner-spin-button,
+::-webkit-outer-spin-button { height: auto; }
+
+:-moz-focusring { outline: auto; }
+
+// Firefox draws its own red glow on a control it considers invalid. The forms
+// report their own errors inline, in the server's wording; two contradictory
+// signals on one field is worse than either alone.
+:-moz-ui-invalid { box-shadow: none; }
+
+fieldset { margin: 0; padding: 0; }
+legend { padding: 0; }
+
+textarea { resize: vertical; }
+
+[role="button"], button { cursor: pointer; }
+:disabled { cursor: default; }
+
+// Without display:block these sit on the text baseline and leave a few pixels
+// of descender space under every icon, image, and the About page's iframe.
+audio, canvas, embed, iframe, img, object, svg, video {
+  display: block;
+  vertical-align: middle;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+[hidden]:where(:not([hidden="until-found"])) { display: none; }
