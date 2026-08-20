@@ -1,0 +1,8 @@
+{
+  "less.compile": {
+    "compress": false,
+    "sourceMap": true,
+    "sourceMapURL": "main.css.map",
+    "out": "../../src/public/css/main.css"
+  }
+}

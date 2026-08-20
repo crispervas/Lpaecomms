@@ -32,6 +32,11 @@ out/
 # Keep the source CSS; ignore the compiled bundle.
 cluster3-project/web/src/public/css/tailwind.css
 
+# LESS: generated stylesheet compiled into the Express static assets.
+# Keep the source LESS; ignore the compiled bundle and its source map.
+cluster3-project/web/src/public/css/main.css
+cluster3-project/web/src/public/css/main.css.map
+
 # ---------------------------------------------------------------------------
 # Web (Express 5 + EJS + Tailwind)
 # ---------------------------------------------------------------------------
