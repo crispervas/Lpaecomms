@@ -1,0 +1,82 @@
+/*
+ * Design tokens: the single place any colour, family, radius, or shadow used by
+ * this stylesheet is defined.
+ *
+ * The palette is named by role rather than by hue, so a brand change is one
+ * edit here rather than a sweep through every rule.
+ */
+
+// ── Surfaces and text ──────────────────────────────────────────────────────
+@canvas:        #FAFAF8;
+@surface:       #FFFFFF;
+@subtle:        #F1F0EC;
+@ink:           #14161A;
+
+// The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
+// against the canvas and fails WCAG AA, so secondary text uses this instead
+// (4.76:1) — a difference barely visible next to the mockup. Do not "correct"
+// this back to the mockup value.
+@muted:         #6B6F76;
+
+@white:         #FFFFFF;
+@black:         #000000;
+
+// ── Lines ──────────────────────────────────────────────────────────────────
+@line:          #E7E5DF;
+@line-strong:   #D8D6CF;
+
+// ── Accent ─────────────────────────────────────────────────────────────────
+@accent:        #2F5EFB;
+@accent-strong: #1F45D6;
+@tint:          #EEF1FF;
+// The notice panels draw a 30% accent border. Written as an explicit rgba
+// because there is no opacity modifier syntax to lean on any more.
+@accent-30:     rgba(47, 94, 251, .3);
+
+// ── Feedback ───────────────────────────────────────────────────────────────
+// Absent from the old theme: the templates reached into Tailwind's default
+// palette for these, which stops existing when Tailwind does.
+@danger-border:   #f87171;
+@danger-text:     #dc2626;
+@warning-bg:      #fffbeb;
+@warning-border:  #fde68a;
+@warning-text:    #92400e;
+@notice-text:     #b45309;
+@success-text:    #047857;
+@error-text:      #b91c1c;
+
+// Password strength meter, weakest to strongest.
+@strength-1:      #ef4444;
+@strength-1-text: #b91c1c;
+@strength-2:      #f59e0b;
+@strength-2-text: #b45309;
+@strength-3:      #84cc16;
+@strength-3-text: #4d7c0f;
+@strength-4:      #10b981;
+@strength-4-text: #047857;
+
+// ── Typography ─────────────────────────────────────────────────────────────
+@font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+@font-sans:    "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+@font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+               "Liberation Mono", "Courier New", monospace;
+
+// ── Radii ──────────────────────────────────────────────────────────────────
+@radius-sm:   .25rem;
+@radius-md:   .375rem;
+@radius-lg:   .5rem;
+@radius-xl:   .75rem;
+@radius-2xl:  1rem;
+@radius-3xl:  1.5rem;
+@radius-10:   10px;
+@radius-20:   20px;
+@radius-full: 9999px;
+
+// ── Elevation ──────────────────────────────────────────────────────────────
+@shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, .05);
+
+// ── Layout ─────────────────────────────────────────────────────────────────
+// The header is fixed, so its height is subtracted or cleared in several
+// places. One value keeps those in agreement.
+@header-height:   5rem;
+@container-width: 64rem;

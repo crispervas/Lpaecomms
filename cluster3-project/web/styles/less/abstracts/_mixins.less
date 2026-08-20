@@ -1,0 +1,39 @@
+/*
+ * Mixins shared across components.
+ *
+ * Kept to patterns that genuinely repeat. A mixin used once is a rule in the
+ * wrong file.
+ */
+
+// Hides an element from sight while leaving it available to a screen reader.
+// Replaces Tailwind's .sr-only; the declarations are its compiled output.
+.visually-hidden() {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// The white panel the mockup uses for every card: category tiles, contact
+// channels, mashup cards, the contact form.
+.card(@radius: @radius-2xl) {
+  background-color: @surface;
+  border: 1px solid @line;
+  border-radius: @radius;
+}
+
+// Strips the browser's default button chrome. The preflight already does most
+// of this globally; this covers buttons that must look like plain text.
+.button-reset() {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

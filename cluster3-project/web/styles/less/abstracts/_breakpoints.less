@@ -1,0 +1,20 @@
+/*
+ * Responsive breakpoints, as detached-ruleset mixins.
+ *
+ * Min-width only, matching the stylesheet these replace: the design has no
+ * max-width query anywhere, so a rule is written for the small screen first and
+ * widened from there.
+ *
+ * Usage:
+ *   .thing {
+ *     display: block;
+ *     .lg({ display: flex; });
+ *   }
+ */
+@screen-sm: 640px;
+@screen-md: 768px;
+@screen-lg: 1024px;
+
+.sm(@rules) { @media (min-width: @screen-sm) { @rules(); } }
+.md(@rules) { @media (min-width: @screen-md) { @rules(); } }
+.lg(@rules) { @media (min-width: @screen-lg) { @rules(); } }
