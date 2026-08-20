@@ -1,0 +1,216 @@
+/*
+ * The fixed site header: brand, primary navigation, and the storefront controls.
+ *
+ * The desktop cluster (search, cart, login) and the primary nav are both hidden
+ * below the `sm` breakpoint, where the collapsed menu takes over. That is why
+ * the Login link is rendered twice in the template — the copy that joins the
+ * desktop cluster is not displayed on a phone.
+ */
+
+.site-header {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 40;
+  background-color: @surface;
+  border-bottom: 1px solid @line;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  height: @header-height;
+  max-width: @container-width;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+// ── Brand ──────────────────────────────────────────────────────────────────
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand__name {
+  font-family: @font-display;
+  // The paired line-height matters: .brand sets line-height 1 for the two-line
+  // lockup, and without this the name would inherit it and lose 8px of height.
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: @ink;
+}
+
+.brand__tag {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .2em;
+  color: @muted;
+}
+
+// ── Primary navigation ─────────────────────────────────────────────────────
+.site-nav {
+  display: none;
+  gap: 2rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  .sm({ display: flex; });
+}
+
+.site-nav__link {
+  color: @muted;
+
+  &:hover { color: @ink; }
+
+  &.is-active {
+    color: @ink;
+    font-weight: 500;
+    padding-bottom: .25rem;
+    border-bottom: 2px solid @accent;
+  }
+}
+
+// ── Storefront controls ────────────────────────────────────────────────────
+.site-tools {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+  .sm({ display: flex; });
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 14rem;
+  padding: .625rem 1rem;
+  background-color: @subtle;
+  border-radius: @radius-full;
+}
+
+.search__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: @muted;
+}
+
+.search__input {
+  width: 100%;
+  background-color: transparent;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @ink;
+
+  &::placeholder { color: @muted; }
+  &:focus { outline: 2px solid transparent; outline-offset: 2px; }
+}
+
+.cart {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: @surface;
+  border: 1px solid @line;
+  border-radius: @radius-full;
+  color: @ink;
+
+  svg { width: 18px; height: 18px; }
+}
+
+.cart__count {
+  position: absolute;
+  top: -.25rem;
+  right: -.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  background-color: @accent;
+  border-radius: @radius-full;
+  font-size: 9px;
+  font-weight: 600;
+  color: @white;
+}
+
+.site-tools__login {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @ink;
+
+  &:hover { color: @accent; }
+
+  &.is-active {
+    padding-bottom: .25rem;
+    border-bottom: 2px solid @accent;
+  }
+}
+
+// ── Collapsed menu ─────────────────────────────────────────────────────────
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: .5rem;
+  border-radius: @radius-md;
+  color: @ink;
+
+  &:hover { background-color: @subtle; }
+
+  svg { width: 1.5rem; height: 1.5rem; }
+
+  .sm({ display: none; });
+}
+
+.mobile-nav {
+  display: none;
+  border-top: 1px solid @line;
+
+  // Opened by nav.js. The desktop nav takes over at `sm`, so the collapsed menu
+  // must stay hidden there even when it was left open on a narrower viewport.
+  &.is-open { display: block; }
+
+  .sm({
+    display: none;
+    &.is-open { display: none; }
+  });
+}
+
+.mobile-nav__list {
+  padding: .75rem 1rem;
+
+  > * + * { margin-top: .25rem; }
+}
+
+.mobile-nav__link {
+  display: block;
+  padding: .5rem .75rem;
+  border-radius: @radius-md;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+
+  &:hover { background-color: @subtle; }
+
+  &.is-active {
+    background-color: @subtle;
+    font-weight: 500;
+    color: @ink;
+  }
+}
+
+// The collapsed Login keeps its weight even when it is not the current page,
+// matching the desktop cluster it stands in for.
+.mobile-nav__link--login {
+  font-weight: 600;
+  color: @ink;
+}

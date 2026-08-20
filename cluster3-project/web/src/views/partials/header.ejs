@@ -30,79 +30,76 @@
   const isActive = (href) =>
     href === '/' ? currentPath === '/' : currentPath.startsWith(href);
 %>
-<header class="fixed inset-x-0 top-0 z-40 border-b border-line bg-surface">
-  <div class="mx-auto flex h-20 max-w-5xl items-center justify-between gap-6 px-4">
-    <a href="/" class="flex flex-col leading-none">
-      <span class="font-display text-xl font-bold tracking-tight text-ink">LPA</span>
-      <span class="text-[10px] font-medium tracking-[0.2em] text-muted">ECOMMS</span>
+<header class="site-header">
+  <div class="site-header__inner">
+    <a href="/" class="brand">
+      <span class="brand__name">LPA</span>
+      <span class="brand__tag">ECOMMS</span>
     </a>
 
-    <nav class="hidden gap-8 text-sm sm:flex">
+    <nav class="site-nav">
       <% navLinks.forEach((link) => { %>
         <a href="<%= link.href %>"
-          class="<%= isActive(link.href) ? 'border-b-2 border-accent pb-1 font-medium text-ink' : 'text-muted hover:text-ink' %>">
+          class="site-nav__link<%= isActive(link.href) ? ' is-active' : '' %>">
           <%= link.label %>
         </a>
       <% }) %>
     </nav>
 
-    <div class="hidden items-center gap-4 sm:flex">
-      <div class="flex w-56 items-center gap-2 rounded-full bg-subtle px-4 py-2.5">
-        <svg class="h-4 w-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <div class="site-tools">
+      <div class="search">
+        <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" aria-hidden="true">
           <circle cx="11" cy="11" r="7"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <input type="search" placeholder="Search peripherals..." aria-label="Search products" disabled
-          title="Coming soon"
-          class="w-full bg-transparent text-sm text-ink placeholder:text-muted focus:outline-none" />
+          title="Coming soon" class="search__input" />
       </div>
 
       <%# aria-disabled is only honoured on elements with a widget role; a plain
           <span> has none, so it would be announced with its bare "0" and no
           context. aria-hidden removes the whole cart from assistive technology
           instead, since it conveys nothing actionable yet. %>
-      <span aria-hidden="true" title="Coming soon"
-        class="relative flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink">
-        <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          aria-hidden="true">
+      <span aria-hidden="true" title="Coming soon" class="cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M6 6h15l-1.5 9h-12z"></path>
           <circle cx="9" cy="20" r="1"></circle>
           <circle cx="18" cy="20" r="1"></circle>
         </svg>
-        <span class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-semibold text-white">0</span>
+        <span class="cart__count">0</span>
       </span>
 
       <%# Unlike the two controls beside it, this one goes somewhere: /login is
           a real page, so it carries no "Coming soon" and stays in the tab
           order. %>
       <a href="<%= loginHref %>"
-        class="text-sm font-semibold <%= isActive(loginHref) ? 'border-b-2 border-accent pb-1 text-ink' : 'text-ink hover:text-accent' %>">
+        class="site-tools__login<%= isActive(loginHref) ? ' is-active' : '' %>">
         Login
       </a>
     </div>
 
     <button type="button" id="nav-toggle" aria-controls="mobile-nav" aria-expanded="false"
-      class="inline-flex items-center rounded-md p-2 text-ink hover:bg-subtle sm:hidden">
-      <span class="sr-only">Toggle navigation</span>
-      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      class="nav-toggle">
+      <span class="u-visually-hidden">Toggle navigation</span>
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
   </div>
 
-  <nav id="mobile-nav" class="hidden border-t border-line sm:hidden">
-    <div class="space-y-1 px-4 py-3">
+  <nav id="mobile-nav" class="mobile-nav">
+    <div class="mobile-nav__list">
       <% navLinks.forEach((link) => { %>
         <a href="<%= link.href %>"
-          class="block rounded-md px-3 py-2 text-sm <%= isActive(link.href) ? 'bg-subtle font-medium text-ink' : 'text-muted hover:bg-subtle' %>">
+          class="mobile-nav__link<%= isActive(link.href) ? ' is-active' : '' %>">
           <%= link.label %>
         </a>
       <% }) %>
 
       <%# Login again, because the cluster it joined on desktop is hidden here. %>
       <a href="<%= loginHref %>"
-        class="block rounded-md px-3 py-2 text-sm <%= isActive(loginHref) ? 'bg-subtle font-medium text-ink' : 'font-semibold text-ink hover:bg-subtle' %>">
+        class="mobile-nav__link mobile-nav__link--login<%= isActive(loginHref) ? ' is-active' : '' %>">
         Login
       </a>
     </div>
