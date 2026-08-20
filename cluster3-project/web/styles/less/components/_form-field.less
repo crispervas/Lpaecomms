@@ -1,0 +1,57 @@
+/*
+ * One labelled field of a validated form: label, control, error line.
+ *
+ * The error line is always in the DOM, hidden with .u-hidden until there is
+ * something to say, so aria-describedby can point at it from the first paint.
+ * public/js/form-validation.js toggles that class and .has-error on the
+ * control; it knows no colours.
+ */
+
+.form-field__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: @ink;
+}
+
+.form-field__optional {
+  font-weight: 400;
+  color: @muted;
+}
+
+// No `display` here on purpose: a control is inline-block by default, and
+// forcing it to block changes how it sits even though `width: 100%` hides that
+// on every current form.
+.form-field__control {
+  width: 100%;
+  margin-top: .5rem;
+  padding: .875rem 1rem;
+  background-color: @surface;
+  border: 1px solid @line-strong;
+  border-radius: @radius-10;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @ink;
+
+  &::placeholder { color: @muted; }
+
+  &.has-error { border-color: @danger-border; }
+
+  // Deliberately after .has-error, and on equal specificity, so focus wins: a
+  // field being corrected shows the accent, not the error colour it is about to
+  // lose. The stylesheet this replaces ordered its focus variant last for the
+  // same effect.
+  &:focus {
+    border-color: @accent;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+}
+
+textarea.form-field__control { resize: vertical; }
+
+.form-field__error {
+  margin-top: .375rem;
+  font-size: 13px;
+  color: @danger-text;
+}

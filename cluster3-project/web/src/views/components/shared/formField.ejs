@@ -23,13 +23,10 @@
       autocomplete — optional autocomplete token %>
 <%
   const control = type === 'textarea' ? 'textarea' : 'input';
-  // Written out as whole class names: Tailwind cannot see a class built by
-  // concatenation, and form-validation.js swaps between exactly these two.
-  const borderClass = error ? 'border-red-400' : 'border-line-strong';
 %>
-<div>
-  <label for="<%= field %>" class="block text-[13px] font-semibold text-ink">
-    <%= label %><% if (!rules.required) { %><span class="font-normal text-muted"> (optional)</span><% } %>
+<div class="form-field">
+  <label for="<%= field %>" class="form-field__label">
+    <%= label %><% if (!rules.required) { %><span class="form-field__optional"> (optional)</span><% } %>
   </label>
 
   <<%= control %>
@@ -52,10 +49,10 @@
     data-error-too-long="<%= rules.messages.tooLong %>"
     <% if (error) { %>aria-invalid="true"<% } %>
     aria-describedby="<%= field %>-error"
-    class="mt-2 w-full rounded-[10px] border <%= borderClass %> bg-surface px-4 py-3.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none<% if (control === 'textarea') { %> resize-y<% } %>"
+    class="form-field__control<% if (error) { %> has-error<% } %>"
   <% if (control === 'input') { %>/><% } else { %>><%= value %></textarea><% } %>
 
-  <p id="<%= field %>-error" class="mt-1.5 text-[13px] text-red-600<% if (!error) { %> hidden<% } %>">
+  <p id="<%= field %>-error" class="form-field__error<% if (!error) { %> u-hidden<% } %>">
     <%= error || '' %>
   </p>
 </div>

@@ -1,0 +1,57 @@
+/*
+ * One product card: image, category, name, price, the whole thing a single link.
+ *
+ * Shared by the home page's trending grid, the catalog results, and the detail
+ * page's related row. The name takes the accent on hover of the whole card,
+ * which is what the group-hover it replaces did.
+ */
+
+.product-card {
+  display: block;
+}
+
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+}
+
+.product-card__media {
+  width: 100%;
+  height: 12rem;
+  overflow: hidden;
+  border-radius: @radius-2xl;
+  // The feed does not always carry a usable image; the tinted block stands in
+  // rather than a broken-image icon.
+  background-color: @tint;
+}
+
+.product-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card__category {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: @muted;
+}
+
+.product-card__name {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @ink;
+
+  .product-card:hover & { color: @accent; }
+}
+
+.product-card__price {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+  color: @ink;
+}

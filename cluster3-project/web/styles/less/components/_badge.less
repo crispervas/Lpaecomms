@@ -1,0 +1,21 @@
+/*
+ * The small uppercase chip used for a product's category and a mashup's kind.
+ *
+ * The size is an arbitrary 11px in the templates, which carries no paired
+ * line-height — the chip takes its leading from its container.
+ */
+
+.badge {
+  display: inline-block;
+  padding: .25rem .625rem;
+  border-radius: @radius-md;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.badge--accent {
+  background-color: @tint;
+  color: @accent;
+}

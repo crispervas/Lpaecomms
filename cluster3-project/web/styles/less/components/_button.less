@@ -1,0 +1,56 @@
+/*
+ * Buttons and button-shaped links.
+ *
+ * Three shapes cover the whole site: the dark solid call to action, the
+ * outlined secondary beside it, and the pill used by the catalog filters.
+ * Several of these are <a> elements — the mockup's "button" is often a link,
+ * and where it is not a real destination it is a disabled <button> instead.
+ */
+
+.button {
+  display: inline-block;
+  padding: 1rem 2rem;
+  border-radius: @radius-lg;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.button--solid {
+  background-color: @ink;
+  color: @white;
+
+  &:hover:not(:disabled) { background-color: @black; }
+}
+
+.button--outline {
+  border: 1px solid @line-strong;
+  color: @ink;
+
+  &:hover:not(:disabled) { background-color: @surface; }
+}
+
+// The form submit buttons: full width, slightly larger type, 10px radius.
+.button--block {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  border-radius: @radius-10;
+  font-size: 15px;
+}
+
+// The catalog category filters.
+.button--pill {
+  padding: .625rem 1.25rem;
+  border: 1px solid @line;
+  border-radius: @radius-full;
+  background-color: @surface;
+  color: @ink;
+
+  &.is-active {
+    background-color: @ink;
+    border-color: @ink;
+    color: @white;
+  }
+}

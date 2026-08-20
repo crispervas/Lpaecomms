@@ -63,16 +63,14 @@ document.querySelectorAll('form[data-validate]').forEach((form) => {
     if (!line) return;
 
     line.textContent = message;
-    line.classList.toggle('hidden', !message);
+    line.classList.toggle('u-hidden', !message);
 
     if (message) {
       control.setAttribute('aria-invalid', 'true');
-      control.classList.remove('border-line-strong');
-      control.classList.add('border-red-400');
+      control.classList.add('has-error');
     } else {
       control.removeAttribute('aria-invalid');
-      control.classList.remove('border-red-400');
-      control.classList.add('border-line-strong');
+      control.classList.remove('has-error');
     }
   };
 
