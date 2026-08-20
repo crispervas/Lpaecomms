@@ -1,0 +1,34 @@
+/*
+ * The document shell: the flex column that holds header, main, and footer, and
+ * the container the page content sits in.
+ *
+ * The footer is pushed to the bottom of short pages by .page__main's flex-grow,
+ * not by a fixed position, so a long page scrolls normally.
+ */
+
+.page {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.page__main {
+  flex: 1 1 0%;
+  width: 100%;
+  max-width: @container-width;
+  margin-left: auto;
+  margin-right: auto;
+  // Clears the fixed header, which is @header-height tall and overlays the top
+  // of the document.
+  padding: @header-height 1rem 2.5rem;
+}
+
+// Drops the container so a page can run edge to edge — the login screen's split
+// layout, which the mockup draws filling the viewport. The top padding stays:
+// the header still has to be cleared.
+.page__main--bleed {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+  padding: @header-height 0 0;
+}
