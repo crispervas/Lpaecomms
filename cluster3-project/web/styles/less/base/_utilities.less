@@ -1,0 +1,19 @@
+/*
+ * The utility layer.
+ *
+ * Fixed here and not grown afterwards. Two classes earn their place because
+ * they are behaviours rather than styling, and they recur across unrelated
+ * components. Everything else that looked like a utility turned out to have a
+ * single caller, which makes it a component rule in the wrong file.
+ *
+ * When a page seems to need a third utility, write a component class instead.
+ */
+
+// Screen-reader-only text: the header's menu toggle label, the "opens in a new
+// tab" note on the directions link.
+.u-visually-hidden { .visually-hidden(); }
+
+// Toggled from the browser scripts to hide an element that is present in the
+// DOM from the first paint — the form error line, which aria-describedby must
+// be able to point at before there is anything to say.
+.u-hidden { display: none; }
