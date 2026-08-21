@@ -10,12 +10,11 @@
   active pill carries aria-current as well as the dark fill, so the selection is
   not conveyed by colour alone.
 %>
-<nav aria-label="Product categories"
-  class="sticky top-20 z-30 border-b border-line bg-canvas pb-6 pt-1">
-  <ul class="flex flex-wrap gap-2.5">
+<nav aria-label="Product categories" class="catalog-filters">
+  <ul class="catalog-filters__list">
     <li>
       <a href="/catalog" <% if (!activeSlug) { %>aria-current="page"<% } %>
-        class="<%= activeSlug ? 'border-line bg-surface text-ink' : 'border-ink bg-ink text-white' %> inline-block rounded-full border px-5 py-2.5 text-sm font-semibold">
+        class="button button--pill<%= activeSlug ? '' : ' is-active' %>">
         All
       </a>
     </li>
@@ -23,7 +22,7 @@
       <li>
         <a href="/catalog?category=<%= encodeURIComponent(category.slug) %>"
           <% if (activeSlug === category.slug) { %>aria-current="page"<% } %>
-          class="<%= activeSlug === category.slug ? 'border-ink bg-ink text-white' : 'border-line bg-surface text-ink' %> inline-block rounded-full border px-5 py-2.5 text-sm font-semibold">
+          class="button button--pill<%= activeSlug === category.slug ? ' is-active' : '' %>">
           <%= category.name %>
         </a>
       </li>

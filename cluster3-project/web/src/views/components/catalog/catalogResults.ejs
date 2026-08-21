@@ -22,11 +22,11 @@
   "Showing 0 products" with a notice that already explains the emptiness says
   the same thing twice, once uselessly.
 %>
-<section class="pb-24 pt-9">
+<section class="catalog-results">
   <% if (!catalogueAvailable) { %>
-    <p class="text-sm text-muted">Our catalogue is unavailable right now. Please check back shortly.</p>
+    <p class="empty-note">Our catalogue is unavailable right now. Please check back shortly.</p>
   <% } else if (!products.length) { %>
-    <p class="py-20 text-center text-sm text-muted">
+    <p class="empty-note empty-note--page">
       <%= activeCategory ? 'No products in this category yet.' : 'No products available yet.' %>
     </p>
   <% } else { %>
@@ -38,10 +38,10 @@
         currency: 'AUD',
       });
     %>
-    <p class="mb-7 text-sm text-muted">
+    <p class="catalog-results__count">
       Showing <%= products.length %> product<%= products.length === 1 ? '' : 's' %>
     </p>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="product-grid">
       <% products.forEach((product) => { %>
         <%- include('../shared/productCard', { product, priceFormatter }) %>
       <% }) %>

@@ -1,0 +1,49 @@
+/*
+ * Catalog page: the heading, the sticky category filter bar, and the results.
+ *
+ * The filters stick below the fixed header rather than under it, which is why
+ * their offset is the header's own height.
+ */
+
+.catalog-head {
+  padding-top: 1rem;
+}
+
+.catalog-head__title {
+  margin-top: .875rem;
+  font-family: @font-display;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+
+  .sm({ font-size: 2.25rem; line-height: 2.5rem; });
+}
+
+// The pills are links, not buttons: the filter lives in the URL, which is what
+// makes a filtered view shareable and the back button work.
+.catalog-filters {
+  position: sticky;
+  top: @header-height;
+  z-index: 30;
+  padding: .25rem 0 1.5rem;
+  background-color: @canvas;
+  border-bottom: 1px solid @line;
+}
+
+.catalog-filters__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+}
+
+.catalog-results {
+  padding: 2.25rem 0 6rem;
+}
+
+.catalog-results__count {
+  margin-bottom: 1.75rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
