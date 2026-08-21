@@ -1,0 +1,19 @@
+/*
+ * The tinted panel that reports the result of a submission.
+ *
+ * role="status" in the markup rather than a plain div: submitting moves focus
+ * nowhere, so without it a screen reader user is given no sign it worked.
+ *
+ * Carries no margin of its own — Contact places it above the form and Login
+ * below the heading, and the two want different gaps.
+ */
+
+.notice {
+  padding: 1rem;
+  background-color: @tint;
+  border: 1px solid @accent-30;
+  border-radius: @radius-xl;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @ink;
+}

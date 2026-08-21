@@ -3,20 +3,20 @@
     POST because the browser's answer cannot be trusted. Wrapped by
     layouts/base.ejs. %>
 
-<section class="mx-auto max-w-3xl pb-10 pt-10 text-center sm:pt-16">
-  <span class="text-[13px] font-semibold uppercase tracking-[0.12em] text-accent">
+<section class="page-intro">
+  <span class="eyebrow eyebrow--lg">
     We're here to help
   </span>
-  <h1 class="mt-5 font-display text-4xl font-bold leading-[1.15] tracking-tight sm:text-5xl">
+  <h1 class="page-intro__title">
     Get in touch
   </h1>
-  <p class="mt-5 text-[17px] leading-relaxed text-muted">
+  <p class="page-intro__lead">
     Questions about an order, a Mashup build, or a warranty claim — our team
     replies within one business day.
   </p>
 </section>
 
-<section class="grid gap-10 py-14 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
+<section class="contact-layout">
   <%- include('../components/contact/contactChannels') %>
   <%- include('../components/contact/contactForm', { fields, values, errors, success }) %>
 </section>

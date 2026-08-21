@@ -36,9 +36,13 @@
 .button--block {
   display: block;
   width: 100%;
+  margin-top: .25rem;
   padding: 1rem;
   border-radius: @radius-10;
+  // An arbitrary size, so unlike .button's named one it carries no paired
+  // leading and takes the document's 1.5 ratio — 22.5px, not 20px.
   font-size: 15px;
+  line-height: 1.5;
 }
 
 // The catalog category filters.

@@ -1,0 +1,186 @@
+/*
+ * Contact page: the three channels, the form card, and the workshop map.
+ *
+ * The address in the template must agree with the coordinates in
+ * public/js/contact-map.js — Australia Fair, Southport — which is also one of
+ * the catalogue's store locations.
+ */
+
+.contact-layout {
+  display: grid;
+  gap: 2.5rem;
+  padding: 3.5rem 0;
+
+  .lg({ grid-template-columns: 1fr 1.2fr; gap: 3.5rem; });
+}
+
+// ── Channels ───────────────────────────────────────────────────────────────
+.channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.channel {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  .card();
+}
+
+.channel__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: @radius-full;
+  background-color: @tint;
+  color: @accent;
+
+  svg { width: 18px; height: 18px; }
+}
+
+.channel__name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.channel__value {
+  margin-top: .25rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+.channel__note {
+  margin-top: .125rem;
+  font-size: .75rem;
+  line-height: 1rem;
+  color: @muted;
+}
+
+// ── Form card ──────────────────────────────────────────────────────────────
+.contact-form {
+  padding: 1.5rem;
+  background-color: @surface;
+  border: 1px solid @line;
+  border-radius: @radius-20;
+
+  .sm({ padding: 2.5rem; });
+}
+
+.contact-form__notice {
+  margin-bottom: 1.75rem;
+}
+
+.contact-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// Name and email share a row from `sm` up; the rest run full width.
+.contact-form__row {
+  display: grid;
+  gap: 1.25rem;
+
+  .sm({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+}
+
+// ── Workshop ───────────────────────────────────────────────────────────────
+.workshop {
+  padding-bottom: 6rem;
+}
+
+.workshop__heading {
+  font-family: @font-display;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+// overflow: hidden is what clips the map's corners to the panel's radius.
+.workshop__panel {
+  display: grid;
+  margin-top: 1.5rem;
+  overflow: hidden;
+  background-color: @surface;
+  border: 1px solid @line;
+  border-radius: @radius-20;
+
+  .lg({ grid-template-columns: 1.4fr 1fr; });
+}
+
+// Leaflet renders here. It needs an explicit height, and `isolation` keeps its
+// internal z-indexes from covering the fixed site header.
+.workshop-map {
+  isolation: isolate;
+  z-index: 0;
+  width: 100%;
+  height: 300px;
+
+  .lg({ height: 340px; });
+}
+
+.workshop__details {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  border-top: 1px solid @line;
+
+  .lg({ border-left: 1px solid @line; border-top-width: 0; });
+}
+
+.workshop__name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.workshop__address {
+  margin-top: .375rem;
+  font-size: .875rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+.workshop__rule {
+  height: 1px;
+  background-color: @line;
+}
+
+.workshop__hours-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.workshop__hours {
+  margin-top: .25rem;
+  font-size: 13px;
+  line-height: 1.625;
+  color: @muted;
+}
+
+// The mockup draws this as a button. A button that does nothing is the same
+// empty promise the retired About cards made, so it is a real link to the same
+// coordinates the map is centred on.
+.workshop__directions {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  width: fit-content;
+  margin-top: .25rem;
+  padding: .75rem 1.25rem;
+  background-color: @ink;
+  border-radius: @radius-lg;
+  font-size: 13px;
+  font-weight: 600;
+  color: @white;
+
+  &:hover { background-color: @black; }
+
+  svg { width: .875rem; height: .875rem; }
+}
