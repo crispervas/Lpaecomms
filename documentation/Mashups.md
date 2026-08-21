@@ -280,7 +280,7 @@ The two mashups below are documented in full here instead, since they are standa
 |---|---|
 | Page | About page (`/about`), under the "What does Mashup mean?" heading |
 | Embed | `<iframe>` pointing at YouTube's embed URL `https://www.youtube.com/embed/ZRcP2CZ8DS8` |
-| Responsive layout | Tailwind `aspect-video` wrapper (locks the 16:9 ratio at any width) with `w-full`; the iframe fills it with `h-full w-full` |
+| Responsive layout | `.about-video__frame` sets `aspect-ratio: 16 / 9`, which locks the ratio at any width; the iframe fills it at 100% of both axes |
 | Performance | `loading="lazy"` defers loading the player until it is near the viewport |
 | Privacy / security | `referrerpolicy="strict-origin-when-cross-origin"`, a scoped `allow` feature policy, and `allowfullscreen` |
 

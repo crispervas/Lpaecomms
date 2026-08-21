@@ -1,7 +1,7 @@
 # Web — Lpaecomms e-commerce store
 
 Server-rendered e-commerce storefront and REST API for Lpaecomms. Stack:
-Express 5 + EJS + Tailwind CSS, PostgreSQL via Prisma.
+Express 5 + EJS + LESS, PostgreSQL via Prisma.
 
 ## Technology stack
 
@@ -14,7 +14,8 @@ new tools are introduced.
 | **pnpm** | Package manager. Installs dependencies through a global content-addressable store with hard links, which is faster and uses less disk. Scoped to this `web` package for now. |
 | **Express 5** | Web framework. Handles HTTP routing and middleware, serving both the EJS views (browser users) and the REST API (mobile and desktop). |
 | **EJS** | Server-side templating engine. Renders HTML pages on the server from `.ejs` templates. |
-| **Tailwind CSS** | Utility-first CSS framework. Provides all styling for the views; compiled into the static assets directory. |
+| **LESS** | CSS preprocessor. `styles/less/main.less` is the only entry point and compiles to `src/public/css/main.css`, which Express serves as a static asset. Class names are BEM-lite; the browser scripts write state classes only. |
+| **less-watch-compiler** | Watches `styles/less/` and recompiles on save (`pnpm dev:css`). VS Code does the same through the Easy LESS extension, configured in the committed `.vscode/settings.json`. |
 | **PostgreSQL** | Relational database. Central data store shared by all three platforms. |
 | **Prisma** | ORM for PostgreSQL. Declares the schema, runs migrations, and provides the data-access client used by the model layer. |
 | **Docker Compose** | Runs PostgreSQL locally in a reproducible, disposable container for development. |
@@ -47,7 +48,7 @@ cluster3-project/web/
 │   │   └── health.model.js         # class HealthModel (wraps Prisma)
 │   ├── views/
 │   │   ├── layouts/
-│   │   │   └── base.ejs            # Root layout (loads /css/tailwind.css)
+│   │   │   └── base.ejs            # Root layout (loads /css/main.css)
 │   │   ├── pages/
 │   │   │   └── home.ejs            # Home page, extends base.ejs
 │   │   └── partials/
@@ -55,14 +56,13 @@ cluster3-project/web/
 │   │       └── footer.ejs
 │   └── public/
 │       └── css/
-│           └── tailwind.css        # Compiled Tailwind output (gitignored)
+│           └── main.css            # Compiled stylesheet (gitignored)
 ├── styles/
-│   └── tailwind.css                # Tailwind source with @tailwind directives (versioned)
+│   └── less/                       # Hand-authored source: abstracts, base, layout, components, pages
 ├── prisma/
 │   └── schema.prisma               # datasource + generator (no models yet)
 ├── tests/
 │   └── health.test.js              # GET /api/v1/health with node:test + supertest
-├── tailwind.config.js              # content globs INCLUDE src/views/**/*.ejs
 ├── docker-compose.yml              # postgres:16
 ├── .env.example                    # Documents every variable (versioned)
 ├── .env                            # Real values, NOT versioned
