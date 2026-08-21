@@ -10,15 +10,14 @@
   The lead-in and the link are new. The video used to sit with no context and no
   way onward; the three mashups it names are the three /mashup actually renders.
 %>
-<section class="pb-16">
-  <h2 class="font-display text-2xl font-semibold text-ink">What does Mashup mean?</h2>
-  <p class="mt-3 max-w-2xl leading-relaxed text-muted">
+<section class="about-video">
+  <h2 class="about-heading">What does Mashup mean?</h2>
+  <p class="about-video__lead">
     The Mashups page pairs our products with a store map, a currency converter,
     and a password checker — this is the idea they are built on.
   </p>
-  <%# aspect-video (16:9) holds the ratio at any width; the iframe fills the box. %>
-  <div class="mt-6 aspect-video w-full overflow-hidden rounded-3xl border border-line">
-    <iframe class="h-full w-full"
+  <div class="about-video__frame">
+    <iframe
       src="https://www.youtube.com/embed/ZRcP2CZ8DS8"
       title="What does Mashup mean?"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -26,8 +25,7 @@
       loading="lazy"
       allowfullscreen></iframe>
   </div>
-  <a href="/mashup"
-    class="mt-6 inline-block text-sm font-semibold text-accent hover:text-accent-strong">
+  <a href="/mashup" class="about-video__link">
     See the Mashups
   </a>
 </section>

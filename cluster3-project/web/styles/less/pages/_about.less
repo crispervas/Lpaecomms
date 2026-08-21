@@ -1,0 +1,132 @@
+/*
+ * About page: the mission statement, the story beside the platform panel, and
+ * the Mashup explainer video.
+ *
+ * The prose comes first in the DOM and the panel is moved back into place from
+ * `lg` up. A screen reader reaching the panel's heading before the heading of
+ * the section it supports reads backwards, so only the visual order flips.
+ */
+
+.about-mission {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 4rem 0;
+  text-align: center;
+
+  .lg({ padding: 6rem 0; });
+}
+
+.about-mission__title {
+  margin-top: 1.25rem;
+  font-family: @font-display;
+  font-size: 2.25rem;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -.025em;
+
+  .sm({ font-size: 3rem; line-height: 1; });
+}
+
+// Shared by the story and the video: the same heading in the same role.
+.about-heading {
+  font-family: @font-display;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  color: @ink;
+}
+
+.about-story {
+  display: grid;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 3rem 0;
+
+  .lg({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+}
+
+.about-story__text {
+  margin-top: 1.25rem;
+  line-height: 1.625;
+  color: @muted;
+
+  // The paragraphs after the first sit closer than the first sits to the
+  // heading above it.
+  & + & { margin-top: 1rem; }
+}
+
+// The mockup fills this column with a workshop photograph that does not exist.
+// An empty tinted rectangle reads as a hole rather than a composition, so the
+// column carries the shape of the system instead.
+.platform-panel {
+  padding: 2rem;
+  border-radius: @radius-3xl;
+  background-color: @subtle;
+
+  .lg({ order: -9999; });
+}
+
+.platform-panel__heading {
+  font-family: @font-display;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  color: @ink;
+}
+
+// A <dl> rather than a grid of divs — each row genuinely is a term and its
+// description, and it linearises correctly for a screen reader.
+.platform-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.platform-panel__term {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @ink;
+}
+
+.platform-panel__detail {
+  margin-top: .25rem;
+  font-size: .875rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+.about-video {
+  padding-bottom: 4rem;
+}
+
+.about-video__lead {
+  margin-top: .75rem;
+  max-width: 42rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+// 16:9 holds the ratio at any width; the iframe fills the box.
+.about-video__frame {
+  margin-top: 1.5rem;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid @line;
+  border-radius: @radius-3xl;
+
+  iframe { width: 100%; height: 100%; }
+}
+
+.about-video__link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @accent;
+
+  &:hover { color: @accent-strong; }
+}

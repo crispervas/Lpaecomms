@@ -22,47 +22,47 @@
   lg:order-first: a screen reader reaching the panel's heading before the
   heading of the section it supports reads backwards.
 %>
-<section class="grid items-center gap-10 py-12 lg:grid-cols-2">
+<section class="about-story">
   <div>
-    <h2 class="font-display text-2xl font-semibold text-ink">
+    <h2 class="about-heading">
       A catalogue that stays the same everywhere
     </h2>
-    <p class="mt-5 leading-relaxed text-muted">
+    <p class="about-story__text">
       Lpaecomms sells the peripherals people use all day: keyboards, mice, headsets, webcams,
       and the things around them. The whole catalogue is online, so you can browse it,
       compare, and decide without guessing.
     </p>
-    <p class="mt-4 leading-relaxed text-muted">
+    <p class="about-story__text">
       It is one store, not three. The site and the API the other platforms use read
       the same catalogue from the same place, so a product that changes shows up the
       same way wherever you opened it.
     </p>
   </div>
 
-  <div class="rounded-3xl bg-subtle p-8 lg:order-first">
-    <h2 class="font-display text-lg font-semibold text-ink">One catalogue behind every platform</h2>
-    <dl class="mt-6 flex flex-col gap-5">
+  <div class="platform-panel">
+    <h2 class="platform-panel__heading">One catalogue behind every platform</h2>
+    <dl class="platform-panel__list">
       <div>
-        <dt class="text-sm font-semibold text-ink">The catalogue</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
+        <dt class="platform-panel__term">The catalogue</dt>
+        <dd class="platform-panel__detail">
           One source of products, shared by everything below.
         </dd>
       </div>
       <div>
-        <dt class="text-sm font-semibold text-ink">Web</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
+        <dt class="platform-panel__term">Web</dt>
+        <dd class="platform-panel__detail">
           This site, rendered on the server straight from that source.
         </dd>
       </div>
       <div>
-        <dt class="text-sm font-semibold text-ink">The REST API</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
+        <dt class="platform-panel__term">The REST API</dt>
+        <dd class="platform-panel__detail">
           The same products over HTTP, for clients that are not this site.
         </dd>
       </div>
       <div>
-        <dt class="text-sm font-semibold text-ink">Mobile and desktop</dt>
-        <dd class="mt-1 text-sm leading-relaxed text-muted">
+        <dt class="platform-panel__term">Mobile and desktop</dt>
+        <dd class="platform-panel__detail">
           Apps in progress on that API.
         </dd>
       </div>
