@@ -30,7 +30,7 @@ export function createApp() {
   app.set('view engine', 'ejs');
   app.set('views', path.join(srcDir, 'views'));
 
-  // Static assets, including the compiled Tailwind stylesheet, live in src/public.
+  // Static assets, including the compiled stylesheet, live in src/public.
   app.use(express.static(path.join(srcDir, 'public')));
 
   // Parse JSON and URL-encoded form bodies for both view and API routes.

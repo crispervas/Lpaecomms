@@ -56,7 +56,7 @@ export const notFoundHandlerWeb = (req, res) => {
     } = boom.notFound();
 
     // Render pages/404 through the shared layout so the page keeps the header,
-    // footer, and Tailwind styles. `url` lets the view show the failed path.
+    // footer, and the site stylesheet. `url` lets the view show the failed path.
     res.status(statusCode).render("layouts/base", {
         title: "Page not found — Lpaecomms",
         page: "404",
