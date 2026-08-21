@@ -9,10 +9,8 @@
                targets this section unconditionally and must always have a
                destination.
 %>
-<%# scroll-mt-24 keeps the heading clear of the fixed header when the hero's
-    "Shop trending" anchor lands here. %>
-<section id="trending" class="scroll-mt-24 pb-20">
-  <h2 class="mb-7 font-display text-xl font-semibold">Trending now</h2>
+<section id="trending" class="trending">
+  <h2 class="section-heading">Trending now</h2>
   <% if (products.length) { %>
     <%
       // Built once per render rather than per card: constructing an Intl
@@ -22,12 +20,12 @@
         currency: 'AUD',
       });
     %>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="product-grid">
       <% products.forEach((product) => { %>
         <%- include('../shared/productCard', { product, priceFormatter }) %>
       <% }) %>
     </div>
   <% } else { %>
-    <p class="text-sm text-muted">Our catalogue is unavailable right now. Please check back shortly.</p>
+    <p class="empty-note">Our catalogue is unavailable right now. Please check back shortly.</p>
   <% } %>
 </section>

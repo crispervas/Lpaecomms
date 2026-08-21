@@ -14,7 +14,6 @@
   font-size: .875rem;
   line-height: 1.25rem;
   font-weight: 600;
-  text-align: center;
 }
 
 .button--solid {
@@ -31,7 +30,9 @@
   &:hover:not(:disabled) { background-color: @surface; }
 }
 
-// The form submit buttons: full width, slightly larger type, 10px radius.
+// The form submit buttons: full width, slightly larger type, 10px radius. The
+// small top margin is part of the shape in both forms that use it — it sits a
+// little further from the last field than the fields sit from each other.
 .button--block {
   display: block;
   width: 100%;

@@ -1,0 +1,28 @@
+/*
+ * The grid that lays out product cards, and the notice that stands in when
+ * there are none.
+ *
+ * Shared by the home page's trending row, the catalog results, and the detail
+ * page's related row: one column on a phone, two from `sm`, four from `lg`.
+ */
+
+.product-grid {
+  display: grid;
+  gap: 1.5rem;
+  .sm({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+  .lg({ grid-template-columns: repeat(4, minmax(0, 1fr)); });
+}
+
+// A short line where a grid would have been — an unreachable catalogue.
+.empty-note {
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+// The same notice when it is the page's whole content rather than one section's,
+// so it is centred in the space the grid would have filled.
+.empty-note--page {
+  padding: 5rem 0;
+  text-align: center;
+}

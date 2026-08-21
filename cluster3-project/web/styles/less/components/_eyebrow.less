@@ -1,0 +1,27 @@
+/*
+ * The small uppercase line that introduces a page or a section heading.
+ *
+ * Appears on Home, Catalog, About, Mashups and Contact. Two sizes are in use:
+ * the default .75rem, and 13px on the pages whose hero the mockup draws larger.
+ */
+
+.eyebrow {
+  font-size: .75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  color: @accent;
+}
+
+// Contact and Mashups open with a slightly larger, slightly tighter eyebrow.
+//
+// The line-height is restated rather than inherited from .eyebrow. The size
+// above is a named one and carries a paired 1rem leading; this one is an
+// arbitrary 13px, which carried no pairing and so fell back to the document's
+// 1.5 ratio — 19.5px, not 16px.
+.eyebrow--lg {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: .12em;
+}
