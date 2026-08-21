@@ -68,8 +68,7 @@
    */
   const showNotice = (message) => {
     map.remove();
-    container.className =
-      'flex h-[320px] w-full items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-4 text-center text-sm text-amber-800 md:h-[420px]';
+    container.className = 'mashup-map mashup-map--failed';
     container.textContent = message;
   };
 

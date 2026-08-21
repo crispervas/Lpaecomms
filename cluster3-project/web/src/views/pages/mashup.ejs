@@ -6,14 +6,14 @@
 <%# Centred hero, from the Marshup mockup. The mockup spells it "Marshup";
     the nav, the routes and the docs all say Mashups, so the page keeps the
     spelling the rest of the site uses. %>
-<section class="mx-auto max-w-3xl pb-14 pt-10 text-center sm:pb-16 sm:pt-16">
-  <span class="text-[13px] font-semibold uppercase tracking-[0.12em] text-accent">
+<section class="page-intro page-intro--roomy">
+  <span class="eyebrow eyebrow--lg">
     Integrations, built on one API
   </span>
-  <h1 class="mt-5 font-display text-4xl font-bold leading-[1.15] tracking-tight sm:text-5xl">
+  <h1 class="page-intro__title">
     Mashups
   </h1>
-  <p class="mt-5 text-[17px] leading-relaxed text-muted">
+  <p class="page-intro__lead">
     A mashup blends data or services from more than one source into a single
     view. Each card below combines the Lpaecomms catalogue with an external
     service, live in your browser.
@@ -23,7 +23,7 @@
 <%# Each mashup is its own component under views/components/mashup. The paths
     are literal so a wrong name fails loudly at include time and stays
     greppable. None of them takes locals: their data arrives over the API. %>
-<section class="flex flex-col gap-7 pb-24">
+<section class="mashup-list">
   <%- include('../components/mashup/mashupOne') %>
   <%- include('../components/mashup/mashupTwo') %>
   <%- include('../components/mashup/mashupThree') %>

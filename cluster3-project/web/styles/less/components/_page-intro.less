@@ -1,0 +1,38 @@
+/*
+ * The centred introduction that opens the Mashups and Contact pages: eyebrow,
+ * large title, and a lead paragraph.
+ */
+
+.page-intro {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2.5rem 0;
+  text-align: center;
+
+  .sm({ padding-top: 4rem; });
+}
+
+// Mashups gives the block more room below than Contact does.
+.page-intro--roomy {
+  padding-bottom: 3.5rem;
+
+  .sm({ padding-bottom: 4rem; });
+}
+
+.page-intro__title {
+  margin-top: 1.25rem;
+  font-family: @font-display;
+  font-size: 2.25rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -.025em;
+
+  .sm({ font-size: 3rem; line-height: 1; });
+}
+
+.page-intro__lead {
+  margin-top: 1.25rem;
+  font-size: 17px;
+  line-height: 1.625;
+  color: @muted;
+}

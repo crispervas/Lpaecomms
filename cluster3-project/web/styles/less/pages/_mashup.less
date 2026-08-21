@@ -1,0 +1,378 @@
+/*
+ * Mashups page: three cards, each pairing the Lpaecomms catalogue or its forms
+ * with an external service.
+ *
+ * The page carries no data of its own — every card fetches from /api/v1 in the
+ * browser, which is the same contract the mobile and desktop clients use.
+ *
+ * Two browser scripts write into this stylesheet's state classes:
+ * mashup-password.js toggles .is-1 … .is-4 on the strength meter and
+ * .is-safe / .is-breached / .is-pending on the breach line, and mashup-map.js
+ * swaps .mashup-map for .mashup-map--failed. Change those names here and there
+ * together.
+ */
+
+.mashup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding-bottom: 6rem;
+}
+
+// ── Card ───────────────────────────────────────────────────────────────────
+.mashup-card {
+  padding: 1.5rem;
+  background-color: @surface;
+  border: 1px solid @line;
+  border-radius: @radius-20;
+
+  .sm({ padding: 2.25rem; });
+}
+
+.mashup-card__head {
+  display: grid;
+  gap: 2rem;
+
+  .lg({ grid-template-columns: 1fr 280px; });
+}
+
+.mashup-card__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .sm({ flex-direction: row; gap: 1.5rem; });
+}
+
+// The mockup puts a product photo here. There is no photo for an integration,
+// so the column holds the purpose icon instead — sized to read as a deliberate
+// plate rather than a gap where an image failed.
+.mashup-card__icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: @radius-2xl;
+  background-color: @tint;
+  color: @accent;
+
+  svg { width: 2rem; height: 2rem; }
+
+  .sm({
+    width: 6rem;
+    height: 6rem;
+    svg { width: 2.5rem; height: 2.5rem; }
+  });
+}
+
+.mashup-card__body {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.mashup-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+}
+
+.mashup-card__live {
+  display: inline-flex;
+  align-items: center;
+  gap: .375rem;
+  font-size: .75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: @muted;
+}
+
+.mashup-card__live-dot {
+  width: .375rem;
+  height: .375rem;
+  border-radius: @radius-full;
+  background-color: @accent;
+}
+
+.mashup-card__title {
+  margin-top: .875rem;
+  font-family: @font-display;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+}
+
+.mashup-card__text {
+  margin-top: .625rem;
+  font-size: .875rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+.mashup-card__sources {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+
+  .lg({ border-left: 1px solid @line; padding-left: 2rem; });
+}
+
+.mashup-card__sources-heading {
+  font-size: .75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+  color: @muted;
+}
+
+// The live widget runs the full width of the card, below a rule.
+.mashup-card__widget {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid @line;
+}
+
+// ── Data source row ────────────────────────────────────────────────────────
+.data-source {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .625rem .75rem;
+  border-radius: @radius-lg;
+  background-color: @canvas;
+}
+
+.data-source__icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: @accent;
+}
+
+.data-source__body {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.data-source__endpoint {
+  font-size: 13px;
+  font-weight: 500;
+  color: @ink;
+}
+
+.data-source__origin {
+  font-size: 11px;
+  color: @muted;
+}
+
+// ── Widget panel, shared by the converter and the password checker ─────────
+.widget-panel {
+  padding: 1.25rem;
+  border-radius: @radius-2xl;
+  background-color: @canvas;
+
+  .sm({ padding: 1.5rem; });
+}
+
+// ── Mashup 1: the map ──────────────────────────────────────────────────────
+// The explicit height matters: an element with no height gives Leaflet nothing
+// to draw into. `isolation` and z-index keep Leaflet's internal z-indexes from
+// painting over the fixed site header.
+.mashup-map {
+  isolation: isolate;
+  z-index: 0;
+  width: 100%;
+  height: 320px;
+  border: 1px solid @line;
+  border-radius: @radius-2xl;
+
+  .md({ height: 420px; });
+}
+
+// mashup-map.js replaces the container's className wholesale when the catalogue
+// cannot be read.
+.mashup-map--failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  border-color: @warning-border;
+  background-color: @warning-bg;
+  text-align: center;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @warning-text;
+}
+
+.mashup-map__attribution {
+  margin-top: .625rem;
+  font-size: .75rem;
+  line-height: 1rem;
+  color: @muted;
+}
+
+// ── Mashup 2: the converter ────────────────────────────────────────────────
+.converter__controls {
+  display: grid;
+  gap: 1rem;
+
+  .sm({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+}
+
+.field-label {
+  display: block;
+  font-size: .75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  color: @muted;
+}
+
+.select {
+  width: 100%;
+  margin-top: .375rem;
+  padding: .625rem .75rem;
+  background-color: @surface;
+  border: 1px solid @line-strong;
+  border-radius: @radius-lg;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @ink;
+}
+
+.converter__result {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid @line;
+
+  .sm({
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  });
+}
+
+.converter__label {
+  font-size: .75rem;
+  line-height: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .025em;
+  color: @muted;
+}
+
+.converter__base {
+  margin-top: .25rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: @muted;
+}
+
+.converter__converted-group {
+  .sm({ text-align: right; });
+}
+
+.converter__converted {
+  margin-top: .25rem;
+  font-family: @font-display;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: @ink;
+}
+
+.converter__status {
+  margin-top: .75rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+// ── Mashup 3: the password checker ─────────────────────────────────────────
+// The field stays capped: a password input stretched to the full card width
+// would read as a search bar.
+.password-check {
+  max-width: 28rem;
+}
+
+.password-check__label {
+  display: block;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: @ink;
+}
+
+.password-check__input {
+  width: 100%;
+  margin-top: .375rem;
+  padding: .625rem .75rem;
+  background-color: @surface;
+  border: 1px solid @line-strong;
+  border-radius: @radius-lg;
+  color: @ink;
+
+  &:focus {
+    border-color: @accent;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+}
+
+.strength {
+  margin-top: .75rem;
+}
+
+// The four segments carry no meaning on their own — colour alone is not an
+// accessible signal — so they are aria-hidden and the label states the level in
+// words.
+.strength__bar {
+  display: flex;
+  gap: .375rem;
+}
+
+.strength__segment {
+  flex: 1 1 0%;
+  height: .375rem;
+  border-radius: @radius-full;
+  background-color: @line-strong;
+
+  &.is-1 { background-color: @strength-1; }
+  &.is-2 { background-color: @strength-2; }
+  &.is-3 { background-color: @strength-3; }
+  &.is-4 { background-color: @strength-4; }
+}
+
+.strength__label {
+  margin-top: .375rem;
+  font-size: .75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: @muted;
+
+  &.is-1 { color: @strength-1-text; }
+  &.is-2 { color: @strength-2-text; }
+  &.is-3 { color: @strength-3-text; }
+  &.is-4 { color: @strength-4-text; }
+}
+
+.breach-status {
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid @line;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+
+  &.is-breached { font-weight: 500; color: @error-text; }
+  &.is-safe     { font-weight: 500; color: @success-text; }
+  // Advisory only: a third party being down is not a reason to block someone
+  // from choosing a password.
+  &.is-pending  { color: @notice-text; }
+}

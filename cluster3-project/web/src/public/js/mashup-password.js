@@ -26,26 +26,11 @@
   const REQUEST_TIMEOUT_MS = 3000;
 
   /**
-   * Strength levels, weakest first. Written as complete Tailwind class names —
-   * Tailwind's scanner cannot see a class assembled by concatenation, and would
-   * strip it from the production stylesheet.
+   * Strength level names, weakest first. The colour for each level lives in the
+   * stylesheet under .strength__segment.is-N and .strength__label.is-N; this
+   * file names the level and nothing else.
    */
-  const LEVELS = [
-    { name: 'Weak', segment: 'bg-red-500', text: 'text-red-700' },
-    { name: 'Fair', segment: 'bg-amber-500', text: 'text-amber-700' },
-    { name: 'Strong', segment: 'bg-lime-500', text: 'text-lime-700' },
-    { name: 'Very strong', segment: 'bg-emerald-500', text: 'text-emerald-700' },
-  ];
-
-  /**
-   * Chrome shared by every state of the status line — only the tone appended to
-   * it changes. Held in one place so the six states cannot drift apart in
-   * spacing or border, and written whole for the same reason as LEVELS above.
-   */
-  const STATUS_BASE = 'mt-3 border-t border-line pt-3 text-sm';
-
-  /** A strength segment the score has not reached. */
-  const SEGMENT_EMPTY = 'h-1.5 flex-1 rounded-full bg-line-strong';
+  const LEVELS = ['Weak', 'Fair', 'Strong', 'Very strong'];
 
   /** @type {number|undefined} */
   let debounceTimer;
@@ -78,15 +63,12 @@
    * @returns {void}
    */
   const renderStrength = (score) => {
-    const level = LEVELS[score - 1];
-
     [...bar.children].forEach((segment, index) => {
-      segment.className =
-        index < score ? `h-1.5 flex-1 rounded-full ${level.segment}` : SEGMENT_EMPTY;
+      segment.className = index < score ? `strength__segment is-${score}` : 'strength__segment';
     });
 
-    label.className = `mt-1.5 text-xs font-semibold ${level.text}`;
-    label.textContent = `Strength: ${level.name}`;
+    label.className = `strength__label is-${score}`;
+    label.textContent = `Strength: ${LEVELS[score - 1]}`;
   };
 
   /**
@@ -96,11 +78,11 @@
    */
   const renderEmpty = () => {
     [...bar.children].forEach((segment) => {
-      segment.className = SEGMENT_EMPTY;
+      segment.className = 'strength__segment';
     });
-    label.className = 'mt-1.5 text-xs font-semibold text-muted';
+    label.className = 'strength__label';
     label.textContent = 'Strength: enter a password';
-    status.className = `${STATUS_BASE} text-muted`;
+    status.className = 'breach-status';
     status.textContent = 'Type a password to check it against known data breaches.';
   };
 
@@ -127,7 +109,7 @@
   const checkBreaches = async (password) => {
     const requestId = (latestRequestId += 1);
 
-    status.className = `${STATUS_BASE} text-muted`;
+    status.className = 'breach-status';
     status.textContent = 'Checking password security…';
 
     try {
@@ -149,10 +131,10 @@
       const breaches = result.suffixes[suffix];
 
       if (breaches) {
-        status.className = `${STATUS_BASE} font-medium text-red-700`;
+        status.className = 'breach-status is-breached';
         status.textContent = `This password has appeared in ${breaches.toLocaleString()} data breaches. Please choose another.`;
       } else {
-        status.className = `${STATUS_BASE} font-medium text-emerald-700`;
+        status.className = 'breach-status is-safe';
         status.textContent = '✓ This password was not found in known breaches';
       }
     } catch {
@@ -160,7 +142,7 @@
 
       // The check is advisory. A third party being down is not a reason to
       // block someone from choosing a password.
-      status.className = `${STATUS_BASE} text-amber-700`;
+      status.className = 'breach-status is-pending';
       status.textContent = 'The breach check is unavailable right now — choose a strong password.';
     }
   };
@@ -183,7 +165,7 @@
     // crypto.subtle only exists in a secure context (HTTPS or localhost).
     // Without it the strength meter still works; only the lookup is disabled.
     if (!globalThis.crypto?.subtle) {
-      status.className = `${STATUS_BASE} text-amber-700`;
+      status.className = 'breach-status is-pending';
       status.textContent = 'The breach check needs a secure connection (HTTPS) and is disabled here.';
       return;
     }
