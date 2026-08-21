@@ -12,9 +12,9 @@
   would promise something the section cannot deliver.
 %>
 <% if (products.length) { %>
-  <section class="pb-20">
-    <h2 class="mb-7 font-display text-xl font-semibold">You might also like</h2>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+  <section class="related">
+    <h2 class="section-heading">You might also like</h2>
+    <div class="product-grid">
       <% products.forEach((product) => { %>
         <%- include('../shared/productCard', { product, priceFormatter }) %>
       <% }) %>

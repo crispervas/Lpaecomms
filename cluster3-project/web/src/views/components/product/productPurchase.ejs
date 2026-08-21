@@ -11,17 +11,17 @@
   offering something the site cannot do. It becomes real with the cart
   iteration.
 %>
-<div class="mt-9 flex gap-3.5">
-  <div class="flex items-center rounded-lg border border-line">
+<div class="purchase">
+  <div class="quantity">
     <button type="button" disabled title="Coming soon" aria-label="Decrease quantity"
-      class="h-12 w-10 text-base text-ink">−</button>
-    <span class="w-9 text-center text-sm font-semibold">1</span>
+      class="quantity__button">−</button>
+    <span class="quantity__value">1</span>
     <button type="button" disabled title="Coming soon" aria-label="Increase quantity"
-      class="h-12 w-10 text-base text-ink">+</button>
+      class="quantity__button">+</button>
   </div>
 
   <button type="button" disabled title="Coming soon"
-    class="flex-1 rounded-lg bg-ink px-8 py-4 text-sm font-semibold text-white">
+    class="button button--solid purchase__submit">
     Add to cart — <%= priceFormatter.format(priceAud) %>
   </button>
 </div>

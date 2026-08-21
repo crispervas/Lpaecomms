@@ -13,20 +13,20 @@
   subject the main image already names, so repeating that name would turn the
   strip into noise for a screen reader without adding anything.
 %>
-<div class="flex flex-col gap-4">
-  <div class="h-[320px] w-full overflow-hidden rounded-3xl bg-tint sm:h-[420px] lg:h-[480px]">
+<div class="gallery">
+  <div class="gallery__main">
     <%# The feed does not always carry a usable image; the tinted block stands
         in rather than a broken-image icon. %>
     <% if (imageUrls.length) { %>
-      <img src="<%= imageUrls[0] %>" alt="<%= name %>" class="h-full w-full object-cover" />
+      <img src="<%= imageUrls[0] %>" alt="<%= name %>" class="gallery__image" />
     <% } %>
   </div>
 
   <% if (imageUrls.length > 1) { %>
-    <div class="grid grid-cols-4 gap-3">
+    <div class="gallery__thumbs">
       <% imageUrls.slice(1).forEach((url) => { %>
-        <div class="h-20 w-full overflow-hidden rounded-xl bg-tint">
-          <img src="<%= url %>" alt="" loading="lazy" class="h-full w-full object-cover" />
+        <div class="gallery__thumb">
+          <img src="<%= url %>" alt="" loading="lazy" class="gallery__image" />
         </div>
       <% }) %>
     </div>

@@ -1,0 +1,148 @@
+/*
+ * Product detail page: breadcrumb, gallery, the buying column, and the related
+ * row.
+ *
+ * Every purchase control is disabled — there is no cart yet — and `disabled`
+ * already keeps them out of the tab order, so nothing else is needed to stop
+ * the block offering something the site cannot do.
+ */
+
+// ── Breadcrumb ─────────────────────────────────────────────────────────────
+.breadcrumb {
+  padding-top: 1.5rem;
+  font-size: .75rem;
+  line-height: 1rem;
+  color: @muted;
+}
+
+.breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .375rem;
+}
+
+.breadcrumb__link:hover { color: @ink; }
+
+.breadcrumb__current { color: @ink; }
+
+// ── Detail ─────────────────────────────────────────────────────────────────
+.product-detail {
+  display: grid;
+  gap: 3rem;
+  padding: 2rem 0 4rem;
+
+  .lg({
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rem;
+  });
+}
+
+.product-detail__title {
+  margin-top: 1rem;
+  font-family: @font-display;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+
+  .sm({ font-size: 2.25rem; line-height: 2.5rem; });
+}
+
+.product-detail__price {
+  margin-top: .75rem;
+  font-family: @font-display;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+}
+
+.product-detail__description {
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+// ── Gallery ────────────────────────────────────────────────────────────────
+// The first image is the main one and the strip holds the rest, so no image
+// appears twice. The tinted block stands in when the feed carries no usable
+// image, rather than a broken-image icon.
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gallery__main {
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  border-radius: @radius-3xl;
+  background-color: @tint;
+
+  .sm({ height: 420px; });
+  .lg({ height: 480px; });
+}
+
+.gallery__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.gallery__thumb {
+  width: 100%;
+  height: 5rem;
+  overflow: hidden;
+  border-radius: @radius-xl;
+  background-color: @tint;
+}
+
+// ── Purchase ───────────────────────────────────────────────────────────────
+.purchase {
+  display: flex;
+  gap: .875rem;
+  margin-top: 2.25rem;
+}
+
+.quantity {
+  display: flex;
+  align-items: center;
+  border: 1px solid @line;
+  border-radius: @radius-lg;
+}
+
+.quantity__button {
+  width: 2.5rem;
+  height: 3rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: @ink;
+}
+
+.quantity__value {
+  width: 2.25rem;
+  text-align: center;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+}
+
+// Takes the rest of the row beside the quantity stepper.
+.purchase__submit {
+  flex: 1 1 0%;
+}
+
+// ── Related ────────────────────────────────────────────────────────────────
+// Renders nothing at all when the list is empty: a heading over an empty row
+// would promise something the section cannot deliver.
+.related {
+  padding-bottom: 5rem;
+}
