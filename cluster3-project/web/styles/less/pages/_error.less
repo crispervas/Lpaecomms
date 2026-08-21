@@ -1,0 +1,84 @@
+/*
+ * The 404 and generic error pages.
+ *
+ * These were the last two pages on Tailwind's `slate` palette; everything else
+ * moved onto the project tokens earlier in the project's history. `slate` does
+ * not survive the move to LESS, so they are mapped onto the tokens here rather
+ * than having slate's values transcribed. That is a deliberate, small change of
+ * appearance — the only one in the migration.
+ */
+
+.error-page {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+// The oversized status code is the visual anchor. aria-hidden in the markup, so
+// a screen reader hears the heading below rather than the bare number.
+.error-page__code {
+  font-size: 4.5rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: @line-strong;
+
+  .sm({ font-size: 6rem; });
+}
+
+.error-page__title {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  color: @ink;
+
+  .sm({ font-size: 1.875rem; line-height: 2.25rem; });
+}
+
+.error-page__text {
+  max-width: 28rem;
+  margin: 1rem auto 0;
+  color: @muted;
+}
+
+// Shown only outside production, where the handler passes a message. Escaped in
+// the template, so an error string can never inject markup into the page.
+.error-page__detail {
+  max-width: 28rem;
+  margin: 1.25rem auto 0;
+  padding: .5rem .75rem;
+  background-color: @subtle;
+  border-radius: @radius-md;
+  overflow-wrap: break-word;
+  text-align: left;
+  font-family: @font-mono;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+.error-page__url {
+  margin-top: .75rem;
+  word-break: break-all;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+.error-page__code-inline {
+  padding: .125rem .375rem;
+  background-color: @subtle;
+  border-radius: @radius-sm;
+  color: @muted;
+}
+
+.error-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .75rem;
+  margin-top: 2rem;
+}
