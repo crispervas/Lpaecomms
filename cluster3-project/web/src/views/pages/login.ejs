@@ -6,11 +6,11 @@
 
     Two modes share this page — see components/auth/authForm.ejs. Nothing here
     authenticates anyone; the auth controller says so on every submission. %>
-<div class="grid min-h-[calc(100vh-5rem)] lg:grid-cols-2">
+<div class="auth">
   <%- include('../components/auth/authPanel') %>
 
-  <div class="flex items-center justify-center px-4 py-12 sm:px-14">
-    <div class="w-full max-w-[400px]">
+  <div class="auth-form-column">
+    <div class="auth-form-column__inner">
       <%- include('../components/auth/authTabs', { mode }) %>
       <%- include('../components/auth/authForm', { mode, fields, values, errors, notice }) %>
     </div>

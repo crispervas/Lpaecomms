@@ -30,10 +30,10 @@
         { field: 'password', label: 'Password', type: 'password', placeholder: '••••••••', autocomplete: 'current-password' },
       ];
 %>
-<h1 class="font-display text-[28px] font-bold tracking-tight">
+<h1 class="auth__title">
   <%= isSignup ? 'Create your account' : 'Welcome back' %>
 </h1>
-<p class="mt-2 text-sm text-muted">
+<p class="auth__lead">
   <%= isSignup
     ? 'Join to save builds and track orders.'
     : 'Log in to manage orders and Mashup builds.' %>
@@ -42,12 +42,12 @@
 <% if (notice) { %>
   <%# role="status": submitting moves focus nowhere, so without it a screen
       reader user is given no sign anything happened. %>
-  <div role="status" class="mt-6 rounded-xl border border-accent/30 bg-tint p-4 text-sm text-ink">
+  <div role="status" class="notice auth__notice">
     <%= notice %>
   </div>
 <% } %>
 
-<form method="post" action="/login" novalidate data-validate class="mt-8 flex flex-col gap-5">
+<form method="post" action="/login" novalidate data-validate class="auth__form">
   <input type="hidden" name="mode" value="<%= mode %>" />
 
   <% layout.forEach((item) => { %>
@@ -64,20 +64,19 @@
     }) %>
   <% }) %>
 
-  <button type="submit"
-    class="mt-1 w-full rounded-[10px] bg-ink px-4 py-4 text-[15px] font-semibold text-white hover:bg-black">
+  <button type="submit" class="button button--solid button--block">
     <%= isSignup ? 'Create account' : 'Log in' %>
   </button>
 </form>
 
 <%# The mockup closes with the same switch as the tabs above. Kept because it
     is where the eye lands after the button, and it is the same link. %>
-<p class="mt-6 text-center text-[13px] text-muted">
+<p class="auth__switch">
   <% if (isSignup) { %>
     Already have an account?
-    <a href="/login" class="font-semibold text-accent hover:text-accent-strong">Log in</a>
+    <a href="/login" class="auth__switch-link">Log in</a>
   <% } else { %>
     Don't have an account?
-    <a href="/login?tab=signup" class="font-semibold text-accent hover:text-accent-strong">Sign up</a>
+    <a href="/login?tab=signup" class="auth__switch-link">Sign up</a>
   <% } %>
 </p>

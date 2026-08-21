@@ -6,22 +6,16 @@
     slot — the panel reads as finished either way, since the copy carries it.
 
     Included by pages/login.ejs. Takes no locals. %>
-<div class="hidden flex-col justify-between bg-tint p-14 lg:flex">
+<div class="auth-panel">
   <%# Decorative: the heading below says everything this image says, so an alt
-      text would only repeat it to a screen reader.
-
-      `mix-blend-multiply` is what makes it sit on the panel rather than on top
-      of it. The illustration ships with an opaque white background, which reads
-      as a white card floating on the tint; multiplying drops pure white to the
-      backdrop and leaves the artwork untouched. %>
-  <img src="/img/hero-product.png" alt="" aria-hidden="true"
-    class="max-h-[60%] w-full object-contain mix-blend-multiply" />
+      text would only repeat it to a screen reader. %>
+  <img src="/img/hero-product.png" alt="" aria-hidden="true" class="auth-panel__image" />
 
   <div>
-    <h2 class="max-w-[420px] font-display text-[26px] font-semibold leading-[1.35]">
+    <h2 class="auth-panel__title">
       Your desk setup, saved to your account.
     </h2>
-    <p class="mt-3 max-w-[380px] text-sm leading-relaxed text-muted">
+    <p class="auth-panel__text">
       Track orders, save Mashup builds and get early access to new peripherals.
     </p>
   </div>

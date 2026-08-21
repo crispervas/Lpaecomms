@@ -13,11 +13,11 @@
     { key: 'signup', href: '/login?tab=signup', label: 'Sign up' },
   ];
 %>
-<div class="mb-9 flex gap-1 rounded-[10px] bg-subtle p-1">
+<div class="auth-tabs">
   <% tabs.forEach((tab) => { %>
     <a href="<%= tab.href %>"
       <% if (tab.key === mode) { %>aria-current="page"<% } %>
-      class="flex-1 rounded-lg py-3 text-center text-sm font-semibold <%= tab.key === mode ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink' %>">
+      class="auth-tabs__tab<%= tab.key === mode ? ' is-active' : '' %>">
       <%= tab.label %>
     </a>
   <% }) %>

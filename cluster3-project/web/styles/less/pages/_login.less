@@ -1,0 +1,149 @@
+/*
+ * Login page: the mockup's split screen, tinted panel beside the form.
+ *
+ * Rendered with `bleed: true`, so it escapes the container the other pages sit
+ * in and runs edge to edge. Two modes share the page — see
+ * components/auth/authForm.ejs. Nothing here authenticates anyone.
+ *
+ * Several sizes on this page are arbitrary (26px, 28px, 13px) and so carry no
+ * paired leading: they take the document's 1.5 ratio, which is restated where
+ * it matters rather than left to look like an omission.
+ */
+
+.auth {
+  display: grid;
+  // The fixed header is already cleared by the layout's top padding; this is
+  // what makes the split screen fill exactly the rest of the viewport.
+  min-height: calc(100vh - @header-height);
+
+  .lg({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+}
+
+// ── Tinted panel ───────────────────────────────────────────────────────────
+// Hidden below `lg`: on a phone the form is the whole screen.
+.auth-panel {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3.5rem;
+  background-color: @tint;
+
+  .lg({ display: flex; });
+}
+
+// mix-blend-mode is what makes the artwork sit on the panel rather than on top
+// of it. The illustration ships with an opaque white background, which reads as
+// a white card floating on the tint; multiplying drops pure white to the
+// backdrop and leaves the artwork untouched.
+.auth-panel__image {
+  width: 100%;
+  max-height: 60%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.auth-panel__title {
+  max-width: 420px;
+  font-family: @font-display;
+  font-size: 26px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.auth-panel__text {
+  margin-top: .75rem;
+  max-width: 380px;
+  font-size: .875rem;
+  line-height: 1.625;
+  color: @muted;
+}
+
+// ── Form column ────────────────────────────────────────────────────────────
+.auth-form-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+
+  .sm({ padding-left: 3.5rem; padding-right: 3.5rem; });
+}
+
+.auth-form-column__inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+// Links rather than buttons, and that is the whole point: the server decides
+// the mode, so the switch works with no JavaScript at all.
+.auth-tabs {
+  display: flex;
+  gap: .25rem;
+  margin-bottom: 2.25rem;
+  padding: .25rem;
+  background-color: @subtle;
+  border-radius: @radius-10;
+}
+
+.auth-tabs__tab {
+  flex: 1 1 0%;
+  padding: .75rem 0;
+  border-radius: @radius-lg;
+  text-align: center;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: @muted;
+
+  &:hover { color: @ink; }
+
+  &.is-active {
+    background-color: @surface;
+    box-shadow: @shadow-sm;
+    color: @ink;
+  }
+}
+
+// ── Form ───────────────────────────────────────────────────────────────────
+.auth__title {
+  font-family: @font-display;
+  font-size: 28px;
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.auth__lead {
+  margin-top: .5rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  color: @muted;
+}
+
+.auth__notice {
+  margin-top: 1.5rem;
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+// The mockup closes with the same switch as the tabs above. Kept because it is
+// where the eye lands after the button, and it is the same link.
+.auth__switch {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: @muted;
+}
+
+.auth__switch-link {
+  font-weight: 600;
+  color: @accent;
+
+  &:hover { color: @accent-strong; }
+}
