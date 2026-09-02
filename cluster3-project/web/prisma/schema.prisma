@@ -13,3 +13,197 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ===========================================================
+// REFERENCE TABLES
+// ===========================================================
+model template {
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String
+  subject     String
+  description String?
+  html        String
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  unixTime   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("template")
+}
+
+
+model role {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  code        String  @unique
+  description String?
+  users       user[]
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("role")
+}
+
+model gender {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  code        String  @unique
+  description String?
+  users       user[]
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("gender")
+}
+
+// ===========================================================
+// USER TABLES
+// ===========================================================
+model user {
+  id             Int       @id @default(autoincrement())
+  roleId         Int
+  genderId       Int
+  name           String
+  lastName       String
+  email          String    @unique
+  password       String // hashed automatically by middleware
+  document       String?   @unique
+  phone          String?
+  address        String?
+  emailVerified  Boolean   @default(false)
+
+  session    DateTime?
+  created    Json?
+  updated    Json?
+  statusName String?   @default("PENDING")
+  status     Int       @default(-2)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  role         role          @relation(fields: [roleId], references: [id])
+  gender       gender        @relation(fields: [genderId], references: [id])
+
+  //auditLogs    audit_log[]
+  purchases    purchase[]
+  
+
+  @@index([email], name: "idx_user_email")
+  @@map("user")
+}
+
+// ===========================================================
+// SHOP TABLES
+// ===========================================================
+
+model category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  code        String  @unique
+  img         String?  
+  description String?
+  products    product[]
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("category")
+}
+
+model product {
+  id          Int     @id @default(autoincrement())
+  categoryId  Int
+  name        String  @unique
+  code        String  @unique  
+  stock       Int     @default(0)
+  price       Float   @default(0)
+  img         String[] 
+  description String?
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  category   category  @relation(fields: [categoryId], references: [id])
+
+  purchase_products purchase_products[]
+
+  @@map("product")
+}
+
+// ===========================================================
+// PURCHASE
+// ===========================================================
+// paymentStatus = PENDING, SUCCESS, FAILED, REJECTED
+model purchase {
+  id     Int @id @default(autoincrement())
+  userId Int
+
+  reference      String?
+
+  totalAmount    Decimal
+  taxes          Decimal @default(0)
+  discountAmount Decimal @default(0)
+  finalAmount    Decimal
+
+  paymentStatus  String
+  invoice        String?
+  paymentDate    DateTime?
+  data           Json?
+ 
+  status         Int       @default(1)
+  statusName     String    @default("ACTIVE")
+  created        Json?
+  updated        Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+
+  user user @relation(fields: [userId], references: [id])
+  
+  products        purchase_products[]
+ 
+  @@index([status, userId])
+  @@map("purchase")
+}
+
+model purchase_products {
+  id         Int     @id @default(autoincrement())
+  purchaseId Int
+  productId  Int
+  amount     Decimal
+
+  status     Int       @default(1)
+  statusName String    @default("ACTIVE")
+  created    Json?
+  updated    Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  purchase purchase @relation(fields: [purchaseId], references: [id])
+  product  product  @relation(fields: [productId], references: [id])
+
+  @@map("purchaseProduct")
+}
