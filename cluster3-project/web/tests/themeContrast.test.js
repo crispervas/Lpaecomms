@@ -29,6 +29,16 @@ const PALETTE_FILE = path.join(
   '_palette.less',
 );
 
+/** Absolute path to the themes stylesheet. */
+const THEMES_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'styles',
+  'less',
+  'abstracts',
+  '_themes.less',
+);
+
 /** Matches `@name-value: #RRGGBB;`, ignoring the rgba entries. */
 const VALUE_PATTERN = /@([a-z0-9-]+)-value:\s*(#[0-9a-fA-F]{6})\s*;/g;
 
@@ -118,10 +128,28 @@ const PAIRINGS = [
  * means the test measures what a page actually renders rather than a list
  * someone kept in step by hand.
  *
+ * The theme names themselves are parsed out of _themes.less rather than typed
+ * here as a literal list, because a name written in two places can disagree
+ * with itself — and this particular disagreement fails silently in the
+ * passing direction. If a theme were deleted from the stylesheet but survived
+ * in a hardcoded list, `withOverrides` would find no matching keys, return a
+ * plain copy of the base palette, and every one of that theme's tests would
+ * pass against daylight's numbers rather than its own. Deriving the list
+ * closes that gap and means a theme added later extends this test instead of
+ * requiring an edit here. `daylight` is added unconditionally: it has no block
+ * of its own by design, since it is what :root already publishes, and
+ * dropping it would stop testing the default the whole site renders in.
+ *
  * @param {Record<string, string>} palette - Every value read from the palette file.
  * @returns {Record<string, Record<string, string>>} Theme name to resolved tokens.
  */
 function themes(palette) {
+  const themesSource = fs.readFileSync(THEMES_FILE, 'utf8');
+  const themeNames = [
+    'daylight',
+    ...[...themesSource.matchAll(/html\[data-theme="([\w-]+)"\]/g)].map((match) => match[1]),
+  ];
+
   const withOverrides = (prefix) => {
     const overrides = {};
 
@@ -134,29 +162,27 @@ function themes(palette) {
     return { ...palette, ...overrides };
   };
 
-  return {
-    daylight: palette,
-    midnight: withOverrides('midnight'),
-    forest: withOverrides('forest'),
-    contrast: withOverrides('contrast'),
-  };
+  return Object.fromEntries(
+    themeNames.map((name) => [name, name === 'daylight' ? palette : withOverrides(name)]),
+  );
 }
 
 /**
- * The text floor each theme answers to. `contrast` exists to clear AAA; holding
- * it to AA would let it stop being the reason someone chose it.
+ * The text floor a theme answers to. Only `contrast` promises AAA; every other
+ * theme — including one not yet imagined — answers to the ordinary AA floor,
+ * so the default covers it without another entry to keep in step.
+ *
+ * @param {string} name - Theme name.
+ * @returns {number} The text contrast floor that theme is held to.
  */
-const TEXT_FLOOR = {
-  daylight: AA_TEXT,
-  midnight: AA_TEXT,
-  forest: AA_TEXT,
-  contrast: AAA_TEXT,
-};
+function textFloor(name) {
+  return name === 'contrast' ? AAA_TEXT : AA_TEXT;
+}
 
 for (const [name, resolved] of Object.entries(themes(readPalette()))) {
   for (const pairing of PAIRINGS) {
     // Only the text floors move with the theme; 1.4.11's 3:1 is 3:1 everywhere.
-    const floor = pairing.floor === AA_TEXT ? TEXT_FLOOR[name] : pairing.floor;
+    const floor = pairing.floor === AA_TEXT ? textFloor(name) : pairing.floor;
 
     test(`${name}: ${pairing.what} clears ${floor}:1`, () => {
       const foreground = resolved[pairing.fg];
