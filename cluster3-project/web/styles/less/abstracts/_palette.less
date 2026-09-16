@@ -20,10 +20,14 @@
 @ink-value:           #14161A;
 
 // The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
-// against the canvas and fails WCAG AA, so secondary text uses this instead
-// (4.76:1) — a difference barely visible next to the mockup. Do not "correct"
-// this back to the mockup value.
-@muted-value:         #6B6F76;
+// against the canvas and fails WCAG AA, so secondary text uses this instead.
+//
+// Darkened from #6B6F76 on 2026-09-16. That original value was checked against
+// the canvas (4.83:1) but never against @subtle, where it measured 4.43:1 and
+// failed AA — and @subtle is the background of the header search field, the
+// login panel, the About section and both error pages. This value clears AA on
+// all three backgrounds. Do not lighten it back toward the mockup.
+@muted-value:         #676B72;
 
 @white-value:         #FFFFFF;
 @black-value:         #000000;
@@ -31,6 +35,13 @@
 // ── Lines ──────────────────────────────────────────────────────────────────
 @line-value:          #E7E5DF;
 @line-strong-value:   #D8D6CF;
+
+// The boundary of a text input or an outlined button. Separate from
+// @line-strong because WCAG 1.4.11 requires 3:1 of a border that identifies a
+// control, while @line-strong is also used decoratively — the ghost numeral on
+// the 404 page is meant to sit faintly behind the text, and raising its
+// contrast would be a regression rather than a fix.
+@border-control-value: #8E8A7F;
 
 // ── Accent ─────────────────────────────────────────────────────────────────
 @accent-value:        #2F5EFB;
@@ -40,10 +51,22 @@
 // because there is no opacity modifier syntax to lean on any more.
 @accent-30-value:     rgba(47, 94, 251, .3);
 
+// ── Text drawn on a filled surface ─────────────────────────────────────────
+// These exist because @white and @black are not colours a theme can keep. A
+// solid button is `@white` on `@ink`; under a dark theme @ink becomes nearly
+// white and that label disappears. Naming the role instead of the colour lets
+// each theme answer "what goes on top of this" for itself.
+@on-ink-value:     #FFFFFF;
+@on-accent-value:  #FFFFFF;
+@ink-hover-value:  #000000;
+
 // ── Feedback ───────────────────────────────────────────────────────────────
 // Absent from the old theme: the templates reached into Tailwind's default
 // palette for these, which stops existing when Tailwind does.
-@danger-border-value:   #f87171;
+// Darkened from #f87171 on 2026-09-16. This draws the border of an errored
+// input — a boundary that identifies a control, which WCAG 1.4.11 holds to
+// 3:1. The original measured 2.77:1 against a card.
+@danger-border-value:   #F05252;
 @danger-text-value:     #dc2626;
 @warning-bg-value:      #fffbeb;
 @warning-border-value:  #fde68a;
