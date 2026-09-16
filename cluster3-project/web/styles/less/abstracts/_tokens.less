@@ -1,61 +1,96 @@
 /*
- * Design tokens: the single place any colour, family, radius, or shadow used by
- * this stylesheet is defined.
+ * Design tokens: what every rule in the stylesheet reads.
  *
- * The palette is named by role rather than by hue, so a brand change is one
- * edit here rather than a sweep through every rule.
+ * Each colour is published twice — once as a CSS custom property on :root, so a
+ * theme can redeclare it at runtime, and once as a LESS variable holding
+ * `var(--name)`, so the existing rules keep their familiar `color: @ink` and
+ * compile to `color: var(--ink)` without being edited.
+ *
+ * Only colours make that round trip. Radii, shadows, font families and the two
+ * layout constants do not vary between themes and stay plain LESS variables,
+ * which keeps them usable in media queries and arithmetic.
+ *
+ * Raw values live in _palette.less. The palette is named by role rather than by
+ * hue, so a brand change is one edit there rather than a sweep through every
+ * rule.
  */
 
-// ── Surfaces and text ──────────────────────────────────────────────────────
-@canvas:        #FAFAF8;
-@surface:       #FFFFFF;
-@subtle:        #F1F0EC;
-@ink:           #14161A;
+// ── Published to the document ──────────────────────────────────────────────
+:root {
+  --canvas:      @canvas-value;
+  --surface:     @surface-value;
+  --subtle:      @subtle-value;
+  --ink:         @ink-value;
+  --muted:       @muted-value;
 
-// The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
-// against the canvas and fails WCAG AA, so secondary text uses this instead
-// (4.76:1) — a difference barely visible next to the mockup. Do not "correct"
-// this back to the mockup value.
-@muted:         #6B6F76;
+  --white:       @white-value;
+  --black:       @black-value;
 
-@white:         #FFFFFF;
-@black:         #000000;
+  --line:        @line-value;
+  --line-strong: @line-strong-value;
 
-// ── Lines ──────────────────────────────────────────────────────────────────
-@line:          #E7E5DF;
-@line-strong:   #D8D6CF;
+  --accent:        @accent-value;
+  --accent-strong: @accent-strong-value;
+  --tint:          @tint-value;
+  --accent-30:     @accent-30-value;
 
-// ── Accent ─────────────────────────────────────────────────────────────────
-@accent:        #2F5EFB;
-@accent-strong: #1F45D6;
-@tint:          #EEF1FF;
-// The notice panels draw a 30% accent border. Written as an explicit rgba
-// because there is no opacity modifier syntax to lean on any more.
-@accent-30:     rgba(47, 94, 251, .3);
+  --danger-border:  @danger-border-value;
+  --danger-text:    @danger-text-value;
+  --warning-bg:     @warning-bg-value;
+  --warning-border: @warning-border-value;
+  --warning-text:   @warning-text-value;
+  --notice-text:    @notice-text-value;
+  --success-text:   @success-text-value;
+  --error-text:     @error-text-value;
 
-// ── Feedback ───────────────────────────────────────────────────────────────
-// Absent from the old theme: the templates reached into Tailwind's default
-// palette for these, which stops existing when Tailwind does.
-@danger-border:   #f87171;
-@danger-text:     #dc2626;
-@warning-bg:      #fffbeb;
-@warning-border:  #fde68a;
-@warning-text:    #92400e;
-@notice-text:     #b45309;
-@success-text:    #047857;
-@error-text:      #b91c1c;
+  --strength-1:      @strength-1-value;
+  --strength-1-text: @strength-1-text-value;
+  --strength-2:      @strength-2-value;
+  --strength-2-text: @strength-2-text-value;
+  --strength-3:      @strength-3-value;
+  --strength-3-text: @strength-3-text-value;
+  --strength-4:      @strength-4-value;
+  --strength-4-text: @strength-4-text-value;
+}
 
-// Password strength meter, weakest to strongest.
-@strength-1:      #ef4444;
-@strength-1-text: #b91c1c;
-@strength-2:      #f59e0b;
-@strength-2-text: #b45309;
-@strength-3:      #84cc16;
-@strength-3-text: #4d7c0f;
-@strength-4:      #10b981;
-@strength-4-text: #047857;
+// ── What the rules read ────────────────────────────────────────────────────
+@canvas:        var(--canvas);
+@surface:       var(--surface);
+@subtle:        var(--subtle);
+@ink:           var(--ink);
+@muted:         var(--muted);
+
+@white:         var(--white);
+@black:         var(--black);
+
+@line:          var(--line);
+@line-strong:   var(--line-strong);
+
+@accent:        var(--accent);
+@accent-strong: var(--accent-strong);
+@tint:          var(--tint);
+@accent-30:     var(--accent-30);
+
+@danger-border:   var(--danger-border);
+@danger-text:     var(--danger-text);
+@warning-bg:      var(--warning-bg);
+@warning-border:  var(--warning-border);
+@warning-text:    var(--warning-text);
+@notice-text:     var(--notice-text);
+@success-text:    var(--success-text);
+@error-text:      var(--error-text);
+
+@strength-1:      var(--strength-1);
+@strength-1-text: var(--strength-1-text);
+@strength-2:      var(--strength-2);
+@strength-2-text: var(--strength-2-text);
+@strength-3:      var(--strength-3);
+@strength-3-text: var(--strength-3-text);
+@strength-4:      var(--strength-4);
+@strength-4-text: var(--strength-4-text);
 
 // ── Typography ─────────────────────────────────────────────────────────────
+// Not themed: a theme changes colour, not the typeface.
 @font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 @font-sans:    "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 @font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,

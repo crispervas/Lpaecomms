@@ -1,0 +1,61 @@
+/*
+ * Raw colour values.
+ *
+ * The only file in the project that may contain a hex literal, enforced by
+ * tests/stylesheetTokens.test.js. Nothing here is consumed by a rule directly:
+ * _tokens.less publishes these as CSS custom properties, and the rules read
+ * the properties. That indirection is what lets a theme swap a colour at
+ * runtime, which a LESS variable — resolved at compile time — cannot do.
+ *
+ * Values carry a `-value` suffix so a token and its value can coexist: LESS
+ * resolves variables lazily and the last declaration in a scope wins, so
+ * `@accent: var(--accent)` beside `@accent: #2F5EFB` would emit
+ * `--accent: var(--accent)` and recurse forever.
+ */
+
+// ── Surfaces and text ──────────────────────────────────────────────────────
+@canvas-value:        #FAFAF8;
+@surface-value:       #FFFFFF;
+@subtle-value:        #F1F0EC;
+@ink-value:           #14161A;
+
+// The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
+// against the canvas and fails WCAG AA, so secondary text uses this instead —
+// a difference barely visible next to the mockup. Do not "correct" this back
+// to the mockup value.
+@muted-value:         #6B6F76;
+
+@white-value:         #FFFFFF;
+@black-value:         #000000;
+
+// ── Lines ──────────────────────────────────────────────────────────────────
+@line-value:          #E7E5DF;
+@line-strong-value:   #D8D6CF;
+
+// ── Accent ─────────────────────────────────────────────────────────────────
+@accent-value:        #2F5EFB;
+@accent-strong-value: #1F45D6;
+@tint-value:          #EEF1FF;
+// The notice panels draw a 30% accent border. Written as an explicit rgba
+// because there is no opacity modifier syntax to lean on any more.
+@accent-30-value:     rgba(47, 94, 251, .3);
+
+// ── Feedback ───────────────────────────────────────────────────────────────
+@danger-border-value:   #f87171;
+@danger-text-value:     #dc2626;
+@warning-bg-value:      #fffbeb;
+@warning-border-value:  #fde68a;
+@warning-text-value:    #92400e;
+@notice-text-value:     #b45309;
+@success-text-value:    #047857;
+@error-text-value:      #b91c1c;
+
+// Password strength meter, weakest to strongest.
+@strength-1-value:      #ef4444;
+@strength-1-text-value: #b91c1c;
+@strength-2-value:      #f59e0b;
+@strength-2-text-value: #b45309;
+@strength-3-value:      #84cc16;
+@strength-3-text-value: #4d7c0f;
+@strength-4-value:      #10b981;
+@strength-4-text-value: #047857;
