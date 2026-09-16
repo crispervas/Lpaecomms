@@ -15,9 +15,11 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
 
 import { errorHandler, logErrors, wrapErrors } from '../src/config/errorHandler.js';
 import { apiCorsHeaders } from '../src/config/apiCors.js';
+import { preferencesLocals } from '../src/config/preferences.js';
 
 /** Absolute path to `src`, so the test app resolves views the way `app.js` does. */
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
@@ -38,6 +40,12 @@ const buildFailingApp = () => {
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(srcDir, 'views'));
+
+  // Mirrors app.js: the error page renders through layouts/base.ejs, which
+  // reads res.locals.preferences unconditionally, so this harness needs the
+  // same cookie-parsing and preferences middleware or the render throws.
+  app.use(cookieParser());
+  app.use(preferencesLocals);
 
   app.use((req, res, next) => {
     res.locals.currentPath = req.path;

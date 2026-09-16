@@ -1,0 +1,91 @@
+<%#
+  The appearance controls: colour theme and text size.
+
+  Included by both the preferences page and the header panel, so the two
+  surfaces cannot offer different options. That is also why `idPrefix` exists:
+  on the preferences page both copies are in the document at once, and a
+  duplicated id would point every label at the wrong control.
+
+  Radio inputs rather than buttons: each group is one tab stop whose options the
+  arrow keys move between, which is what a screen reader announces as a choice.
+  The inputs are moved off-screen rather than hidden, so they keep their place
+  in the tab order; the labels are the visible controls.
+
+  Expected locals:
+    preferences — {theme, textSize}, from res.locals
+    errors      — field name to message; {} when there is nothing to report
+    returnTo    — site-relative path to send the visitor back to after saving
+    idPrefix    — distinguishes this copy's ids from the other copy's
+%>
+<%
+  const themeOptions = [
+    { value: 'daylight', label: 'Daylight', hint: 'The original light palette' },
+    { value: 'midnight', label: 'Midnight', hint: 'Dark surfaces, lighter type' },
+    { value: 'forest', label: 'Forest', hint: 'Light surfaces, green accent' },
+    { value: 'contrast', label: 'High contrast', hint: 'Maximum legibility' },
+  ];
+
+  const sizeOptions = [
+    { value: 'normal', label: 'Normal', hint: '100%' },
+    { value: 'large', label: 'Large', hint: '112.5%' },
+    { value: 'larger', label: 'Larger', hint: '125%' },
+  ];
+%>
+<form method="post" action="/preferences" class="appearance" data-appearance-form>
+  <input type="hidden" name="returnTo" value="<%= returnTo %>" />
+
+  <fieldset class="appearance__group">
+    <legend class="appearance__legend">Colour theme</legend>
+    <% if (errors.theme) { %>
+      <p class="appearance__error"><%= errors.theme %></p>
+    <% } %>
+
+    <div class="appearance__options">
+      <% themeOptions.forEach((option) => { %>
+        <% const id = `theme-${idPrefix}-${option.value}`; %>
+        <input type="radio" id="<%= id %>" name="theme" value="<%= option.value %>"
+          class="appearance__input"
+          <%= preferences.theme === option.value ? 'checked' : '' %> />
+        <label for="<%= id %>" class="appearance__option">
+          <%# Decorative: the label beside it already names the theme. %>
+          <span class="appearance__swatch" data-swatch="<%= option.value %>" aria-hidden="true"></span>
+          <span class="appearance__text">
+            <span class="appearance__name"><%= option.label %></span>
+            <span class="appearance__hint"><%= option.hint %></span>
+          </span>
+        </label>
+      <% }) %>
+    </div>
+  </fieldset>
+
+  <fieldset class="appearance__group">
+    <legend class="appearance__legend">Text size</legend>
+    <% if (errors.textSize) { %>
+      <p class="appearance__error"><%= errors.textSize %></p>
+    <% } %>
+
+    <div class="appearance__options appearance__options--thirds">
+      <% sizeOptions.forEach((option) => { %>
+        <% const id = `text-${idPrefix}-${option.value}`; %>
+        <input type="radio" id="<%= id %>" name="text" value="<%= option.value %>"
+          class="appearance__input"
+          <%= preferences.textSize === option.value ? 'checked' : '' %> />
+        <label for="<%= id %>" class="appearance__option">
+          <span class="appearance__text">
+            <span class="appearance__name"><%= option.label %></span>
+            <span class="appearance__hint"><%= option.hint %></span>
+          </span>
+        </label>
+      <% }) %>
+    </div>
+  </fieldset>
+
+  <%# Always rendered, even with JavaScript available: it is the only way to
+      save without it, and the panel's script does not remove it. %>
+  <button type="submit" class="button button--solid button--block">Save appearance</button>
+
+  <%# Filled by public/js/appearance.js when a background save fails. Present
+      from the first paint so the live region is registered before it has
+      anything to announce. %>
+  <p class="appearance__status u-hidden" role="status" data-appearance-status></p>
+</form>

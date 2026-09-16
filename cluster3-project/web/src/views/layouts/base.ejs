@@ -13,7 +13,12 @@
   render unchanged.
 %>
 <!doctype html>
-<html lang="en">
+<%# The theme and text size come from res.locals.preferences, resolved from the
+    visitor's cookie by config/preferences.js. Writing them here rather than
+    from a script is what stops the page painting in the default theme and then
+    jumping. Both values are whitelisted before they arrive; see
+    lib/preferences.js. %>
+<html lang="en" data-theme="<%= preferences.theme %>" data-text-size="<%= preferences.textSize %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

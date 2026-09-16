@@ -55,6 +55,26 @@
   --strength-3-text: @strength-3-text-value;
   --strength-4:      @strength-4-value;
   --strength-4-text: @strength-4-text-value;
+
+  // Previews for the theme picker's swatches. Published on :root rather than in
+  // each theme's block because all four must be readable at once, whichever
+  // theme is active — a swatch for midnight has to look like midnight while the
+  // page is in daylight.
+  --preview-daylight-canvas: @canvas-value;
+  --preview-daylight-ink:    @ink-value;
+  --preview-daylight-accent: @accent-value;
+
+  --preview-midnight-canvas: @midnight-canvas-value;
+  --preview-midnight-ink:    @midnight-ink-value;
+  --preview-midnight-accent: @midnight-accent-value;
+
+  --preview-forest-canvas:   @canvas-value;
+  --preview-forest-ink:      @ink-value;
+  --preview-forest-accent:   @forest-accent-value;
+
+  --preview-contrast-canvas: @contrast-canvas-value;
+  --preview-contrast-ink:    @contrast-ink-value;
+  --preview-contrast-accent: @contrast-accent-value;
 }
 
 // ── What the rules read ────────────────────────────────────────────────────
