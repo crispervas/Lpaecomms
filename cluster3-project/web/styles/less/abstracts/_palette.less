@@ -20,9 +20,9 @@
 @ink-value:           #14161A;
 
 // The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
-// against the canvas and fails WCAG AA, so secondary text uses this instead —
-// a difference barely visible next to the mockup. Do not "correct" this back
-// to the mockup value.
+// against the canvas and fails WCAG AA, so secondary text uses this instead
+// (4.76:1) — a difference barely visible next to the mockup. Do not "correct"
+// this back to the mockup value.
 @muted-value:         #6B6F76;
 
 @white-value:         #FFFFFF;
@@ -41,6 +41,8 @@
 @accent-30-value:     rgba(47, 94, 251, .3);
 
 // ── Feedback ───────────────────────────────────────────────────────────────
+// Absent from the old theme: the templates reached into Tailwind's default
+// palette for these, which stops existing when Tailwind does.
 @danger-border-value:   #f87171;
 @danger-text-value:     #dc2626;
 @warning-bg-value:      #fffbeb;

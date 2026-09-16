@@ -44,6 +44,38 @@ test('the compiled stylesheet publishes the colour tokens on :root', async () =>
   assert.match(root, /--accent-strong:\s*#1F45D6/i);
 });
 
+test('every palette value reaches :root and its LESS variable', async () => {
+  // A value-equality check here would freeze the palette, and a later task in
+  // this plan deliberately changes `muted` and `danger-border` as WCAG fixes —
+  // that check would fail by design and train the next implementer to edit the
+  // test until it passes. Completeness is the real risk: a token dropped or
+  // mistyped on its way through _tokens.less is invisible in review, so every
+  // `@<name>-value` declared in _palette.less is checked for arriving at both
+  // its `--<name>` custom property and its `@<name>: var(--<name>)` LESS
+  // variable, whatever value it carries.
+  const paletteSource = await fs.readFile(
+    path.join(LESS_DIR, 'abstracts', '_palette.less'),
+    'utf8',
+  );
+  const tokensSource = await fs.readFile(path.join(LESS_DIR, 'abstracts', '_tokens.less'), 'utf8');
+  const css = await compileStylesheet();
+  const root = css.match(/:root\s*\{([^}]*)\}/)?.[1] ?? '';
+
+  const names = [...paletteSource.matchAll(/^@([\w-]+)-value:/gm)].map((match) => match[1]);
+
+  const missingFromRoot = names.filter((name) => !new RegExp(`--${name}:`).test(root));
+  const missingFromTokens = names.filter(
+    (name) => !new RegExp(`@${name}:\\s*var\\(--${name}\\)`).test(tokensSource),
+  );
+
+  assert.deepEqual(missingFromRoot, [], `tokens missing from :root: ${missingFromRoot.join(', ')}`);
+  assert.deepEqual(
+    missingFromTokens,
+    [],
+    `tokens missing their LESS variable in _tokens.less: ${missingFromTokens.join(', ')}`,
+  );
+});
+
 test('the component rules read the accent through its custom property', async () => {
   const css = await compileStylesheet();
 
