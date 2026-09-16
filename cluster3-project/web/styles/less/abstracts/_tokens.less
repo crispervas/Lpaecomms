@@ -120,6 +120,11 @@
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 // The header is fixed, so its height is subtracted or cleared in several
-// places. One value keeps those in agreement.
+// places. One value keeps those in agreement. In rem on purpose: the bar should
+// grow with the text it contains.
 @header-height:   5rem;
-@container-width: 64rem;
+
+// In px on purpose, unlike the header. At 125% text a rem width would widen the
+// content column by a quarter — that is changing the layout, which is not what
+// the reader asked for when they asked for larger text.
+@container-width: 1024px;
