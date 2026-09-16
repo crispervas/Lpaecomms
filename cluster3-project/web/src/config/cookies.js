@@ -21,14 +21,19 @@ export const PERSISTENT_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
  * validates first, which is what keeps an edited cookie from becoming an
  * unvalidated value in the markup.
  *
+ * @param {boolean} [isProduction] - Defaults to the live environment. The
+ *   parameter exists so a test can ask for the production branch directly,
+ *   the same way `HealthController` takes an injected model and `ProductModel`
+ *   takes an injectable base URL — without it, `secure` could only be
+ *   exercised by mutating `NODE_ENV` around the test.
  * @returns {{httpOnly: boolean, sameSite: string, secure: boolean, maxAge: number, path: string}}
  *   Options ready to hand to `res.cookie`.
  */
-export function persistentCookieOptions() {
+export function persistentCookieOptions(isProduction = config.isProduction) {
   return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: config.isProduction,
+    secure: isProduction,
     maxAge: PERSISTENT_COOKIE_MAX_AGE_MS,
     path: '/',
   };

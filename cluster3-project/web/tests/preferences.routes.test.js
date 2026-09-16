@@ -105,6 +105,22 @@ test('an invalid text size is refused with 422', async () => {
   assert.match(response.text, /Choose one of the available text sizes\./);
 });
 
+test('a returnTo that survives the redirect guard still cannot break out of the markup', async () => {
+  // isSafeReturnPath guards redirects, not markup: a leading "/" is all it
+  // asks for, so a quote and an angle bracket pass it through untouched. The
+  // hidden field that carries this value back to the form is only safe
+  // because <%= %> escapes by default — this pins that, not the redirect
+  // guard, which tests/preferences.test.js already covers.
+  const response = await request(createApp())
+    .post('/preferences')
+    .type('form')
+    .send({ theme: 'neon', text: 'large', returnTo: '/foo"><script>' });
+
+  assert.equal(response.status, 422);
+  assert.doesNotMatch(response.text, /"><script/);
+  assert.match(response.text, /value="\/foo&#34;&gt;&lt;script&gt;"/);
+});
+
 test('a return path pointing off-site is discarded', async () => {
   const response = await request(createApp())
     .post('/preferences')
