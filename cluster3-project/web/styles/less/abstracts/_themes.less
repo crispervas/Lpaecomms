@@ -1,0 +1,95 @@
+/*
+ * The themes.
+ *
+ * Each block redeclares custom properties and nothing else, so switching theme
+ * is switching one attribute on <html> — no second stylesheet, no reload, no
+ * flash. Written as attribute selectors rather than classes because the server
+ * writes the attribute into the markup before the first paint; see
+ * views/layouts/base.ejs.
+ *
+ * `daylight` has no block here on purpose: it is what :root already publishes.
+ * If everything else in this feature failed, the site would render exactly as
+ * it did before any of it existed.
+ *
+ * Values live in _palette.less and their contrast is enforced by
+ * tests/themeContrast.test.js.
+ */
+
+html[data-theme="midnight"] {
+  --canvas:         @midnight-canvas-value;
+  --surface:        @midnight-surface-value;
+  --subtle:         @midnight-subtle-value;
+  --ink:            @midnight-ink-value;
+  --muted:          @midnight-muted-value;
+  --line:           @midnight-line-value;
+  --line-strong:    @midnight-line-strong-value;
+  --border-control: @midnight-border-control-value;
+  --accent:         @midnight-accent-value;
+  --accent-strong:  @midnight-accent-strong-value;
+  --tint:           @midnight-tint-value;
+  --accent-30:      @midnight-accent-30-value;
+  --on-ink:         @midnight-on-ink-value;
+  --on-accent:      @midnight-on-accent-value;
+  --ink-hover:      @midnight-ink-hover-value;
+
+  --danger-border:  @midnight-danger-border-value;
+  --danger-text:    @midnight-danger-text-value;
+  --warning-bg:     @midnight-warning-bg-value;
+  --warning-border: @midnight-warning-border-value;
+  --warning-text:   @midnight-warning-text-value;
+  --notice-text:    @midnight-notice-text-value;
+  --success-text:   @midnight-success-text-value;
+  --error-text:     @midnight-error-text-value;
+
+  --strength-1:      @midnight-strength-1-value;
+  --strength-1-text: @midnight-strength-1-text-value;
+  --strength-2:      @midnight-strength-2-value;
+  --strength-2-text: @midnight-strength-2-text-value;
+  --strength-3:      @midnight-strength-3-value;
+  --strength-3-text: @midnight-strength-3-text-value;
+  --strength-4:      @midnight-strength-4-value;
+  --strength-4-text: @midnight-strength-4-text-value;
+}
+
+html[data-theme="forest"] {
+  --accent:        @forest-accent-value;
+  --accent-strong: @forest-accent-strong-value;
+  --tint:          @forest-tint-value;
+  --accent-30:     @forest-accent-30-value;
+}
+
+html[data-theme="contrast"] {
+  --canvas:         @contrast-canvas-value;
+  --surface:        @contrast-surface-value;
+  --subtle:         @contrast-subtle-value;
+  --ink:            @contrast-ink-value;
+  --muted:          @contrast-muted-value;
+  --line:           @contrast-line-value;
+  --line-strong:    @contrast-line-strong-value;
+  --border-control: @contrast-border-control-value;
+  --accent:         @contrast-accent-value;
+  --accent-strong:  @contrast-accent-strong-value;
+  --tint:           @contrast-tint-value;
+  --accent-30:      @contrast-accent-30-value;
+  --on-ink:         @contrast-on-ink-value;
+  --on-accent:      @contrast-on-accent-value;
+  --ink-hover:      @contrast-ink-hover-value;
+
+  --danger-border:  @contrast-danger-border-value;
+  --danger-text:    @contrast-danger-text-value;
+  --warning-bg:     @contrast-warning-bg-value;
+  --warning-border: @contrast-warning-border-value;
+  --warning-text:   @contrast-warning-text-value;
+  --notice-text:    @contrast-notice-text-value;
+  --success-text:   @contrast-success-text-value;
+  --error-text:     @contrast-error-text-value;
+
+  --strength-1:      @contrast-strength-1-value;
+  --strength-1-text: @contrast-strength-1-text-value;
+  --strength-2:      @contrast-strength-2-value;
+  --strength-2-text: @contrast-strength-2-text-value;
+  --strength-3:      @contrast-strength-3-value;
+  --strength-3-text: @contrast-strength-3-text-value;
+  --strength-4:      @contrast-strength-4-value;
+  --strength-4-text: @contrast-strength-4-text-value;
+}

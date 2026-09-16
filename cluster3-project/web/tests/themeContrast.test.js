@@ -110,30 +110,66 @@ const PAIRINGS = [
 ];
 
 /**
- * Themes by name, each mapping a token to the palette entry it reads. A theme
- * that does not override a token inherits the default one, which is what the
- * spread expresses.
+ * Resolve every theme's effective palette.
  *
- * Task 3 adds midnight, forest and contrast here.
+ * A theme overrides the tokens it names and inherits the rest, which is exactly
+ * how the stylesheet behaves: `html[data-theme]` redeclares some custom
+ * properties and `:root` supplies the others. Modelling it the same way here
+ * means the test measures what a page actually renders rather than a list
+ * someone kept in step by hand.
+ *
+ * @param {Record<string, string>} palette - Every value read from the palette file.
+ * @returns {Record<string, Record<string, string>>} Theme name to resolved tokens.
  */
 function themes(palette) {
-  return { daylight: palette };
+  const withOverrides = (prefix) => {
+    const overrides = {};
+
+    for (const [name, hex] of Object.entries(palette)) {
+      if (name.startsWith(`${prefix}-`)) {
+        overrides[name.slice(prefix.length + 1)] = hex;
+      }
+    }
+
+    return { ...palette, ...overrides };
+  };
+
+  return {
+    daylight: palette,
+    midnight: withOverrides('midnight'),
+    forest: withOverrides('forest'),
+    contrast: withOverrides('contrast'),
+  };
 }
 
-for (const [name, resolved] of Object.entries(themes(readPalette()))) {
-  for (const { what, fg, bg, floor } of PAIRINGS) {
-    test(`${name}: ${what} clears ${floor}:1`, () => {
-      const foreground = resolved[fg];
-      const background = resolved[bg];
+/**
+ * The text floor each theme answers to. `contrast` exists to clear AAA; holding
+ * it to AA would let it stop being the reason someone chose it.
+ */
+const TEXT_FLOOR = {
+  daylight: AA_TEXT,
+  midnight: AA_TEXT,
+  forest: AA_TEXT,
+  contrast: AAA_TEXT,
+};
 
-      assert.ok(foreground, `${name} has no value for ${fg}`);
-      assert.ok(background, `${name} has no value for ${bg}`);
+for (const [name, resolved] of Object.entries(themes(readPalette()))) {
+  for (const pairing of PAIRINGS) {
+    // Only the text floors move with the theme; 1.4.11's 3:1 is 3:1 everywhere.
+    const floor = pairing.floor === AA_TEXT ? TEXT_FLOOR[name] : pairing.floor;
+
+    test(`${name}: ${pairing.what} clears ${floor}:1`, () => {
+      const foreground = resolved[pairing.fg];
+      const background = resolved[pairing.bg];
+
+      assert.ok(foreground, `${name} has no value for ${pairing.fg}`);
+      assert.ok(background, `${name} has no value for ${pairing.bg}`);
 
       const ratio = contrastRatio(foreground, background);
 
       assert.ok(
         ratio >= floor,
-        `${what} measures ${ratio.toFixed(2)}:1 (${foreground} on ${background}), below ${floor}:1`,
+        `${pairing.what} measures ${ratio.toFixed(2)}:1 (${foreground} on ${background}), below ${floor}:1`,
       );
     });
   }

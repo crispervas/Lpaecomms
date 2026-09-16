@@ -84,3 +84,89 @@
 @strength-3-text-value: #4d7c0f;
 @strength-4-value:      #10b981;
 @strength-4-text-value: #047857;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Theme overrides
+//
+// A theme declares only the tokens it changes; _themes.less redeclares those
+// custom properties and the rest keep falling through to :root. Every ratio
+// below was computed, not judged by eye — tests/themeContrast.test.js holds
+// each one to WCAG AA, or AAA for `contrast`.
+// ───────────────────────────────────────────────────────────────────────────
+
+// ── midnight ── every surface inverts, so every token is restated.
+@midnight-canvas-value:          #0F1114;
+@midnight-surface-value:         #171A1F;
+@midnight-subtle-value:          #1E2227;
+@midnight-ink-value:             #EEF0F3;
+@midnight-muted-value:           #A2A9B4;
+@midnight-line-value:            #2A2F36;
+@midnight-line-strong-value:     #3A414A;
+@midnight-border-control-value:  #6A7480;
+@midnight-accent-value:          #7EA0FF;
+@midnight-accent-strong-value:   #A9C0FF;
+@midnight-tint-value:            #172038;
+@midnight-accent-30-value:       rgba(126, 160, 255, .3);
+// The accent is light here, so white text on it would be unreadable; both
+// on-surface roles invert with it.
+@midnight-on-ink-value:          #0F1114;
+@midnight-on-accent-value:       #0B1020;
+@midnight-ink-hover-value:       #FFFFFF;
+@midnight-danger-border-value:   #F87171;
+@midnight-danger-text-value:     #FCA5A5;
+@midnight-warning-bg-value:      #2A2211;
+@midnight-warning-border-value:  #8A6D1E;
+@midnight-warning-text-value:    #FCD34D;
+@midnight-notice-text-value:     #FCD34D;
+@midnight-success-text-value:    #6EE7B7;
+@midnight-error-text-value:      #FCA5A5;
+@midnight-strength-1-value:      #F87171;
+@midnight-strength-1-text-value: #FCA5A5;
+@midnight-strength-2-value:      #FBBF24;
+@midnight-strength-2-text-value: #FCD34D;
+@midnight-strength-3-value:      #A3E635;
+@midnight-strength-3-text-value: #BEF264;
+@midnight-strength-4-value:      #34D399;
+@midnight-strength-4-text-value: #6EE7B7;
+
+// ── forest ── the surfaces are daylight's; only the accent family moves, which
+// is the whole point of a variant theme being cheap.
+@forest-accent-value:        #176B4D;
+@forest-accent-strong-value: #0F5039;
+@forest-tint-value:          #E8F4EE;
+@forest-accent-30-value:     rgba(23, 107, 77, .3);
+
+// ── contrast ── pure white and black, every text pairing at AAA. Panels are
+// told apart by their borders rather than by a fill, which is the convention a
+// high-contrast theme follows.
+@contrast-canvas-value:          #FFFFFF;
+@contrast-surface-value:         #FFFFFF;
+@contrast-subtle-value:          #F2F2F2;
+@contrast-ink-value:             #000000;
+@contrast-muted-value:           #3A3A3A;
+@contrast-line-value:            #767676;
+@contrast-line-strong-value:     #595959;
+@contrast-border-control-value:  #000000;
+@contrast-accent-value:          #0B2F9E;
+@contrast-accent-strong-value:   #061C63;
+@contrast-tint-value:            #E8ECFF;
+@contrast-accent-30-value:       rgba(11, 47, 158, .5);
+@contrast-on-ink-value:          #FFFFFF;
+@contrast-on-accent-value:       #FFFFFF;
+@contrast-ink-hover-value:       #1A1A1A;
+@contrast-danger-border-value:   #B00020;
+@contrast-danger-text-value:     #8A0016;
+@contrast-warning-bg-value:      #FFF8E1;
+@contrast-warning-border-value:  #8A6400;
+@contrast-warning-text-value:    #5C3A00;
+@contrast-notice-text-value:     #5C3A00;
+@contrast-success-text-value:    #00563B;
+@contrast-error-text-value:      #8A0016;
+@contrast-strength-1-value:      #B00020;
+@contrast-strength-1-text-value: #8A0016;
+@contrast-strength-2-value:      #8A6400;
+@contrast-strength-2-text-value: #5C3A00;
+@contrast-strength-3-value:      #4A6B00;
+@contrast-strength-3-text-value: #3A5400;
+@contrast-strength-4-value:      #00563B;
+@contrast-strength-4-text-value: #00563B;
