@@ -70,6 +70,17 @@
         <span class="cart__count">0</span>
       </span>
 
+      <%# Opens the appearance panel. A real button, so it is reachable by
+          keyboard; aria-expanded is kept in sync by /js/appearance.js. %>
+      <button type="button" id="appearance-toggle" aria-controls="appearance-panel"
+        aria-expanded="false" class="appearance-toggle">
+        <span class="u-visually-hidden">Appearance settings</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"></path>
+        </svg>
+      </button>
+
       <%# Unlike the two controls beside it, this one goes somewhere: /login is
           a real page, so it carries no "Coming soon" and stays in the tab
           order. %>

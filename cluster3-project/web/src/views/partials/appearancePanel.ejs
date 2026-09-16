@@ -1,0 +1,22 @@
+<%#
+  The header's appearance panel.
+
+  Wraps the same controls the preferences page uses, so the two can never offer
+  different options. Closed by default in the stylesheet and opened by the
+  `is-open` state class from public/js/appearance.js; without JavaScript the
+  toggle does nothing and the visitor uses /preferences, which is linked here.
+
+  `currentPath` is set on res.locals in app.js, so saving from the panel returns
+  the visitor to the page they were reading rather than to the settings page.
+%>
+<div id="appearance-panel" class="appearance-panel">
+  <h2 class="appearance-panel__title">Appearance</h2>
+
+  <%- include('../components/preferences/appearanceForm', {
+    errors: {},
+    returnTo: currentPath,
+    idPrefix: 'panel',
+  }) %>
+
+  <a href="/preferences" class="appearance-panel__link">Open the full settings page</a>
+</div>

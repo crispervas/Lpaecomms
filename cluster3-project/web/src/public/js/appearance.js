@@ -1,0 +1,92 @@
+// Applies an appearance choice the moment it is made, and saves it in the
+// background.
+//
+// Progressive enhancement: the form works without any of this — it posts, the
+// server stores the cookie and redirects. This only removes the round trip.
+//
+// The script writes state attributes and state classes, never a colour and
+// never a layout value. What `data-theme="midnight"` looks like is decided in
+// styles/less/abstracts/_themes.less and nowhere else.
+(function () {
+  const toggle = document.getElementById('appearance-toggle');
+  const panel = document.getElementById('appearance-panel');
+  if (!toggle || !panel) {
+    return;
+  }
+
+  const form = panel.querySelector('[data-appearance-form]');
+  const status = panel.querySelector('[data-appearance-status]');
+
+  toggle.addEventListener('click', () => {
+    // The stylesheet keeps the panel closed by default; this class is what
+    // opens it, so the toggle's return value is the open state directly.
+    const isOpen = panel.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  // A panel that stays open after the reader has moved on is a panel in the
+  // way. Closing on an outside click costs nothing and does not trap focus.
+  document.addEventListener('click', (event) => {
+    if (panel.contains(event.target) || toggle.contains(event.target)) return;
+
+    panel.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !panel.classList.contains('is-open')) return;
+
+    panel.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
+  });
+
+  if (!form) {
+    return;
+  }
+
+  /**
+   * Show a message when a save could not be stored.
+   *
+   * @param {string} message - What to tell the reader; empty clears the line.
+   * @returns {void}
+   */
+  function report(message) {
+    if (!status) return;
+
+    status.textContent = message;
+    status.classList.toggle('u-hidden', message === '');
+  }
+
+  form.addEventListener('change', async (event) => {
+    const control = event.target;
+    if (control.name !== 'theme' && control.name !== 'text') return;
+
+    // Applied first, so the change is visible whether or not the save lands.
+    if (control.name === 'theme') {
+      document.documentElement.dataset.theme = control.value;
+    } else {
+      document.documentElement.dataset.textSize = control.value;
+    }
+
+    report('');
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        // Marks this as the background save, which the controller answers with
+        // 204 rather than a redirect it would be pointless to follow.
+        headers: { 'X-Requested-With': 'fetch' },
+        body: new FormData(form),
+      });
+
+      if (!response.ok) {
+        report('That choice could not be saved. It will reset on your next visit.');
+      }
+    } catch {
+      // Offline, or the server went away. The change is already applied; only
+      // its persistence failed, and saying so is more useful than silence.
+      report('That choice could not be saved. It will reset on your next visit.');
+    }
+  });
+})();

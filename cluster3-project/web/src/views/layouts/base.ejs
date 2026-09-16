@@ -42,6 +42,7 @@
   </head>
   <body class="page">
     <%- include('../partials/header') %>
+    <%- include('../partials/appearancePanel') %>
     <%# The optional `bleed` local drops the shared container so a page can run
         edge to edge — the login page's split screen, which the mockup draws
         filling the viewport. Every page that omits it renders in the container. %>
@@ -50,6 +51,7 @@
     </main>
     <%- include('../partials/footer') %>
     <script src="/js/nav.js" defer></script>
+    <script src="/js/appearance.js" defer></script>
     <%# Optional per-page scripts, injected through the `scripts` local and
         loaded in order after the shared ones (e.g. Leaflet, then the map init).
         `defer` preserves order and runs them once the DOM is parsed. %>
