@@ -15,6 +15,12 @@
  * by declaration — `daylight` is whatever `:root` already publishes, and
  * `normal` is the base `html { font-size: 100% }` — so neither has a
  * `html[data-theme="..."]` or `html[data-text-size="..."]` block to find.
+ *
+ * The source is stripped of comments before it is scanned. A block commented
+ * out rather than deleted no longer compiles and no longer renders, but its
+ * text is still sitting in the file — exactly the silent drift this test
+ * exists to catch, so leaving comments in would give it a blind spot shaped
+ * like the most common way to temporarily disable a theme.
  */
 
 import { test } from 'node:test';
@@ -46,6 +52,50 @@ const TYPOGRAPHY_FILE = path.join(
 );
 
 /**
+ * Remove LESS comments from source text before it is scanned.
+ *
+ * Block comments go first, since a `//` sitting inside a `/* ... *\/` block
+ * must not be treated as the start of a line comment of its own. Line comments
+ * are then stripped with a quote-aware scan rather than a plain regex, so a
+ * `//` inside a quoted attribute value — a URL, say — is left alone instead of
+ * truncating the rest of that line.
+ *
+ * @param {string} source - Raw LESS source.
+ * @returns {string} The source with every comment removed; structure otherwise unchanged.
+ */
+function stripComments(source) {
+  const withoutBlockComments = source.replace(/\/\*[\s\S]*?\*\//g, '');
+  let result = '';
+  let quote = null;
+
+  for (let i = 0; i < withoutBlockComments.length; i += 1) {
+    const char = withoutBlockComments[i];
+
+    if (quote) {
+      result += char;
+      if (char === quote) quote = null;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      result += char;
+      continue;
+    }
+
+    if (char === '/' && withoutBlockComments[i + 1] === '/') {
+      const end = withoutBlockComments.indexOf('\n', i);
+      i = end === -1 ? withoutBlockComments.length : end - 1;
+      continue;
+    }
+
+    result += char;
+  }
+
+  return result;
+}
+
+/**
  * Names captured out of every occurrence of a one-argument attribute selector.
  *
  * @param {string} source - LESS source to scan.
@@ -53,7 +103,7 @@ const TYPOGRAPHY_FILE = path.join(
  * @returns {Set<string>} Distinct names found, in no particular order.
  */
 function namesIn(source, pattern) {
-  return new Set([...source.matchAll(pattern)].map((match) => match[1]));
+  return new Set([...stripComments(source).matchAll(pattern)].map((match) => match[1]));
 }
 
 /**

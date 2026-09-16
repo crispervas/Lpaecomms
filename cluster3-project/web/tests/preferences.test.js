@@ -93,12 +93,16 @@ test('anything that could leave the site is not', () => {
     'https://evil.example',
     '//evil.example',
     '/' + String.fromCharCode(92) + 'evil.example',
+    String.fromCharCode(92) + 'evil.example',
+    '/' + String.fromCharCode(92) + '/evil.example',
+    '//' + String.fromCharCode(92) + 'evil.example',
     'catalog',
     '',
     undefined,
     null,
     42,
     '/catalog' + carriageReturn + 'Set-Cookie: a=b',
+    '/catalog' + String.fromCharCode(9) + '/evil.example',
   ]) {
     assert.equal(isSafeReturnPath(value), false, `for ${JSON.stringify(value)}`);
   }
