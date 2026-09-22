@@ -24,19 +24,34 @@ export const RECENT_LIMIT = 8;
  *
  * Unreadable entries are dropped rather than failing the whole list: a cookie
  * that picked up a stray character should cost one recommendation, not all of
- * them.
+ * them. The pipeline runs parse -> drop unusable -> dedupe -> truncate, in
+ * that order: deduping before truncating means a run of repeats does not
+ * silently shrink an otherwise-full, valid history down to whatever survived
+ * the repeats.
  *
  * @param {string|undefined} raw - Raw cookie value, or undefined when unset.
- * @returns {Array<number>} Product ids, most recently viewed first.
+ * @returns {Array<number>} Product ids, most recently viewed first, each once.
  */
 export function parseRecent(raw) {
   if (typeof raw !== 'string' || raw === '') return [];
 
-  return raw
+  const usable = raw
     .split(',')
     .map((entry) => Number(entry))
-    .filter((id) => Number.isInteger(id) && id > 0)
-    .slice(0, RECENT_LIMIT);
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  // pushRecent never writes a duplicate, but the cookie is client-editable
+  // and nobody but this function validates it before it gets here — a
+  // hand-edited cookie can still arrive with an id repeated, so dedupe on
+  // read too, keeping the first (most recent) occurrence.
+  const seen = new Set();
+  const deduped = usable.filter((id) => {
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+
+  return deduped.slice(0, RECENT_LIMIT);
 }
 
 /**
