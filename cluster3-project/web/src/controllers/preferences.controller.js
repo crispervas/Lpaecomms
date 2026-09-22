@@ -45,7 +45,13 @@ export class PreferencesController {
    * @returns {void}
    */
   save(req, res) {
-    const { theme, text, returnTo } = req.body;
+    // `req.body` is `undefined`, not `{}`, when the request arrives in an
+    // encoding neither express.json() nor express.urlencoded() parses (e.g.
+    // multipart) — there is no parser installed for that on purpose, so this
+    // request must degrade into the same 422 a bad field value already gets,
+    // not throw. `?? {}` reduces it to that existing case: every field below
+    // reads as missing, which validatePreferences already rejects.
+    const { theme, text, returnTo } = req.body ?? {};
     const errors = validatePreferences({ theme, text });
 
     // Resolved before the branch so the error render returns the visitor to the

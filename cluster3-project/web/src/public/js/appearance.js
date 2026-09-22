@@ -77,7 +77,13 @@
         // Marks this as the background save, which the controller answers with
         // 204 rather than a redirect it would be pointless to follow.
         headers: { 'X-Requested-With': 'fetch' },
-        body: new FormData(form),
+        // A bare FormData body is always sent as multipart/form-data by fetch,
+        // no matter what headers say — and the server has no multipart parser,
+        // on purpose, since nothing here ever needs one. URLSearchParams turns
+        // the same fields into application/x-www-form-urlencoded instead, the
+        // encoding express.urlencoded() already reads. Safe here because this
+        // form is only radios and a hidden field, never a file input.
+        body: new URLSearchParams(new FormData(form)),
       });
 
       if (!response.ok) {

@@ -155,3 +155,20 @@ test('a background save with an invalid theme still reports 422', async () => {
   assert.equal(response.status, 422);
   assert.equal(response.headers['set-cookie'], undefined);
 });
+
+test('a body encoded as multipart is refused with 422, not a crash', async () => {
+  // No test above crosses this seam: .type('form') sends
+  // application/x-www-form-urlencoded, which is what a native <form> submits
+  // and what express.urlencoded() parses. This app installs no multipart
+  // parser on purpose, so req.body is undefined for a multipart request
+  // regardless of how well-formed its fields are — the route must survive
+  // that as the same 422 a bad field value already gets, not throw.
+  const response = await request(createApp())
+    .post('/preferences')
+    .field('theme', 'forest')
+    .field('text', 'large')
+    .field('returnTo', '/catalog');
+
+  assert.equal(response.status, 422);
+  assert.equal(response.headers['set-cookie'], undefined);
+});
