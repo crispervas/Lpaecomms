@@ -1,0 +1,7 @@
+{
+  "name": "lpaecomms-mobile-scaffold",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
