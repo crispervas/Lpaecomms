@@ -21,12 +21,12 @@ export interface Product {
 }
 
 /**
- * Validate one raw catalogue item.
+ * Validate one raw catalogue item. Shared by every module that reads products.
  *
  * @param raw - An element of the response's products array.
  * @returns The typed product, or null when a required field is missing or mistyped.
  */
-function toProduct(raw: unknown): Product | null {
+export function parseProduct(raw: unknown): Product | null {
   if (typeof raw !== 'object' || raw === null) return null;
 
   const { id, name, priceAud, imageUrl } = raw as Record<string, unknown>;
@@ -54,6 +54,6 @@ export async function fetchProducts(): Promise<ApiResult<Product[]>> {
     return { ok: false, status: result.status, data: null, error: MESSAGES.unreadable };
   }
 
-  const products = list.map(toProduct).filter((p): p is Product => p !== null);
+  const products = list.map(parseProduct).filter((p): p is Product => p !== null);
   return { ok: true, status: result.status, data: products, error: null };
 }
