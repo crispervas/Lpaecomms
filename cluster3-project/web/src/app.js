@@ -35,6 +35,14 @@ export function createApp() {
   // Static assets, including the compiled stylesheet, live in src/public.
   app.use(express.static(path.join(srcDir, 'public')));
 
+  // CORS headers apply to every /api response — success, failure, and the
+  // API's own 404 alike — so this must be mounted ahead of both the routes
+  // and notFoundHandlerApi below, not folded into either one. It also sits
+  // ahead of the body parsers: a body they reject skips straight to the error
+  // middleware, and that 400 must still be readable cross-origin. View routes
+  // are served same-origin to the browser and carry no CORS header.
+  app.use('/api', apiCorsHeaders);
+
   // Parse JSON and URL-encoded form bodies for both view and API routes.
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -54,12 +62,6 @@ export function createApp() {
     res.locals.currentPath = req.path;
     next();
   });
-
-  // CORS headers apply to every /api response — success, failure, and the
-  // API's own 404 alike — so this must be mounted ahead of both the routes
-  // and notFoundHandlerApi below, not folded into either one. View routes are
-  // served same-origin to the browser and carry no CORS header.
-  app.use('/api', apiCorsHeaders);
 
   // Mount view routes (HTML) and API routes (JSON).
   registerRoutes(app);

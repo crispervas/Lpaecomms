@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiGet, MESSAGES, REQUEST_TIMEOUT_MS } from './client';
+import { apiGet, apiPost, MESSAGES, REQUEST_TIMEOUT_MS } from './client';
 
 const BASE = 'http://api.test/api/v1';
 
@@ -116,5 +116,56 @@ describe('apiGet', () => {
 
     expect(result).toEqual({ ok: false, status: null, data: null, error: MESSAGES.notConfigured });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('apiPost', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_API_BASE_URL', BASE);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('sends the body as JSON with a POST', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(202, { received: true }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await apiPost('/contact', { name: 'Ana' });
+
+    expect(result).toEqual({ ok: true, status: 202, data: { received: true }, error: null });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`${BASE}/contact`);
+    expect(init.method).toBe('POST');
+    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(init.body).toBe('{"name":"Ana"}');
+  });
+
+  it('carries the field-tagged validation list of a 422', async () => {
+    const validation = [{ field: 'email', message: 'Please enter a valid email address.' }];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(422, { message: 'Some fields need attention.', validation })),
+    );
+
+    const result = await apiPost('/contact', {});
+
+    expect(result).toEqual({
+      ok: false,
+      status: 422,
+      data: null,
+      error: 'Some fields need attention.',
+      validation,
+    });
+  });
+
+  it('omits validation when the error body has none', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(400, { message: 'Bad.', validation: [] })));
+
+    const result = await apiPost('/contact', {});
+
+    expect(result).toEqual({ ok: false, status: 400, data: null, error: 'Bad.' });
   });
 });

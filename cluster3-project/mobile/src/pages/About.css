@@ -1,0 +1,71 @@
+/* About & Contact page, following Mobile About in the mockups. */
+.about__toolbar {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 12px;
+}
+
+.about__back {
+  --background: var(--lpa-surface);
+  --color: var(--lpa-ink);
+  --border-radius: 50%;
+  --padding-start: 0;
+  --padding-end: 0;
+  --icon-font-size: 18px;
+  width: 38px;
+  height: 38px;
+  margin-right: 14px;
+}
+
+.about__back::part(native) {
+  border: 1px solid var(--lpa-border);
+}
+
+.about__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.about {
+  padding: 8px 20px 28px;
+}
+
+.about__eyebrow {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--lpa-accent);
+}
+
+.about__headline {
+  margin: 0 0 18px;
+  font-family: var(--lpa-font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.about__story {
+  margin: 0 0 28px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--lpa-subtle);
+}
+
+.about__rule {
+  height: 1px;
+  margin: 0 0 28px;
+  border: none;
+  background: var(--lpa-border);
+}
+
+.about__heading {
+  margin: 0 0 16px;
+  font-family: var(--lpa-font-display);
+  font-size: 16px;
+  font-weight: 600;
+}

@@ -51,7 +51,11 @@ const isApiRequest = (req) => req.originalUrl.startsWith("/api");
  */
 const collectValidation = (err) => {
     if (err.errors) return err.errors.map((e) => ({ message: `${e.path} ${e.message}` }));
-    if (err.data?.details) return err.data.details.map((d) => ({ message: `${d}` }));
+    // Structured details (e.g. { field, message }) are passed through so a
+    // client can put each message under its own field.
+    if (err.data?.details) {
+        return err.data.details.map((d) => (typeof d === "object" && d !== null ? d : { message: `${d}` }));
+    }
     return [];
 };
 
@@ -103,6 +107,11 @@ export const logErrors = (err, req, res, next) => {
  * @returns {void}
  */
 export const wrapErrors = (err, req, res, next) => {
+    // express.json() rejects a malformed body with a plain error of this type.
+    // The fault is the client's, so it must not surface as a 500.
+    if (err.type === "entity.parse.failed") {
+        return next(boom.badRequest("The request body is not valid JSON."));
+    }
     // Anything that isn't already Boom becomes a 500 so downstream code stays uniform.
     if (!err.isBoom) return next(boom.badImplementation(err));
     next(err);

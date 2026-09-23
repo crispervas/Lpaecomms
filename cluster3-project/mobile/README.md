@@ -79,3 +79,9 @@ placeholders until their own views are built. Catalog reads
 `GET /api/v1/categories` and `GET /api/v1/catalog` — restart the web server
 after pulling so it serves them. Categories on Home are still a fixed
 client-side list; the Catalog's chips come from the API.
+
+About & Contact (from Home's "Our story" card) sends its form to
+`POST /api/v1/contact` and embeds a Leaflet map with OpenStreetMap tiles,
+which need a connection; offline the studio card's "Open in Maps" link still
+works. Its copy follows the web's About and Contact pages rather than the
+mockup (no team section, no invented history).

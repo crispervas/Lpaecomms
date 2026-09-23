@@ -22,6 +22,7 @@ import currencyRoutes from './api/currency.routes.js';
 import passwordRoutes from './api/password.routes.js';
 import categoryRoutes from './api/category.routes.js';
 import catalogApiRoutes from './api/catalog.routes.js';
+import contactApiRoutes from './api/contact.routes.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -48,6 +49,7 @@ export function registerRoutes(app) {
   apiRouter.use('/', productRoutes);
   apiRouter.use('/', categoryRoutes);
   apiRouter.use('/', catalogApiRoutes);
+  apiRouter.use('/', contactApiRoutes);
   apiRouter.use('/', currencyRoutes);
   apiRouter.use('/', passwordRoutes);
 

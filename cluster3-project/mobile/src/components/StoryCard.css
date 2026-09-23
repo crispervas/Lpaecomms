@@ -7,6 +7,7 @@
   border-radius: 14px;
   background: var(--lpa-ink);
   color: var(--lpa-on-ink);
+  text-decoration: none;
 }
 
 .story-card__title {

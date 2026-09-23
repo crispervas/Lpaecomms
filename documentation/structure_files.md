@@ -46,6 +46,8 @@ bruno/lpaecomms-web/
 │   └── get-categories.bru         # Category list request + docs (populated only, caching)
 ├── catalog/
 │   └── get-catalog.bru            # Paged catalogue request + docs (filter, offset/limit, hasMore)
+├── contact/
+│   └── post-contact.bru           # Contact message request + docs (202/422/400, no delivery)
 ├── currency/
 │   └── get-convert.bru            # Currency conversion request + docs (caching, identity short-circuit)
 └── password/
@@ -249,6 +251,7 @@ src/
 │       ├── product.routes.js
 │       ├── category.routes.js
 │       ├── catalog.routes.js
+│       ├── contact.routes.js
 │       ├── currency.routes.js
 │       └── password.routes.js
 ├── controllers/          # CONTROLLER: request in, response out
@@ -261,6 +264,7 @@ src/
 │   ├── product.controller.js
 │   ├── category.controller.js # API: GET /api/v1/categories
 │   ├── catalogApi.controller.js # API: GET /api/v1/catalog (paged, category filter)
+│   ├── contactApi.controller.js # API: POST /api/v1/contact (web form rules, 202/422)
 │   ├── currency.controller.js
 │   ├── password.controller.js
 │   ├── catalog.controller.js  # Catalog page: category filter, product grid
@@ -533,17 +537,19 @@ mobile/
     │   ├── client.ts         # apiGet → {ok, status, data, error}; 8 s timeout
     │   ├── products.ts       # fetchProducts → validated Product[]; parseProduct shared
     │   ├── categories.ts     # fetchCategories → validated CatalogCategory[]
-    │   └── catalog.ts        # fetchCatalogPage → one page + hasMore
-    ├── hooks/                # useProducts, useCategories, useCatalog (paging, stale-safe)
-    ├── lib/formatPrice.ts    # AUD display formatting
-    ├── data/categories.tsx   # Fixed "Shop by category" list (no API yet)
-    ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard, ComingSoonPage
-    ├── pages/                # Home and Catalog (mockups), Cart / Login (placeholders)
+    │   ├── catalog.ts        # fetchCatalogPage → one page + hasMore
+    │   └── contact.ts        # sendContact; fieldErrors maps 422 validation to fields
+    ├── hooks/                # useProducts, useCategories, useCatalog, useContactForm
+    ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules)
+    ├── data/                 # categories.tsx (fixed Home rail), studio.ts (studio location)
+    ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard,
+    │                         # ContactChannels, ContactForm, StudioMap (Leaflet), ComingSoonPage
+    ├── pages/                # Home, Catalog, About (mockups), Cart / Login (placeholders)
     └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms. Home and Catalog implement their mockups; Cart and Login are
+platforms. Home, Catalog and About implement their mockups; Cart and Login are
 placeholders. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.

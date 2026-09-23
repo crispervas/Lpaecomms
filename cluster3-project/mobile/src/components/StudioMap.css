@@ -1,0 +1,19 @@
+/* Embedded studio map. */
+.studio-map {
+  position: relative;
+  /* Leaflet's panes use z-indexes in the hundreds; isolating them keeps the
+     map from painting over the page header while the content scrolls. */
+  isolation: isolate;
+  z-index: 0;
+  height: 140px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--lpa-border);
+}
+
+.studio-map__marker {
+  fill: var(--lpa-accent);
+  fill-opacity: 1;
+  stroke: var(--lpa-surface);
+  stroke-width: 3;
+}
