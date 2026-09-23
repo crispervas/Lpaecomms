@@ -38,7 +38,7 @@ describe('fetchCatalogPage', () => {
     const result = await fetchCatalogPage({ category: 'clothes', offset: 0, limit: 6 });
 
     expect(mockedApiGet).toHaveBeenCalledWith('/catalog?offset=0&limit=6&category=clothes');
-    expect(result).toEqual({ ok: true, status: 200, data: { products: [item], hasMore: true }, error: null });
+    expect(result).toEqual({ ok: true, status: 200, data: { products: [item], hasMore: true, received: 1 }, error: null });
   });
 
   it('defaults a missing category name to an empty string and drops malformed items', async () => {
@@ -52,6 +52,8 @@ describe('fetchCatalogPage', () => {
     const result = await fetchCatalogPage({ category: null, offset: 0, limit: 6 });
 
     expect(result.ok && result.data.products).toEqual([{ ...item, category: '' }]);
+    // The dropped item still occupied a slot in the server's page.
+    expect(result.ok && result.data.received).toBe(2);
   });
 
   it('fails when hasMore is missing', async () => {

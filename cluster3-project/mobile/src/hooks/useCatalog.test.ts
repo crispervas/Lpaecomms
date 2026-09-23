@@ -11,12 +11,13 @@ import { CATALOG_PAGE_SIZE, useCatalog } from './useCatalog';
 const mockedFetch = vi.mocked(fetchCatalogPage);
 
 /** A successful page holding products with the given ids. */
-const page = (ids: number[], hasMore: boolean): ApiResult<CatalogPage> => ({
+const page = (ids: number[], hasMore: boolean, received = ids.length): ApiResult<CatalogPage> => ({
   ok: true,
   status: 200,
   data: {
     products: ids.map((id) => ({ id, name: `P${id}`, priceAud: 10, imageUrl: '', category: 'Clothes' })),
     hasMore,
+    received,
   },
   error: null,
 });
@@ -81,6 +82,26 @@ describe('useCatalog', () => {
 
     act(() => result.current.loadMore());
     await waitFor(() => expect(ids(result)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]));
+
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.hasMore).toBe(false));
+    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, offset: 12, limit: CATALOG_PAGE_SIZE });
+  });
+
+  it('advances past items the client rejected as malformed', async () => {
+    mockedFetch
+      .mockResolvedValueOnce(page([1, 2, 3, 4, 5, 6], true))
+      // The server sent six items, all malformed: nothing shows, but the next
+      // request must still move past them instead of asking for them again.
+      .mockResolvedValueOnce(page([], true, 6))
+      .mockResolvedValueOnce(page([13], false));
+
+    const { result } = renderHook(() => useCatalog(null));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.loadingMore).toBe(false));
 
     act(() => result.current.loadMore());
     await waitFor(() => expect(result.current.hasMore).toBe(false));

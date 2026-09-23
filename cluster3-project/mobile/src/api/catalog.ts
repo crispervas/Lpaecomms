@@ -20,6 +20,11 @@ export interface CatalogPage {
   products: CatalogProduct[];
   /** Whether another page exists after this one. */
   hasMore: boolean;
+  /**
+   * How many items the server sent, before malformed ones were dropped. The
+   * next page starts this far on, so a rejected item is skipped, not re-requested.
+   */
+  received: number;
 }
 
 /** Which page to request. */
@@ -81,5 +86,10 @@ export async function fetchCatalogPage(query: CatalogQuery): Promise<ApiResult<C
     .map(parseCatalogProduct)
     .filter((p): p is CatalogProduct => p !== null);
 
-  return { ok: true, status: result.status, data: { products, hasMore: body.hasMore }, error: null };
+  return {
+    ok: true,
+    status: result.status,
+    data: { products, hasMore: body.hasMore, received: body.products.length },
+    error: null,
+  };
 }

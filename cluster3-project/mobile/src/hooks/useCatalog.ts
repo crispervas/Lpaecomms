@@ -44,8 +44,8 @@ interface CatalogState {
   loadMoreError: string | null;
   /**
    * Where the next page starts. Tracked apart from products.length because
-   * repeated products are dropped, and the offset must still advance by what
-   * the server actually returned.
+   * repeated and malformed products are dropped, and the offset must still
+   * advance by what the server actually returned.
    */
   nextOffset: number;
 }
@@ -104,7 +104,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
               status: 'ready',
               products: result.data.products,
               hasMore: result.data.hasMore,
-              nextOffset: result.data.products.length,
+              nextOffset: result.data.received,
             }
           : { ...INITIAL, status: 'error', error: result.error },
       );
@@ -132,7 +132,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
               loadingMore: false,
               products: appendUnique(latest.products, result.data.products),
               hasMore: result.data.hasMore,
-              nextOffset: latest.nextOffset + result.data.products.length,
+              nextOffset: latest.nextOffset + result.data.received,
             }
           : { ...latest, loadingMore: false, loadMoreError: result.error },
       );
