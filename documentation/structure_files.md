@@ -512,21 +512,29 @@ this order and update this document:
 
 ```
 mobile/
-├── .env.example              # Documents VITE_API_BASE_URL (unused so far)
+├── .env.example              # Documents VITE_API_BASE_URL (read by api/client.ts)
 ├── capacitor.config.ts       # App id com.lpaecomms.mobile, webDir: dist
 ├── ionic.config.json         # Ionic CLI project metadata
 ├── ios/                      # Gitignored — regenerate with `npx cap add ios`
 ├── android/                  # Gitignored — regenerate with `npx cap add android`
+├── public/img/hero-product.png  # Home hero, copied from the web platform
 └── src/
-    ├── main.tsx              # React root
-    ├── App.tsx               # Ionic router shell — the template's default, untouched
-    ├── pages/Home.tsx        # The template's only screen
-    ├── components/ExploreContainer.tsx  # Default placeholder content
-    └── theme/variables.css   # Ionic's default design tokens
+    ├── main.tsx              # React root; loads the bundled fonts
+    ├── App.tsx               # IonTabs shell: Home, Catalog, Cart, Login
+    ├── api/
+    │   ├── client.ts         # apiGet → {ok, status, data, error}; 8 s timeout
+    │   └── products.ts       # fetchProducts → validated Product[]
+    ├── hooks/useProducts.ts  # loading / ready / error state + retry
+    ├── lib/formatPrice.ts    # AUD display formatting
+    ├── data/categories.tsx   # Fixed "Shop by category" list (no API yet)
+    ├── components/           # CategoryRail, ProductCard(+Skeleton), StoryCard, ComingSoonPage
+    ├── pages/                # Home (mockup), Catalog / Cart / Login (placeholders)
+    └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms — no product page exists yet. Unlike `web` and `desktop` (plain
+platforms. The Home tab implements the Mobile Home mockup; the other tabs are
+placeholders. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.
 
