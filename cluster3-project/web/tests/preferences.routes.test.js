@@ -72,7 +72,8 @@ test('the chosen theme also reaches the error page, raised before preferencesLoc
     .set('Content-Type', 'application/json')
     .send('{bad');
 
-  assert.equal(response.status, 500);
+  // A malformed body is the client's fault, so it answers 400 (see wrapErrors).
+  assert.equal(response.status, 400);
   // The regression sent plain text ("Error 500") because rendering the layout
   // threw. Asserting the content type is HTML is enough to prove the layout
   // rendered without reading its markup.
