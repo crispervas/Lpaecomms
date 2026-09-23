@@ -179,18 +179,22 @@ export class ProductModel {
    * distinct cache entry, which is why the home page's eight products, the
    * mashup's five, and each category's twelve can never overwrite one another.
    *
+   * Offset joins them for the same reason: each page of a paged listing is its
+   * own cache entry, so page two can never be served page one's products.
+   *
    * @param {number} limit - How many products to request.
    * @param {number|null} [categoryId] - Category to scope to, or null for all.
+   * @param {number} [offset] - How many products to skip; 0 for the first page.
    * @returns {string} The absolute feed URL.
    */
-  #catalogueUrl(limit, categoryId = null) {
+  #catalogueUrl(limit, categoryId = null, offset = 0) {
     const url = new URL(
       categoryId === null
         ? this.catalogueBaseUrl
         : `${this.categoriesBaseUrl}/${categoryId}/products`,
     );
 
-    url.searchParams.set('offset', '0');
+    url.searchParams.set('offset', String(offset));
     url.searchParams.set('limit', String(limit));
 
     return url.toString();
@@ -286,13 +290,14 @@ export class ProductModel {
    * @param {number|null} categoryId - Category to scope to, or null for every
    *   category.
    * @param {number} [limit] - How many products to return.
+   * @param {number} [offset] - How many products to skip, for paging.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
    *   Products in feed order.
    * @throws {Error} When the feed is unreachable, times out, or answers a
    *   non-2xx status.
    */
-  async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT) {
-    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId));
+  async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT, offset = 0) {
+    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId, offset));
 
     return products.slice(0, limit).map((product) => ({
       id: product.id,
