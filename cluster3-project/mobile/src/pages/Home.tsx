@@ -1,25 +1,13 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
-import './Home.css';
+/**
+ * @file Home tab. Temporary stub; the mockup's sections arrive in a later task.
+ */
+import ComingSoonPage from '../components/ComingSoonPage';
 
-const Home: React.FC = () => {
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Blank</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <ExploreContainer />
-      </IonContent>
-    </IonPage>
-  );
-};
-
-export default Home;
+/**
+ * Render the Home tab.
+ *
+ * @returns The home page.
+ */
+export default function Home() {
+  return <ComingSoonPage title="Home" />;
+}

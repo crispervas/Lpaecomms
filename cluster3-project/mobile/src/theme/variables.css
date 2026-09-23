@@ -1,2 +1,36 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/*
+ * Design tokens for the mobile storefront, taken from the mobile mockups.
+ * This is the only file allowed to hardcode a colour: components reference
+ * the --lpa-* tokens, and the --ion-* mappings make Ionic's own components
+ * (toolbar, tab bar, buttons) pick up the same palette.
+ */
+:root {
+  --lpa-bg: #fafaf8;
+  --lpa-surface: #ffffff;
+  --lpa-ink: #14161a;
+  --lpa-on-ink: #ffffff;
+  --lpa-accent: #2f5efb;
+  --lpa-accent-soft: #eef1ff;
+  --lpa-border: #e7e5df;
+  --lpa-muted: #9a9c9a;
+
+  --lpa-font-body: 'IBM Plex Sans', sans-serif;
+  --lpa-font-display: 'Space Grotesk', sans-serif;
+
+  --ion-font-family: var(--lpa-font-body);
+  --ion-background-color: var(--lpa-bg);
+  --ion-text-color: var(--lpa-ink);
+  --ion-toolbar-background: var(--lpa-bg);
+  --ion-toolbar-border-color: transparent;
+  --ion-tab-bar-background: var(--lpa-surface);
+  --ion-tab-bar-border-color: var(--lpa-border);
+  --ion-tab-bar-color: var(--lpa-muted);
+  --ion-tab-bar-color-selected: var(--lpa-accent);
+
+  --ion-color-primary: #2f5efb;
+  --ion-color-primary-rgb: 47, 94, 251;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2953dd;
+  --ion-color-primary-tint: #446efb;
+}
