@@ -20,17 +20,30 @@ reimplementing what the official CLI already gets right.
 
 ## Setup
 
-`ios/` and `android/` are gitignored — they are fully derived from
-`capacitor.config.ts` and `package.json`, so a fresh checkout regenerates
-them instead of tracking them:
+`ios/` and `android/` are gitignored — nothing in them is hand-edited yet, so
+a fresh checkout regenerates them from `capacitor.config.ts` and
+`package.json` instead of tracking them (see the caveat at the bottom of
+this section):
 
 ```bash
 pnpm install
 cp .env.example .env
 pnpm build
 npx cap add ios
+
+# Android's platform add runs a Gradle sync, which needs these three set —
+# Gradle's own error text will not tell you which one is missing:
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 npx cap add android
 ```
+
+The moment anything in `ios/` or `android/` is hand-edited — permissions
+in `Info.plist`, entries in `AndroidManifest.xml`, app icons, a signing
+config, a deep-link scheme — regenerating destroys that edit. That is the
+point to revisit this gitignore policy and start committing the native
+projects, not to work around it.
 
 ## Commands
 

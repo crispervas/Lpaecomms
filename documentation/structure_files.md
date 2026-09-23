@@ -478,8 +478,11 @@ JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.
 
 `ios/` and `android/` are entirely derived from `capacitor.config.ts` and
-`package.json` — the root `.gitignore` excludes both directories outright
-("Native Capacitor projects are generated from config; regenerate with
-`npx cap add`"), so neither is committed. Capacitor 8 resolves its default
-plugins through Swift Package Manager, so there is no `Podfile`/`.xcworkspace`
-on iOS — build against `App.xcodeproj` directly.
+`package.json` today — the root `.gitignore` excludes both directories
+outright ("Native Capacitor projects are generated from config; regenerate
+with `npx cap add`"), so neither is committed. Capacitor 8 resolves its
+default plugins through Swift Package Manager, so there is no
+`Podfile`/`.xcworkspace` on iOS — build against `App.xcodeproj` directly.
+That "derived" premise holds only until something inside either directory is
+hand-edited (permissions, manifest entries, icons, signing, deep links) —
+the first such edit is the point to start committing the native projects.
