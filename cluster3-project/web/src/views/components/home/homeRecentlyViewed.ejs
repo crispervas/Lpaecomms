@@ -1,0 +1,50 @@
+<%#
+  The two personalised blocks.
+
+  Neither is a setting. "Recently viewed" replays what the visitor opened;
+  "Picked for you" is an inference from it — products in the category they have
+  read most, minus the ones they have already seen. Nobody configures either.
+
+  A visitor with no history sees nothing at all: an empty "Picked for you" is
+  worse than no block, because it promises a service it is not providing.
+
+  Expected locals:
+    recentlyViewed — array of {id, name, category, priceAud, imageUrl}
+    pickedForYou   — the same shape; empty when no category dominates
+%>
+<% if (recentlyViewed.length || pickedForYou.length) { %>
+  <%
+    // Built once for both grids rather than per card: constructing an Intl
+    // formatter is the expensive part, formatting with it is not.
+    const priceFormatter = new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+    });
+  %>
+
+  <% if (recentlyViewed.length) { %>
+    <section class="recently-viewed">
+      <h2 class="section-heading">Recently viewed</h2>
+      <p class="recently-viewed__note">Picking up where you left off.</p>
+      <div class="product-grid">
+        <% recentlyViewed.forEach((product) => { %>
+          <%- include('../shared/productCard', { product, priceFormatter }) %>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+  <% if (pickedForYou.length) { %>
+    <section class="recently-viewed">
+      <h2 class="section-heading">Picked for you</h2>
+      <p class="recently-viewed__note">
+        More <%= pickedForYou[0].category %>, based on what you have been looking at.
+      </p>
+      <div class="product-grid">
+        <% pickedForYou.forEach((product) => { %>
+          <%- include('../shared/productCard', { product, priceFormatter }) %>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+<% } %>

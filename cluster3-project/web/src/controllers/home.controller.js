@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { RECENT_COOKIE, parseRecent } from '../lib/recentlyViewed.js';
+
 /** Absolute path to the static image directory. */
 const IMAGE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'img');
 
@@ -22,6 +24,9 @@ const HERO_IMAGE_CANDIDATES = ['hero-product.webp', 'hero-product.jpg', 'hero-pr
 
 /** The mockup's trending grid holds eight cards. */
 const FEATURED_LIMIT = 8;
+
+/** The "Picked for you" row holds four cards, like the detail page's related row. */
+const PICKED_COUNT = 4;
 
 /**
  * Find the hero photograph among the accepted filenames.
@@ -46,6 +51,39 @@ export function resolveHeroImage(imageDir = IMAGE_DIR) {
  * appear mid-process, so a per-request stat would buy nothing.
  */
 const heroImage = resolveHeroImage();
+
+/**
+ * Find the category a visitor has looked at most.
+ *
+ * Ties break toward the more recently viewed product, because `findByIds`
+ * returns newest first and the first category to reach a count keeps it. That
+ * is the right bias: a visitor who has just switched interest is telling us
+ * something more current than the tally is.
+ *
+ * @param {Array<{categoryId: number|null}>} products - Recently viewed products.
+ * @returns {number|null} The dominant category id, or null when there is none.
+ */
+function dominantCategoryId(products) {
+  const counts = new Map();
+
+  for (const { categoryId } of products) {
+    if (categoryId === null || categoryId === undefined) continue;
+
+    counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
+  }
+
+  let dominant = null;
+  let best = 0;
+
+  for (const [categoryId, count] of counts) {
+    if (count > best) {
+      dominant = categoryId;
+      best = count;
+    }
+  }
+
+  return dominant;
+}
 
 /**
  * Controller for the storefront home page.
@@ -85,11 +123,63 @@ export class HomeController {
       });
     }
 
+    const { recentlyViewed, pickedForYou } = await this.#personalise(req);
+
     res.render('layouts/base', {
       title: 'Lpaecomms — Home',
       page: 'home',
       heroImage,
       products,
+      recentlyViewed,
+      pickedForYou,
     });
+  }
+
+  /**
+   * Build the two blocks derived from what this visitor has browsed.
+   *
+   * Nobody asked for these and nobody configured them, which is what separates
+   * them from the appearance controls: the history is a record of behaviour and
+   * "Picked for you" is an inference drawn from it.
+   *
+   * Every failure here resolves to empty rather than throwing. These blocks are
+   * an extra; a recommendation that cannot be built must never be the reason the
+   * storefront has no front page.
+   *
+   * @param {import('express').Request} req - Incoming request, read for cookies.
+   * @returns {Promise<{recentlyViewed: Array<Object>, pickedForYou: Array<Object>}>}
+   *   Both lists, either of which may be empty.
+   */
+  async #personalise(req) {
+    const history = parseRecent(req.cookies?.[RECENT_COOKIE]);
+
+    // A first-time visitor has nothing to personalise from, and asking the feed
+    // about an empty list would be a request with no possible answer.
+    if (history.length === 0) {
+      return { recentlyViewed: [], pickedForYou: [] };
+    }
+
+    try {
+      const recentlyViewed = await this.productModel.findByIds(history);
+      const categoryId = dominantCategoryId(recentlyViewed);
+
+      if (categoryId === null) {
+        return { recentlyViewed, pickedForYou: [] };
+      }
+
+      const pickedForYou = await this.productModel.findByCategoryExcluding(
+        categoryId,
+        recentlyViewed.map((product) => product.id),
+        PICKED_COUNT,
+      );
+
+      return { recentlyViewed, pickedForYou };
+    } catch (error) {
+      console.error('🪵 Home: personalisation unavailable:', {
+        message: error.message,
+      });
+
+      return { recentlyViewed: [], pickedForYou: [] };
+    }
   }
 }
