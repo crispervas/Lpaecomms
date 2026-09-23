@@ -1,0 +1,48 @@
+/* Purchase bar under the product page. */
+.purchase-bar__inner {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--lpa-border);
+  background: var(--lpa-surface);
+}
+
+.purchase-bar__stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--lpa-border);
+  border-radius: 8px;
+}
+
+.purchase-bar__step {
+  width: 36px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--lpa-ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.purchase-bar__quantity {
+  width: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.purchase-bar__add {
+  flex: 1;
+  border: none;
+  border-radius: 10px;
+  background: var(--lpa-ink);
+  color: var(--lpa-on-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.purchase-bar__step:disabled,
+.purchase-bar__add:disabled {
+  opacity: 0.45;
+}

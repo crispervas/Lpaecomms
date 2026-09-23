@@ -1,0 +1,47 @@
+/* Header for pages pushed onto a tab's stack: round back button, title, optional action. */
+.page-header {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 12px;
+}
+
+.page-header__back {
+  --background: var(--lpa-surface);
+  --color: var(--lpa-ink);
+  --border-radius: 50%;
+  --padding-start: 0;
+  --padding-end: 0;
+  --icon-font-size: 18px;
+  width: 38px;
+  height: 38px;
+  margin-right: 14px;
+}
+
+.page-header__back::part(native) {
+  border: 1px solid var(--lpa-border);
+}
+
+.page-header__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.page-header--centered .page-header__title {
+  display: block;
+  text-align: center;
+}
+
+/* Round action button matching the back button, e.g. the cart link. */
+.page-header__action {
+  --border-radius: 50%;
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: var(--lpa-border);
+  --background: var(--lpa-surface);
+  --color: var(--lpa-ink);
+  --padding-start: 0;
+  --padding-end: 0;
+  width: 38px;
+  height: 38px;
+}
