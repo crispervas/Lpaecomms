@@ -1,0 +1,78 @@
+/* Cart tab, following Mobile Cart (step 1) in the mockups. */
+.cart-page__toolbar {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 18px;
+  --padding-bottom: 14px;
+}
+
+.cart-page__title {
+  margin: 0 0 16px;
+  font-family: var(--lpa-font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cart-page {
+  padding: 6px 20px 24px;
+}
+
+.cart-page__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cart-page__actions {
+  margin-top: 20px;
+}
+
+.cart-page__next {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--lpa-ink);
+  color: var(--lpa-on-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cart-page__next:disabled {
+  opacity: 0.45;
+}
+
+.cart-page__note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--lpa-subtle);
+}
+
+.cart-page__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.cart-page__empty-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--lpa-subtle);
+}
+
+.cart-page__browse {
+  --background: var(--lpa-ink);
+  --color: var(--lpa-on-ink);
+  --border-radius: 10px;
+  --box-shadow: none;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
