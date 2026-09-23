@@ -42,6 +42,10 @@ bruno/lpaecomms-web/
 │   └── get-health.bru             # A request + its docs (purpose, params, responses)
 ├── products/
 │   └── get-products.bru           # Product catalogue request + docs (pairing, truncation, caching)
+├── categories/
+│   └── get-categories.bru         # Category list request + docs (populated only, caching)
+├── catalog/
+│   └── get-catalog.bru            # Paged catalogue request + docs (filter, offset/limit, hasMore)
 ├── currency/
 │   └── get-convert.bru            # Currency conversion request + docs (caching, identity short-circuit)
 └── password/
@@ -243,6 +247,8 @@ src/
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
 │       ├── product.routes.js
+│       ├── category.routes.js
+│       ├── catalog.routes.js
 │       ├── currency.routes.js
 │       └── password.routes.js
 ├── controllers/          # CONTROLLER: request in, response out
@@ -253,6 +259,8 @@ src/
 │   ├── mashup.controller.js
 │   ├── health.controller.js
 │   ├── product.controller.js
+│   ├── category.controller.js # API: GET /api/v1/categories
+│   ├── catalogApi.controller.js # API: GET /api/v1/catalog (paged, category filter)
 │   ├── currency.controller.js
 │   ├── password.controller.js
 │   ├── catalog.controller.js  # Catalog page: category filter, product grid
@@ -523,17 +531,19 @@ mobile/
     ├── App.tsx               # IonTabs shell: Home, Catalog, Cart, Login
     ├── api/
     │   ├── client.ts         # apiGet → {ok, status, data, error}; 8 s timeout
-    │   └── products.ts       # fetchProducts → validated Product[]
-    ├── hooks/useProducts.ts  # loading / ready / error state + retry
+    │   ├── products.ts       # fetchProducts → validated Product[]; parseProduct shared
+    │   ├── categories.ts     # fetchCategories → validated CatalogCategory[]
+    │   └── catalog.ts        # fetchCatalogPage → one page + hasMore
+    ├── hooks/                # useProducts, useCategories, useCatalog (paging, stale-safe)
     ├── lib/formatPrice.ts    # AUD display formatting
     ├── data/categories.tsx   # Fixed "Shop by category" list (no API yet)
-    ├── components/           # CategoryRail, ProductCard(+Skeleton), StoryCard, ComingSoonPage
-    ├── pages/                # Home (mockup), Catalog / Cart / Login (placeholders)
+    ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard, ComingSoonPage
+    ├── pages/                # Home and Catalog (mockups), Cart / Login (placeholders)
     └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms. The Home tab implements the Mobile Home mockup; the other tabs are
+platforms. Home and Catalog implement their mockups; Cart and Login are
 placeholders. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.
