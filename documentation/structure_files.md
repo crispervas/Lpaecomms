@@ -452,3 +452,34 @@ this order and update this document:
 | `views/**/*.ejs` | View (presentation) |
 | `*.routes.js` | Routing (URL → controller) |
 | `config/*.js` | Cross-cutting middleware / configuration |
+
+---
+
+## 6. The mobile platform (`cluster3-project/mobile`)
+
+```
+mobile/
+├── .env.example              # Documents VITE_API_BASE_URL (unused so far)
+├── capacitor.config.ts       # App id com.lpaecomms.mobile, webDir: dist
+├── ionic.config.json         # Ionic CLI project metadata
+├── ios/                      # Gitignored — regenerate with `npx cap add ios`
+├── android/                  # Gitignored — regenerate with `npx cap add android`
+└── src/
+    ├── main.tsx              # React root
+    ├── App.tsx               # Ionic router shell — the template's default, untouched
+    ├── pages/Home.tsx        # The template's only screen
+    ├── components/ExploreContainer.tsx  # Default placeholder content
+    └── theme/variables.css   # Ionic's default design tokens
+```
+
+This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
+platforms — no product page exists yet. Unlike `web` and `desktop` (plain
+JavaScript), this platform is TypeScript, because Ionic's React starters ship
+that way and there is no JavaScript variant of the same template.
+
+`ios/` and `android/` are entirely derived from `capacitor.config.ts` and
+`package.json` — the root `.gitignore` excludes both directories outright
+("Native Capacitor projects are generated from config; regenerate with
+`npx cap add`"), so neither is committed. Capacitor 8 resolves its default
+plugins through Swift Package Manager, so there is no `Podfile`/`.xcworkspace`
+on iOS — build against `App.xcodeproj` directly.
