@@ -116,19 +116,6 @@
   gap: 14px;
 }
 
-.home__notice {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.home__retry {
-  margin: 0;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
 .home__notice-text {
   margin: 0;
   font-size: 13px;

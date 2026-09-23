@@ -1,0 +1,60 @@
+/* Catalog tab layout, following Mobile Catalog in the mockups. */
+.catalog__toolbar {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 20px;
+  --padding-bottom: 14px;
+}
+
+.catalog__title {
+  margin: 0;
+  font-family: var(--lpa-font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.catalog__body {
+  padding: 16px 20px 24px;
+}
+
+.catalog__count {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--lpa-subtle);
+}
+
+.catalog__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.catalog__message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lpa-muted);
+}
+
+.catalog__message--spaced {
+  margin-top: 16px;
+}
+
+.catalog__more {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 13px;
+  border: 1px solid var(--lpa-border);
+  border-radius: 10px;
+  background: var(--lpa-surface);
+  color: var(--lpa-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.catalog__more:disabled {
+  color: var(--lpa-muted);
+  cursor: default;
+}
