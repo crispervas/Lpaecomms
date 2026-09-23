@@ -37,4 +37,7 @@ test('a malformed JSON body to the API answers 400, not 500', async () => {
 
   assert.equal(response.status, 400);
   assert.equal(response.body.message, 'The request body is not valid JSON.');
+  // Without the CORS header a cross-origin client cannot read this 400 and
+  // sees an opaque network failure instead.
+  assert.equal(response.headers['access-control-allow-origin'], '*');
 });
