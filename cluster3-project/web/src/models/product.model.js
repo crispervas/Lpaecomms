@@ -69,6 +69,14 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const catalogueCache = new Map();
 
 /**
+ * Most feed responses the cache holds at once. The paged catalogue API lets
+ * any client choose the offset and page size, so the set of URLs is no longer
+ * fixed; without a cap, walking offsets would grow memory without end. Two
+ * hundred comfortably covers every page real browsing touches in one TTL.
+ */
+const MAX_CACHE_ENTRIES = 200;
+
+/**
  * Lpaecomms store locations on the Gold Coast, assigned to products by index.
  * The external feed carries no coordinates, and the map mashup needs one point
  * per product, so the pairing lives here rather than being invented downstream.
@@ -253,6 +261,12 @@ export class ProductModel {
 
     // Written only once the fetch succeeded, so a failure can never overwrite —
     // and therefore can never evict — a still-valid entry.
+    // A Map iterates in insertion order, so re-inserting makes this entry the
+    // newest and the first key is always the oldest — the one to evict.
+    catalogueCache.delete(url);
+    if (catalogueCache.size >= MAX_CACHE_ENTRIES) {
+      catalogueCache.delete(catalogueCache.keys().next().value);
+    }
     catalogueCache.set(url, { payload, expiresAt: Date.now() + CACHE_TTL_MS });
 
     return payload;
