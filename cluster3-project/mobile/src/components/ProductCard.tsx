@@ -2,11 +2,15 @@
  * @file Product tile shared by the Home and Catalog grids.
  *
  * The tile links wherever its `to` prop says, or nowhere when it has none.
+ * Links go through the Ionic router as a forward push rather than a plain
+ * router link: a push without a direction leaves Ionic's stack showing the
+ * previous page on top when both share a parameterised route, which is exactly
+ * what opening a related product from a product page does.
  * The cart button sits beside the tile body, not inside it, because a button
  * nested in a link is invalid and ambiguous to tap.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useIonRouter } from '@ionic/react';
 import type { Product } from '../api/products';
 import { formatPrice } from '../lib/formatPrice';
 import './ProductCard.css';
@@ -28,6 +32,7 @@ export interface ProductCardProps {
  * @returns The tile.
  */
 export default function ProductCard({ product, category, to }: ProductCardProps) {
+  const router = useIonRouter();
   // The demo feed's image links are often dead; a failed load falls back to
   // the same placeholder block as a product with no image at all.
   const [imageFailed, setImageFailed] = useState(false);
@@ -57,9 +62,18 @@ export default function ProductCard({ product, category, to }: ProductCardProps)
   return (
     <article className="product-card">
       {to ? (
-        <Link to={to} className="product-card__body">
+        <a
+          href={to}
+          className="product-card__body"
+          onClick={(event) => {
+            // The href keeps it a real link (focus, screen readers); the
+            // navigation itself is Ionic's, so the stack animates correctly.
+            event.preventDefault();
+            router.push(to, 'forward', 'push');
+          }}
+        >
           {body}
-        </Link>
+        </a>
       ) : (
         <div className="product-card__body">{body}</div>
       )}
