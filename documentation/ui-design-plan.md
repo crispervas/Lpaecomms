@@ -121,11 +121,12 @@ Three steps, selected by `html[data-text-size="..."]` in
 whatever the browser's own default is, rather than overwriting it with a fixed
 value. A reader who has already raised their browser's default text size keeps
 that as the baseline the site's own steps multiply from, instead of the site
-silently resetting it to a fixed pixel value. Every rule in the stylesheet
-sizes its type in `rem`, so raising the root percentage scales the whole page;
-`tests/textScale.test.js` asserts that no `font-size` declaration anywhere in
-`styles/less/` is written in `px`, which would silently opt that one rule out
-of the scale.
+silently resetting it to a fixed pixel value. `tests/textScale.test.js`
+asserts that no `font-size` declaration anywhere in `styles/less/` is written
+in `px`: every one is either `rem` (scaling with the root), `em` or
+`inherit` (scaling with its parent), or the root's own `100%` — units that all
+move when the root percentage changes, which is what lets raising it scale the
+whole page rather than one rule silently sitting outside the scale.
 
 **Why 125% is the ceiling.** The stylesheet's own comment
 (`base/_typography.less`) states the reason: past 125%, the fixed header and
@@ -134,17 +135,7 @@ the product grid stop holding their shape. This was confirmed directly on
 link height goes 26px → 29px → 50px across the three steps as "Contact us"
 wraps from one line to two at the largest step. There is **no page-level
 horizontal overflow at any step** — `document.documentElement.scrollWidth`
-equals `clientWidth` (1024px) at all three sizes — but the fixed header bar's
-own inner row does exceed its box at 125% (its `scrollWidth` reaches 1052px
-against a 1024px `clientWidth`) — concretely, the header's rightmost control,
-the Login link, sits with its right edge about 28px past the viewport's edge
-at exactly this width. This is a narrower finding than it sounds: it is a
-property of the fixed header row, not of the page, so it only surfaces when
-the browser window is close to the `1024px` container width itself; at the
-wider desktop widths a centred `1024px` container more commonly renders at
-(1280px and up), the margin around the container absorbs the same 28px and
-nothing is cut off. It is exactly the wrapping the design
-accepts rather than the horizontal scrollbar it is built to avoid. A fourth,
+equals `clientWidth` (1024px) at all three sizes. A fourth,
 larger step was not added because avoiding that trade-off would require either
 forcing the label onto one line (which the design rejected, since a
 `white-space: nowrap` fix would widen the navigation instead of wrapping it —
@@ -152,6 +143,13 @@ trading a tidy wrap for the overflow the design forbids) or narrowing the
 container, which changes the layout rather than the text. 125% is the last
 step the implementation offers where the page stays usable, not the last step
 where it stays tidy.
+
+A related defect was found while confirming the above — not in the wrap
+itself, but in the fixed header's own row, which briefly also exceeded its
+1024px box at 125% because `.search`'s width grew in rem lockstep with the
+text — and was fixed rather than documented as a trade-off; see the "header
+row's search field" entry in `documentation/ui-personalisation-evidence.md`'s
+Measured improvement section for the before/after numbers.
 
 ## 5. Information architecture
 
@@ -189,9 +187,11 @@ their radio input `id`s from colliding.
 
 - **Radio groups as a single tab stop.** Each theme and each text size is a
   radio input, not a button, inside one `<fieldset>`. A radio group is one stop
-  in the tab order; the arrow keys move between its options, which is what a
-  screen reader announces as a choice among alternatives rather than a row of
-  independent buttons.
+  in the tab order; the arrow keys move between its options. This follows the
+  documented HTML/ARIA semantics of a native radio group — the specification's
+  behaviour, not a result observed with actual assistive technology in this
+  project — which is why it is listed as a documented-but-untested semantic
+  rather than a measurement in section 8.
 - **The inputs are off-screen, not hidden.** `.appearance__input` applies the
   project's `.visually-hidden()` mixin (clipped to a 1px box, not
   `display: none`), which keeps each input focusable and in the tab order while

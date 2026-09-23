@@ -79,9 +79,10 @@ rather than leaving it as a silent gap in coverage.
 auto-submit a form to this endpoint and change a visitor's theme without their
 action; `SameSite=Lax` on the `lpa_prefs` cookie does not by itself guarantee a
 cross-site POST is blocked in every case an implementer might assume. This was
-weighed and accepted rather than fixed: the endpoint writes one of four
-whitelisted enum values into a cookie that holds no session and no personal
-data (`src/lib/preferences.js`'s `validatePreferences` rejects anything outside
+weighed and accepted rather than fixed: the endpoint writes into a cookie that
+carries two independently whitelisted fields — one of four themes and one of
+three text sizes — and holds no session and no personal data
+(`src/lib/preferences.js`'s `validatePreferences` rejects anything outside
 `THEMES`/`TEXT_SIZES` before a cookie is ever set), reads nothing back to the
 attacker, and the worst outcome is a visitor's colours changing, undone in two
 clicks on `/preferences`. A CSRF token needs session state to bind itself to,
@@ -102,20 +103,39 @@ the label unable to wrap, the navigation would have to widen instead, and by
 this measurement the header is already at the width the container allows —
 trading a two-line label for a possible horizontal scrollbar is the trade the
 design exists to avoid. 125% was chosen as the last step where the page stays
-usable, not the last step where it stays tidy.
+usable, not the last step where it stays tidy. The wrap itself is unchanged by
+the fix below: "Contact us" still goes from one line to two lines at 125%
+(link height 26px → 29px → 50px, confirmed again after the fix) — that trade
+is still made, and is still the right one for the reason above.
 
-One consequence of that trade is worth stating precisely rather than
-generally: the fixed header's own inner row, unlike the page, does overflow
-its box at 125% (`.site-header__inner`'s `scrollWidth` reaches 1052px against
-its 1024px `clientWidth`), and the header's rightmost control — the Login link
-— sits with its right edge about 28px past the viewport's edge when the
-browser window is at exactly the `1024px` container width. This is narrower
-than it sounds: it is a property of the fixed header row rather than of the
-page (the page itself never gains a horizontal scrollbar, as above), and it
-only shows up when the viewport is close to `1024px` itself. At the wider
-desktop widths a centred `1024px` container more commonly renders at (1280px
-and up), the margin around the container absorbs the same 28px and nothing is
-cut off.
+### The header row's search field, found overflowing and fixed
+
+While measuring the wrap above, the fixed header's own row — not the page —
+was found to overflow its box at 125%. `.search` (`styles/less/layout/_header.less`)
+had a fixed `width: 14rem`, which grows in step with the root font size the same
+way every other rem value does; unlike the nav label, nothing about a disabled,
+"Coming soon" search field needs proportionally more room as text grows. At a
+1024px viewport:
+
+| | `.site-header__inner` scrollWidth | vs. clientWidth | Login link's right edge | vs. `innerWidth` |
+| --- | --- | --- | --- | --- |
+| Before, at 125% | 1052px | 1024px | ~1052px | 1024px |
+| After, at 125% | 1024px | 1024px | 1004px | 1024px |
+
+The fix: `.search` now takes `flex: 0 1 14rem; min-width: 6rem;` in place of
+`width: 14rem`, so it shrinks to make room instead of pushing the row wider
+than its container, while a floor keeps its icon and part of its placeholder
+visible at every step. Measured after the fix, at a 1024px viewport across all
+three text sizes, `.site-header__inner`'s `scrollWidth` equals its
+`clientWidth` (1024px) at `normal`, `large` and `larger` alike, and the Login
+link's right edge (1008px / 1006px / 1004px across the three steps) stays
+inside `innerWidth` (1024px) at every step — the header no longer overflows
+itself at any text size. Re-measured at a 1280px viewport for the same three
+steps: unchanged behaviour, `.site-header__inner` still centres at its
+`1024px` max-width with no overflow, confirming the fix does not regress the
+case that already had room to spare. The `sm` breakpoint (640px) — where
+`.site-tools` and `.site-nav` give way to the collapsed menu — was re-checked
+at a 500px viewport and is unaffected by this change.
 
 ### Text scaling result
 

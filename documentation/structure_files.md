@@ -68,7 +68,7 @@ web/
 ├── styles/
 │   └── less/             # Hand-authored stylesheet SOURCE (input to the build)
 │       ├── main.less             # The only entry point; @imports everything below in cascade order
-│       ├── abstracts/            # Tokens, breakpoint mixins, shared mixins — emits no CSS
+│       ├── abstracts/            # Tokens, breakpoint mixins, shared mixins, the theme blocks — most files emit nothing on their own; _tokens.less (:root) and _themes.less (html[data-theme]) do compile to real rules
 │       ├── base/                 # Document reset, page typography, the fixed utility layer
 │       ├── layout/               # Page shell, header, footer
 │       ├── components/           # Reused across two or more pages (button, card, form field…)
