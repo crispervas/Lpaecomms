@@ -1,0 +1,87 @@
+meta {
+  name: Send contact message
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/contact
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Ana Silva",
+    "email": "ana@example.com",
+    "orderNumber": "LPA-00248",
+    "message": "Where is my order?"
+  }
+}
+
+docs {
+  # Send contact message
+
+  Accepts a message for the Lpaecomms team. Backs the contact form of the
+  mobile About & Contact view; desktop can use it too. Validation is the web
+  contact form's own (`lib/contactValidation.js`), so every client accepts
+  and rejects the same input.
+
+  **Nothing is delivered yet.** Like the web form, an accepted message is
+  validated and acknowledged but not emailed or stored — delivery is a
+  separate integration. That is why success is `202 Accepted`.
+
+  ## Auth
+
+  None. This endpoint is public.
+
+  ## Body (JSON object)
+
+  - `name` (string, required) — at most 100 characters.
+  - `email` (string, required) — at most 254 characters, `name@domain.tld`.
+  - `orderNumber` (string, optional) — at most 20 characters, `LPA-` plus digits.
+  - `message` (string, required) — at most 2000 characters.
+
+  Values are trimmed before validation. Unknown fields are ignored.
+
+  ## Responses
+
+  ### 202 Accepted
+
+  { "received": true }
+
+  ### 422 Unprocessable Entity — a field failed validation
+
+  One entry per failing field, in field order, each naming its field.
+
+  {
+    "statusCode": 422,
+    "error": "Unprocessable Entity",
+    "message": "Some fields need attention.",
+    "validation": [
+      { "field": "email", "message": "Please enter a valid email address." }
+    ],
+    "url": "/api/v1/contact",
+    "method": "POST"
+  }
+
+  ### 400 Bad Request — no usable body
+
+  The body is missing, is not JSON, is malformed JSON ("The request body is
+  not valid JSON."), or is JSON but not an object ("Send the message as a
+  JSON object.").
+
+  {
+    "statusCode": 400,
+    "error": "Bad Request",
+    "message": "Send the message as a JSON object.",
+    "validation": [],
+    "url": "/api/v1/contact",
+    "method": "POST"
+  }
+
+  ## CORS
+
+  Cross-origin clients send a preflight `OPTIONS` first; the API answers it
+  with `204` and the CORS headers.
+}

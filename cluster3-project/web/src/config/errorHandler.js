@@ -51,7 +51,11 @@ const isApiRequest = (req) => req.originalUrl.startsWith("/api");
  */
 const collectValidation = (err) => {
     if (err.errors) return err.errors.map((e) => ({ message: `${e.path} ${e.message}` }));
-    if (err.data?.details) return err.data.details.map((d) => ({ message: `${d}` }));
+    // Structured details (e.g. { field, message }) are passed through so a
+    // client can put each message under its own field.
+    if (err.data?.details) {
+        return err.data.details.map((d) => (typeof d === "object" && d !== null ? d : { message: `${d}` }));
+    }
     return [];
 };
 
