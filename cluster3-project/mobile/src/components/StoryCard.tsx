@@ -1,7 +1,8 @@
 /**
- * @file "Our story" banner at the foot of the Home view. Inert until the
- * About view exists; it becomes a link in that view's spec.
+ * @file "Our story" banner at the foot of the Home view. Links to the About &
+ * Contact page.
  */
+import { Link } from 'react-router-dom';
 import './StoryCard.css';
 
 /**
@@ -11,7 +12,7 @@ import './StoryCard.css';
  */
 export default function StoryCard() {
   return (
-    <div className="story-card">
+    <Link to="/home/about" className="story-card">
       <div>
         <div className="story-card__title">Our story</div>
         <div className="story-card__subtitle">Learn about LPA Ecomms</div>
@@ -20,6 +21,6 @@ export default function StoryCard() {
         <path d="M5 12h14" />
         <path d="M13 6l6 6-6 6" />
       </svg>
-    </div>
+    </Link>
   );
 }
