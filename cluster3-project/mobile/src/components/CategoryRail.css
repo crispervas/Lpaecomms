@@ -1,0 +1,40 @@
+/* "Shop by category" rail: fixed-width tiles scrolling sideways. */
+.category-rail {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0 20px 4px;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.category-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.category-rail__item {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 72px;
+}
+
+.category-rail__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--lpa-accent-soft);
+  color: var(--lpa-accent);
+}
+
+.category-rail__name {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}

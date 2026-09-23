@@ -63,9 +63,17 @@ a fresh shell has neither set. Capacitor 8 resolves its default plugins
 through Swift Package Manager, so there is no `Podfile`/`.xcworkspace` on
 iOS — build or open `ios/App/App.xcodeproj` directly.
 
-## What this is not, yet
+## Running against the local API
 
-This branch is the runnable scaffold only: the template's default screen,
-Capacitor wired for both native platforms, and a documented (unused)
-`VITE_API_BASE_URL`. No product page, navigation, or API call exists yet —
-that arrives in the branch that builds the first real view.
+The Home view's "Trending now" grid calls `GET /api/v1/products`. Start the
+web platform (`pnpm dev` in `cluster3-project/web`) before `pnpm dev` here,
+and make sure `.env` sets `VITE_API_BASE_URL=http://localhost:3000/api/v1`.
+With the API down the grid shows an error with a Retry button; the rest of
+the page still renders.
+
+## Current scope
+
+The app shell is an `IonTabs` bar with Home, Catalog, Cart and Login. Home
+implements the Mobile Home mockup; the other three tabs are "coming soon"
+placeholders until their own views are built. Categories on Home are a fixed
+client-side list, because the API has no categories endpoint yet.
