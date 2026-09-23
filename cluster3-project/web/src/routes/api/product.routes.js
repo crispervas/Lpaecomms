@@ -16,4 +16,7 @@ const productController = new ProductController(new ProductModel());
 // GET /api/v1/products -> the catalogue with store locations.
 router.get('/products', (req, res, next) => productController.list(req, res, next));
 
+// GET /api/v1/products/:id -> one product with its category, description and images.
+router.get('/products/:id', (req, res, next) => productController.show(req, res, next));
+
 export default router;
