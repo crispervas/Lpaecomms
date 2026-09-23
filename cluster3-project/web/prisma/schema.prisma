@@ -36,6 +36,23 @@ model template {
   @@map("template")
 }
 
+model document_type {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  code        String  @unique
+  description String?
+  users       user[]
+
+  created    Json?
+  updated    Json?
+  statusName String    @default("ACTIVE")
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("documenType")
+}
+
 
 model role {
   id          Int     @id @default(autoincrement())
@@ -78,6 +95,7 @@ model user {
   id             Int       @id @default(autoincrement())
   roleId         Int
   genderId       Int
+  documentTypeId Int
   name           String
   lastName       String
   email          String    @unique
@@ -98,6 +116,7 @@ model user {
 
   role         role          @relation(fields: [roleId], references: [id])
   gender       gender        @relation(fields: [genderId], references: [id])
+  documentType document_type @relation(fields: [documentTypeId], references: [id])
 
   //auditLogs    audit_log[]
   purchases    purchase[]
