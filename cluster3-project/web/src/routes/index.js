@@ -20,6 +20,7 @@ import healthRoutes from './api/health.routes.js';
 import productRoutes from './api/product.routes.js';
 import currencyRoutes from './api/currency.routes.js';
 import passwordRoutes from './api/password.routes.js';
+import categoryRoutes from './api/category.routes.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -44,6 +45,7 @@ export function registerRoutes(app) {
   // API routes (JSON).
   apiRouter.use('/', healthRoutes);
   apiRouter.use('/', productRoutes);
+  apiRouter.use('/', categoryRoutes);
   apiRouter.use('/', currencyRoutes);
   apiRouter.use('/', passwordRoutes);
 
