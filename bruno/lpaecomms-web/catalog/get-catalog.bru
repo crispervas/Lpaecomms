@@ -1,0 +1,120 @@
+meta {
+  name: List catalogue page
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/catalog?category=clothes&offset=0&limit=6
+  body: none
+  auth: none
+}
+
+params:query {
+  category: clothes
+  offset: 0
+  limit: 6
+}
+
+docs {
+  # List catalogue page
+
+  Returns one page of the product catalogue, optionally filtered to one
+  category. Backs the mobile Catalog view (category chips, product grid and
+  "Show more products"). Unlike `GET /api/v1/products`, it carries each
+  product's category and no store location.
+
+  Products come from the external demo feed
+  (`https://api.escuelajs.co/api/v1/products`). The feed does not report a
+  total, so the server asks it for `limit + 1` products and reports whether
+  the extra one exists as `hasMore`. Clients page by adding the number of
+  products received to `offset`; the feed can change between two requests,
+  so a client should drop any product whose `id` it already shows.
+
+  ## Caching
+
+  Each distinct feed URL (category, offset and size) is cached in process for
+  **5 minutes**. The category list used to resolve `category` has its own
+  5-minute cache. Failures are never cached.
+
+  ## Auth
+
+  None. This endpoint is public.
+
+  ## Parameters
+
+  - `category` (query, string, optional) — a `slug` from
+    `GET /api/v1/categories`. Omit it for every category. Must appear at most
+    once and must not be empty.
+  - `offset` (query, integer, optional, default `0`) — products to skip.
+    Plain digits only, `0`–`10000`.
+  - `limit` (query, integer, optional, default `12`) — page size. Plain digits
+    only, `1`–`24`.
+
+  ## Responses
+
+  ### 200 OK
+
+  {
+    "products": [
+      {
+        "id": 4,
+        "name": "Classic Grey Hooded Sweatshirt",
+        "category": "Clothes",
+        "priceAud": 90,
+        "imageUrl": "https://i.imgur.com/R2PN9Wq.jpeg"
+      }
+    ],
+    "offset": 0,
+    "limit": 6,
+    "hasMore": true
+  }
+
+  - `products` (array) — at most `limit` products, feed order.
+  - `products[].id` (number) — feed identifier.
+  - `products[].name` (string) — product name.
+  - `products[].category` (string) — category name; empty when the feed has none.
+  - `products[].priceAud` (number) — price, assumed AUD (see `GET /api/v1/products`).
+  - `products[].imageUrl` (string) — first image; empty when the feed has none.
+  - `offset`, `limit` (number) — the values applied.
+  - `hasMore` (boolean) — whether another page exists after this one.
+
+  ### 400 Bad Request — invalid parameter
+
+  `offset` or `limit` is not plain digits or is out of range, or `category`
+  is empty or repeated. The feed is not contacted.
+
+  {
+    "statusCode": 400,
+    "error": "Bad Request",
+    "message": "Parameter \"limit\" must be between 1 and 24.",
+    "validation": [],
+    "url": "/api/v1/catalog?limit=25",
+    "method": "GET"
+  }
+
+  ### 404 Not Found — unknown category
+
+  {
+    "statusCode": 404,
+    "error": "Not Found",
+    "message": "Category \"nope\" does not exist.",
+    "validation": [],
+    "url": "/api/v1/catalog?category=nope",
+    "method": "GET"
+  }
+
+  ### 502 Bad Gateway — catalogue source unavailable
+
+  The product feed failed, or a `category` was given and the category list
+  could not be read (the filter cannot be resolved).
+
+  {
+    "statusCode": 502,
+    "error": "Bad Gateway",
+    "message": "The product catalogue source is unavailable.",
+    "validation": [],
+    "url": "/api/v1/catalog",
+    "method": "GET"
+  }
+}
