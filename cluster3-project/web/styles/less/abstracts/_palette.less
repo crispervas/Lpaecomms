@@ -1,0 +1,172 @@
+/*
+ * Raw colour values.
+ *
+ * The only file in the project that may contain a hex literal, enforced by
+ * tests/stylesheetTokens.test.js. Nothing here is consumed by a rule directly:
+ * _tokens.less publishes these as CSS custom properties, and the rules read
+ * the properties. That indirection is what lets a theme swap a colour at
+ * runtime, which a LESS variable — resolved at compile time — cannot do.
+ *
+ * Values carry a `-value` suffix so a token and its value can coexist: LESS
+ * resolves variables lazily and the last declaration in a scope wins, so
+ * `@accent: var(--accent)` beside `@accent: #2F5EFB` would emit
+ * `--accent: var(--accent)` and recurse forever.
+ */
+
+// ── Surfaces and text ──────────────────────────────────────────────────────
+@canvas-value:        #FAFAF8;
+@surface-value:       #FFFFFF;
+@subtle-value:        #F1F0EC;
+@ink-value:           #14161A;
+
+// The home mockup uses #9A9C9A for small secondary text. It measures 2.65:1
+// against the canvas and fails WCAG AA, so secondary text uses this instead.
+//
+// Darkened from #6B6F76 on 2026-09-16. That original value was checked against
+// the canvas (4.83:1) but never against @subtle, where it measured 4.43:1 and
+// failed AA — and @subtle is the background of the header search field, the
+// login panel, the About section and both error pages. This value clears AA on
+// all three backgrounds. Do not lighten it back toward the mockup.
+@muted-value:         #676B72;
+
+@white-value:         #FFFFFF;
+@black-value:         #000000;
+
+// ── Lines ──────────────────────────────────────────────────────────────────
+@line-value:          #E7E5DF;
+@line-strong-value:   #D8D6CF;
+
+// The boundary of a text input or an outlined button. Separate from
+// @line-strong because WCAG 1.4.11 requires 3:1 of a border that identifies a
+// control, while @line-strong is also used decoratively — the ghost numeral on
+// the 404 page is meant to sit faintly behind the text, and raising its
+// contrast would be a regression rather than a fix.
+@border-control-value: #8E8A7F;
+
+// ── Accent ─────────────────────────────────────────────────────────────────
+@accent-value:        #2F5EFB;
+@accent-strong-value: #1F45D6;
+@tint-value:          #EEF1FF;
+// The notice panels draw a 30% accent border. Written as an explicit rgba
+// because there is no opacity modifier syntax to lean on any more.
+@accent-30-value:     rgba(47, 94, 251, .3);
+
+// ── Text drawn on a filled surface ─────────────────────────────────────────
+// These exist because @white and @black are not colours a theme can keep. A
+// solid button is `@white` on `@ink`; under a dark theme @ink becomes nearly
+// white and that label disappears. Naming the role instead of the colour lets
+// each theme answer "what goes on top of this" for itself.
+@on-ink-value:     #FFFFFF;
+@on-accent-value:  #FFFFFF;
+@ink-hover-value:  #000000;
+
+// ── Feedback ───────────────────────────────────────────────────────────────
+// Absent from the old theme: the templates reached into Tailwind's default
+// palette for these, which stops existing when Tailwind does.
+// Darkened from #f87171 on 2026-09-16. This draws the border of an errored
+// input — a boundary that identifies a control, which WCAG 1.4.11 holds to
+// 3:1. The original measured 2.77:1 against a card.
+@danger-border-value:   #F05252;
+@danger-text-value:     #dc2626;
+@warning-bg-value:      #fffbeb;
+@warning-border-value:  #fde68a;
+@warning-text-value:    #92400e;
+@notice-text-value:     #b45309;
+@success-text-value:    #047857;
+@error-text-value:      #b91c1c;
+
+// Password strength meter, weakest to strongest.
+@strength-1-value:      #ef4444;
+@strength-1-text-value: #b91c1c;
+@strength-2-value:      #f59e0b;
+@strength-2-text-value: #b45309;
+@strength-3-value:      #84cc16;
+@strength-3-text-value: #4d7c0f;
+@strength-4-value:      #10b981;
+@strength-4-text-value: #047857;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Theme overrides
+//
+// A theme declares only the tokens it changes; _themes.less redeclares those
+// custom properties and the rest keep falling through to :root. Every ratio
+// below was computed, not judged by eye — tests/themeContrast.test.js holds
+// each one to WCAG AA, or AAA for `contrast`.
+// ───────────────────────────────────────────────────────────────────────────
+
+// ── midnight ── every surface inverts, so every token is restated.
+@midnight-canvas-value:          #0F1114;
+@midnight-surface-value:         #171A1F;
+@midnight-subtle-value:          #1E2227;
+@midnight-ink-value:             #EEF0F3;
+@midnight-muted-value:           #A2A9B4;
+@midnight-line-value:            #2A2F36;
+@midnight-line-strong-value:     #3A414A;
+@midnight-border-control-value:  #6A7480;
+@midnight-accent-value:          #7EA0FF;
+@midnight-accent-strong-value:   #A9C0FF;
+@midnight-tint-value:            #172038;
+@midnight-accent-30-value:       rgba(126, 160, 255, .3);
+// The accent is light here, so white text on it would be unreadable; both
+// on-surface roles invert with it.
+@midnight-on-ink-value:          #0F1114;
+@midnight-on-accent-value:       #0B1020;
+@midnight-ink-hover-value:       #FFFFFF;
+@midnight-danger-border-value:   #F87171;
+@midnight-danger-text-value:     #FCA5A5;
+@midnight-warning-bg-value:      #2A2211;
+@midnight-warning-border-value:  #8A6D1E;
+@midnight-warning-text-value:    #FCD34D;
+@midnight-notice-text-value:     #FCD34D;
+@midnight-success-text-value:    #6EE7B7;
+@midnight-error-text-value:      #FCA5A5;
+@midnight-strength-1-value:      #F87171;
+@midnight-strength-1-text-value: #FCA5A5;
+@midnight-strength-2-value:      #FBBF24;
+@midnight-strength-2-text-value: #FCD34D;
+@midnight-strength-3-value:      #A3E635;
+@midnight-strength-3-text-value: #BEF264;
+@midnight-strength-4-value:      #34D399;
+@midnight-strength-4-text-value: #6EE7B7;
+
+// ── forest ── the surfaces are daylight's; only the accent family moves, which
+// is the whole point of a variant theme being cheap.
+@forest-accent-value:        #176B4D;
+@forest-accent-strong-value: #0F5039;
+@forest-tint-value:          #E8F4EE;
+@forest-accent-30-value:     rgba(23, 107, 77, .3);
+
+// ── contrast ── pure white and black, every text pairing at AAA. Panels are
+// told apart by their borders rather than by a fill, which is the convention a
+// high-contrast theme follows.
+@contrast-canvas-value:          #FFFFFF;
+@contrast-surface-value:         #FFFFFF;
+@contrast-subtle-value:          #F2F2F2;
+@contrast-ink-value:             #000000;
+@contrast-muted-value:           #3A3A3A;
+@contrast-line-value:            #767676;
+@contrast-line-strong-value:     #595959;
+@contrast-border-control-value:  #000000;
+@contrast-accent-value:          #0B2F9E;
+@contrast-accent-strong-value:   #061C63;
+@contrast-tint-value:            #E8ECFF;
+@contrast-accent-30-value:       rgba(11, 47, 158, .5);
+@contrast-on-ink-value:          #FFFFFF;
+@contrast-on-accent-value:       #FFFFFF;
+@contrast-ink-hover-value:       #1A1A1A;
+@contrast-danger-border-value:   #B00020;
+@contrast-danger-text-value:     #8A0016;
+@contrast-warning-bg-value:      #FFF8E1;
+@contrast-warning-border-value:  #8A6400;
+@contrast-warning-text-value:    #5C3A00;
+@contrast-notice-text-value:     #5C3A00;
+@contrast-success-text-value:    #00563B;
+@contrast-error-text-value:      #8A0016;
+@contrast-strength-1-value:      #B00020;
+@contrast-strength-1-text-value: #8A0016;
+@contrast-strength-2-value:      #8A6400;
+@contrast-strength-2-text-value: #5C3A00;
+@contrast-strength-3-value:      #4A6B00;
+@contrast-strength-3-text-value: #3A5400;
+@contrast-strength-4-value:      #00563B;
+@contrast-strength-4-text-value: #00563B;

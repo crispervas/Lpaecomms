@@ -7,8 +7,11 @@
  * an escalating selector or !important.
  */
 
-// ── Abstracts ── no CSS output; must come first so everything below can use it
+// ── Abstracts ── no CSS output except :root; must come first so everything
+// below can use it. _palette holds the raw values _tokens publishes.
+@import "abstracts/_palette";
 @import "abstracts/_tokens";
+@import "abstracts/_themes";
 @import "abstracts/_breakpoints";
 @import "abstracts/_mixins";
 
@@ -32,6 +35,9 @@
 @import "components/_badge";
 @import "components/_product-card";
 @import "components/_form-field";
+@import "components/_appearance";
+@import "components/_appearance-panel";
+@import "components/_recently-viewed";
 
 // ── Pages ── page-specific composition, last so it can lean on everything above
 @import "pages/_home";
@@ -42,3 +48,4 @@
 @import "pages/_contact";
 @import "pages/_login";
 @import "pages/_error";
+@import "pages/_preferences";

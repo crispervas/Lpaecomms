@@ -1,0 +1,26 @@
+<%# Appearance preferences. Wrapped by layouts/base.ejs.
+
+    The form here and the one in the header panel are the same component; this
+    page is where a visitor without JavaScript changes their settings, and where
+    a rejected submission comes back to. %>
+
+<section class="page-intro">
+  <span class="eyebrow eyebrow--lg">
+    Make it yours
+  </span>
+  <h1 class="page-intro__title">
+    Appearance
+  </h1>
+  <p class="page-intro__lead">
+    Choose the colours and the text size you read most comfortably. Your choice
+    is remembered on this device and applies to every page.
+  </p>
+</section>
+
+<section class="preferences">
+  <%- include('../components/preferences/appearanceForm', {
+    errors,
+    returnTo,
+    idPrefix: 'page',
+  }) %>
+</section>

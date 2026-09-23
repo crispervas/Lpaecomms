@@ -366,4 +366,69 @@ export class ProductModel {
   async listFeatured(limit = DEFAULT_FEATURED_LIMIT) {
     return this.listByCategory(null, limit);
   }
+
+  /**
+   * Fetch several products by id, in the order asked for.
+   *
+   * Fans out over `getById`, so a product viewed twice in five minutes is
+   * served from the same cache the rest of the site reads rather than fetched
+   * again. Ids the feed no longer has are dropped: this list comes from a
+   * visitor's browsing history, and the feed is a volatile demo source where an
+   * id recorded yesterday may be gone today. That is an ordinary outcome, not a
+   * failure worth propagating.
+   *
+   * Returns the card shape rather than `getById`'s, with `categoryId` alongside
+   * the category name so a caller can infer a dominant category without reading
+   * every product a second time.
+   *
+   * @param {Array<number>} ids - Product ids, in the order to return them.
+   * @returns {Promise<Array<{id: number, name: string, category: string, categoryId: number|null, priceAud: number, imageUrl: string}>>}
+   *   The products that still exist, in the requested order; empty when none do.
+   */
+  async findByIds(ids) {
+    if (ids.length === 0) return [];
+
+    const found = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return await this.getById(id);
+        } catch {
+          // One unreadable product costs its own card, not the whole strip.
+          return null;
+        }
+      }),
+    );
+
+    return found.filter(Boolean).map((product) => ({
+      id: product.id,
+      name: product.name,
+      category: product.category.name,
+      categoryId: product.category.id,
+      priceAud: product.priceAud,
+      imageUrl: product.imageUrls[0] ?? '',
+    }));
+  }
+
+  /**
+   * Fetch products from one category, skipping the ones already excluded.
+   *
+   * Asks the feed for the limit plus the exclusions rather than the limit
+   * alone: filtering afterwards would otherwise return short whenever the
+   * excluded products happened to sort first, which for a "more like this"
+   * block is exactly when they do.
+   *
+   * @param {number} categoryId - Category to read.
+   * @param {Array<number>} excludeIds - Products to leave out.
+   * @param {number} limit - How many products to return.
+   * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
+   *   Products in feed order, at most `limit` of them.
+   * @throws {Error} When the feed is unreachable, times out, or answers a
+   *   non-2xx status.
+   */
+  async findByCategoryExcluding(categoryId, excludeIds, limit) {
+    const candidates = await this.listByCategory(categoryId, limit + excludeIds.length);
+    const excluded = new Set(excludeIds);
+
+    return candidates.filter((product) => !excluded.has(product.id)).slice(0, limit);
+  }
 }

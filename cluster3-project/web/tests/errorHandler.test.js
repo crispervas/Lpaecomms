@@ -15,9 +15,14 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
+
+import boom from '@hapi/boom';
 
 import { errorHandler, logErrors, wrapErrors } from '../src/config/errorHandler.js';
 import { apiCorsHeaders } from '../src/config/apiCors.js';
+import { preferencesLocals } from '../src/config/preferences.js';
+import { DEFAULT_PREFERENCES } from '../src/lib/preferences.js';
 
 /** Absolute path to `src`, so the test app resolves views the way `app.js` does. */
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
@@ -38,6 +43,12 @@ const buildFailingApp = () => {
 
   app.set('view engine', 'ejs');
   app.set('views', path.join(srcDir, 'views'));
+
+  // Mirrors app.js: the error page renders through layouts/base.ejs, which
+  // reads res.locals.preferences unconditionally, so this harness needs the
+  // same cookie-parsing and preferences middleware or the render throws.
+  app.use(cookieParser());
+  app.use(preferencesLocals);
 
   app.use((req, res, next) => {
     res.locals.currentPath = req.path;
@@ -144,4 +155,60 @@ test('CORS headers are set for API errors only', async () => {
 
   assert.equal(api.headers['access-control-allow-origin'], '*');
   assert.equal(web.headers['access-control-allow-origin'], undefined);
+});
+
+/**
+ * Build a minimal mock of the Express response object that captures what
+ * `res.render` is called with instead of compiling EJS, so this file can
+ * inspect the locals errorHandlerWeb builds without reading any markup.
+ *
+ * @param {object} [locals] - Seed for `res.locals`, mirroring whatever
+ *   upstream middleware managed to set before the error was raised.
+ * @returns {{res: object, getRenderedLocals: () => object|undefined}} The mock
+ *   response and an accessor for the locals passed to its last `render` call.
+ */
+const buildRenderSpyResponse = (locals = {}) => {
+  let renderedLocals;
+  const res = {
+    headersSent: false,
+    locals,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    render(view, viewLocals, callback) {
+      renderedLocals = viewLocals;
+      callback(null, '<html>stub</html>');
+    },
+    send() {},
+  };
+
+  return { res, getRenderedLocals: () => renderedLocals };
+};
+
+test('the error page falls back to the default preferences when raised before preferencesLocals', () => {
+  // Mirrors a body-parser failure: it throws ahead of preferencesLocals in
+  // app.js, so res.locals never gets a preferences key. errorHandlerWeb must
+  // default it the same way it already defaults currentPath, or base.ejs
+  // throws reading preferences.theme and the visitor gets plain text instead
+  // of the styled error page.
+  const err = boom.badImplementation('raised before preferencesLocals');
+  const { res, getRenderedLocals } = buildRenderSpyResponse({});
+
+  errorHandler(err, { originalUrl: '/preferences', path: '/preferences' }, res, () => {});
+
+  assert.deepEqual(getRenderedLocals().preferences, DEFAULT_PREFERENCES);
+});
+
+test('the error page keeps the visitor\'s own preferences when they were already resolved', () => {
+  // Once preferencesLocals has run (the common case — most errors are raised
+  // by a controller, further down the chain), the visitor's actual choice
+  // must reach the error page rather than being overwritten by the default.
+  const visitorPreferences = { theme: 'midnight', textSize: 'larger' };
+  const err = boom.badImplementation('raised after preferencesLocals');
+  const { res, getRenderedLocals } = buildRenderSpyResponse({ preferences: visitorPreferences });
+
+  errorHandler(err, { originalUrl: '/preferences', path: '/preferences' }, res, () => {});
+
+  assert.deepEqual(getRenderedLocals().preferences, visitorPreferences);
 });

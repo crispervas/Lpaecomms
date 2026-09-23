@@ -13,6 +13,14 @@
  * file two other platforms depend on, to buy nothing.
  */
 
+import { persistentCookieOptions } from '../config/cookies.js';
+import {
+  RECENT_COOKIE,
+  parseRecent,
+  pushRecent,
+  serialiseRecent,
+} from '../lib/recentlyViewed.js';
+
 /**
  * Ask for five to show four: the product being viewed is usually among its own
  * category's first results, and filtering it out of four would leave three.
@@ -57,6 +65,13 @@ export class ProductDetailController {
     // middleware and the error page.
     const product = await this.productModel.getById(id);
     if (!product) return next();
+
+    // Recorded only once the product is known to exist, so a mistyped URL does
+    // not teach the home page about something that is not there. The visitor is
+    // never asked and never maintains this: it is the behaviour the home page's
+    // recommendations are inferred from.
+    const history = pushRecent(parseRecent(req.cookies?.[RECENT_COOKIE]), id);
+    res.cookie(RECENT_COOKIE, serialiseRecent(history), persistentCookieOptions());
 
     let related = [];
 

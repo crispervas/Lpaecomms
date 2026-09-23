@@ -68,7 +68,7 @@ web/
 ├── styles/
 │   └── less/             # Hand-authored stylesheet SOURCE (input to the build)
 │       ├── main.less             # The only entry point; @imports everything below in cascade order
-│       ├── abstracts/            # Tokens, breakpoint mixins, shared mixins — emits no CSS
+│       ├── abstracts/            # Tokens, breakpoint mixins, shared mixins, the theme blocks — most files emit nothing on their own; _tokens.less (:root) and _themes.less (html[data-theme]) do compile to real rules
 │       ├── base/                 # Document reset, page typography, the fixed utility layer
 │       ├── layout/               # Page shell, header, footer
 │       ├── components/           # Reused across two or more pages (button, card, form field…)
@@ -82,7 +82,17 @@ web/
 │   ├── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
 │   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
-│   └── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
+│   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
+│   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
+│   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
+│   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
+│   ├── appearanceContract.test.js # THEMES/TEXT_SIZES in lib/preferences.js name exactly what the stylesheet renders, in both directions
+│   ├── preferences.test.js        # Preference whitelist, cookie parsing/serialisation, and the safe-return-path guard
+│   ├── cookies.test.js            # persistentCookieOptions(): the secure flag by environment and the other cookie attributes
+│   ├── preferences.routes.test.js # GET/POST /preferences: cookie round-trip, whitelist rejection, returnTo guard, the 204 background-save path
+│   ├── recentlyViewed.test.js     # Browsing-history cookie: ordering, dedupe, truncation at RECENT_LIMIT
+│   ├── recommendations.test.js    # ProductModel.findByIds and findByCategoryExcluding against the external feed
+│   └── personalisation.test.js    # Home page's dominant-category inference and its failure isolation between the two blocks
 └── src/                  # Application code — see section 3
 ```
 
@@ -108,6 +118,21 @@ what a failed map looks like.
 > (`@font-display`, `@font-sans`). Rules use those names, never raw hex, so a
 > brand change is one edit in that file. The mockup's `#9A9C9A` is deliberately
 > absent: it fails WCAG AA on the canvas, and `@muted` replaces it.
+
+> **The palette, the themes, and the appearance stylesheets.**
+> `abstracts/_palette.less` holds every raw colour value in the project — the
+> only file allowed to, enforced by `tests/stylesheetTokens.test.js` — and
+> `_tokens.less` republishes each one as a `--custom-property` on `:root` plus
+> the `@name: var(--name)` LESS variable the rules read. `abstracts/_themes.less`
+> redeclares those custom properties inside `html[data-theme="midnight"]`,
+> `html[data-theme="forest"]` and `html[data-theme="contrast"]` blocks;
+> `daylight` has no block of its own, since it is whatever `:root` already
+> publishes. Four component and page stylesheets style the customisation and
+> personalisation UI: `components/_appearance.less` (the shared theme/text-size
+> radio form), `pages/_preferences.less` (the `/preferences` page around it),
+> `components/_appearance-panel.less` (the header's popover copy of the same
+> form), and `components/_recently-viewed.less` (the home page's "Recently
+> viewed" and "Picked for you" strips).
 
 > **Catalog filtering.** The catalog's filter lives in the URL
 > (`/catalog?category=<slug>`), not in memory, so a filtered view is shareable
@@ -173,6 +198,22 @@ what a failed map looks like.
 > None of this authenticates anyone: there is no user model yet, and every
 > well-formed submission says so.
 
+> **Customisation is chosen; personalisation is decided.** Two unrelated
+> cookies carry this distinction all the way through the code. `lpa_prefs`
+> (`lib/preferences.js`, `config/cookies.js`, `config/preferences.js`) holds
+> what the visitor picked on `/preferences` or the header panel, whitelisted
+> against `THEMES`/`TEXT_SIZES` on every read so an edited or stale cookie can
+> only ever fall back to the default, never reach the markup unchecked.
+> `lpa_recent` (`lib/recentlyViewed.js`) holds what the visitor did — the
+> products they opened, written by `productDetail.controller.js` with no
+> control anywhere to add, edit or clear it. `home.controller.js` reads that
+> second cookie to build "Recently viewed" (a replay) and, from it, the
+> dominant category the visitor has been reading, to build "Picked for you" (an
+> inference) via `product.model.js`'s `findByCategoryExcluding`. Both
+> personalisation blocks are optional by construction: a lookup that fails
+> costs its own block, never the home page, and a visitor with no history sees
+> neither.
+
 ---
 
 ## 3. Inside `src/` — the application
@@ -185,7 +226,9 @@ src/
 │   ├── env.js            # Reads & validates environment variables (fails fast)
 │   ├── errorHandler.js   # Error middleware chain (logErrors → wrapErrors → errorHandler)
 │   ├── notFoundHandler.js# 404 handlers: JSON for API, HTML page for the browser
-│   └── apiCors.js        # CORS headers for every /api response, success and failure alike
+│   ├── apiCors.js        # CORS headers for every /api response, success and failure alike
+│   ├── cookies.js        # Shared attributes for a persistent first-party cookie (httpOnly, sameSite, secure, 1-year maxAge)
+│   └── preferences.js    # Middleware: resolves res.locals.preferences from the cookie for every template
 ├── routes/               # URL → controller mapping (the routing layer)
 │   ├── index.js          # registerRoutes(): mounts view routes at / and API at /api/v1
 │   ├── views/            # View routes (return HTML)
@@ -195,7 +238,8 @@ src/
 │   │   ├── auth.routes.js
 │   │   ├── mashup.routes.js
 │   │   ├── catalog.routes.js
-│   │   └── productDetail.routes.js
+│   │   ├── productDetail.routes.js
+│   │   └── preferences.routes.js # GET/POST /preferences
 │   └── api/              # API routes (return JSON)
 │       ├── health.routes.js
 │       ├── product.routes.js
@@ -212,7 +256,8 @@ src/
 │   ├── currency.controller.js
 │   ├── password.controller.js
 │   ├── catalog.controller.js  # Catalog page: category filter, product grid
-│   └── productDetail.controller.js # One product's page: gallery, price, related
+│   ├── productDetail.controller.js # One product's page: gallery, price, related; records the view in lpa_recent
+│   └── preferences.controller.js # /preferences: show(), save() (whitelist check, cookie write, redirect or 204)
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
 │   ├── product.model.js  # External catalogue: storefront list + store locations
@@ -223,18 +268,22 @@ src/
 │   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
 │   ├── formRules.js      # Applies a field table: normalise, validate, derive HTML patterns
 │   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
-│   └── authValidation.js # Login and sign-up rules, keyed by mode
+│   ├── authValidation.js # Login and sign-up rules, keyed by mode
+│   ├── preferences.js    # THEMES/TEXT_SIZES whitelists, cookie parse/serialise, safe-return-path guard — no Express import
+│   └── recentlyViewed.js # Browsing-history cookie: parse, push (dedupe + move-to-front), serialise, RECENT_LIMIT (8)
 ├── views/                # VIEW: server-rendered EJS templates
 │   ├── layouts/
 │   │   └── base.ejs      # HTML document shell; wraps every page
 │   ├── partials/
-│   │   ├── header.ejs    # Shared header / navigation
-│   │   └── footer.ejs    # Shared footer
+│   │   ├── header.ejs    # Shared header / navigation, plus the appearance-panel toggle button
+│   │   ├── footer.ejs    # Shared footer
+│   │   └── appearancePanel.ejs # Header popover wrapping appearanceForm.ejs; opened by public/js/appearance.js
 │   ├── components/       # Page fragments, one folder per page that owns them
 │   │   ├── home/
 │   │   │   ├── homeHero.ejs      # Home hero: headline, CTAs, product shot
 │   │   │   ├── homeCategories.ejs # Home "Shop by category" grid (static markup)
-│   │   │   └── homeTrending.ejs  # Home "Trending now" grid (products local)
+│   │   │   ├── homeTrending.ejs  # Home "Trending now" grid (products local)
+│   │   │   └── homeRecentlyViewed.ejs # "Recently viewed" and "Picked for you": both personalisation blocks, either may be empty
 │   │   ├── catalog/
 │   │   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
 │   │   │   └── catalogResults.ejs # Catalog grid, count label and empty states
@@ -259,6 +308,8 @@ src/
 │   │   │   ├── authPanel.ejs  # Tinted left half: illustration and the account promise
 │   │   │   ├── authTabs.ejs   # Log in / Sign up switch, rendered as links
 │   │   │   └── authForm.ejs   # The form itself, both modes, with the hidden mode field
+│   │   ├── preferences/
+│   │   │   └── appearanceForm.ejs # The theme and text-size radio groups; included by both preferences.ejs and appearancePanel.ejs via idPrefix
 │   │   └── shared/           # Fragments no single page owns
 │   │       ├── productCard.ejs # One product card, used by home, catalog and product
 │   │       └── formField.ejs   # One label + control + error line, driven by a rule table
@@ -270,6 +321,7 @@ src/
 │       ├── mashup.ejs
 │       ├── catalog.ejs
 │       ├── productDetail.ejs
+│       ├── preferences.ejs # The full appearance settings page; works with no JavaScript
 │       ├── 404.ejs       # Not Found page
 │       └── error.ejs     # Generic error page (any failed browser request)
 └── public/               # Static assets served as-is
@@ -282,7 +334,8 @@ src/
         ├── form-validation.js # Inline validation for any form[data-validate] (the server still decides)
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
         ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
-        └── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)
+        ├── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)
+        └── appearance.js       # Opens/closes the header panel, applies a choice instantly, persists it in the background
 ```
 
 > **Per-page assets without a bundler.** `layouts/base.ejs` accepts two optional

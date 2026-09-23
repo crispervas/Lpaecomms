@@ -15,6 +15,7 @@ import aboutRoutes from './views/about.routes.js';
 import contactRoutes from './views/contact.routes.js';
 import authRoutes from './views/auth.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
+import preferencesRoutes from './views/preferences.routes.js';
 import healthRoutes from './api/health.routes.js';
 import productRoutes from './api/product.routes.js';
 import currencyRoutes from './api/currency.routes.js';
@@ -37,6 +38,7 @@ export function registerRoutes(app) {
   viewRouter.use('/', aboutRoutes);
   viewRouter.use('/', contactRoutes);
   viewRouter.use('/', authRoutes);
+  viewRouter.use('/', preferencesRoutes);
   viewRouter.use('/', mashupRoutes);
 
   // API routes (JSON).

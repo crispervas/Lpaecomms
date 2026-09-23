@@ -47,7 +47,7 @@
 }
 
 .brand__tag {
-  font-size: 10px;
+  font-size: .625rem;
   font-weight: 500;
   letter-spacing: .2em;
   color: @muted;
@@ -87,7 +87,15 @@
   display: flex;
   align-items: center;
   gap: .5rem;
-  width: 14rem;
+  // A fixed rem width grows in lockstep with the text size, which is what
+  // pushed the whole header row wider than its container at 125%. The field
+  // carries no function yet — it is disabled, with a "Coming soon" title — so
+  // it is the right thing to give up width first when the row runs out of
+  // room: a flex basis lets it shrink instead of widening the header, and the
+  // minimum keeps its icon and enough of its placeholder visible to still
+  // read as a search field.
+  flex: 0 1 14rem;
+  min-width: 6rem;
   padding: .625rem 1rem;
   background-color: @subtle;
   border-radius: @radius-full;
@@ -137,9 +145,9 @@
   height: 1rem;
   background-color: @accent;
   border-radius: @radius-full;
-  font-size: 9px;
+  font-size: .5625rem;
   font-weight: 600;
-  color: @white;
+  color: @on-accent;
 }
 
 .site-tools__login {

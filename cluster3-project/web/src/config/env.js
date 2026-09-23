@@ -13,7 +13,10 @@ import { expand } from 'dotenv-expand';
 
 // Load .env and expand ${VAR} references so DATABASE_URL can be composed from
 // the individual POSTGRES_* variables rather than duplicating them.
-expand(dotenv.config({ override: true }));
+// `quiet` suppresses dotenv's own stdout output (a random promotional tip on
+// every load, as of v17) — it does not silence anything this module logs
+// itself, and no error or warning from a malformed .env is affected.
+expand(dotenv.config({ override: true, quiet: true }));
 
 /**
  * Environments the application recognises.

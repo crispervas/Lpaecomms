@@ -1,0 +1,33 @@
+/*
+ * The personalised rows on the home page.
+ *
+ * Deliberately quieter than "Trending now": these are a convenience the visitor
+ * did not ask for, and a row that shouts about knowing what someone has been
+ * reading is unsettling rather than helpful.
+ */
+
+.recently-viewed {
+  margin-top: 3.5rem;
+}
+
+.recently-viewed__note {
+  margin-top: .375rem;
+  margin-bottom: 1.25rem;
+  font-size: .8125rem;
+  color: @muted;
+}
+
+// A separate block from .recently-viewed on purpose, styled identically for
+// now: one replays behaviour, the other is an inference drawn from it, and
+// giving them the same class name would say otherwise to anyone reading this
+// file later. Each rule is free to diverge without disturbing the other.
+.picked-for-you {
+  margin-top: 3.5rem;
+}
+
+.picked-for-you__note {
+  margin-top: .375rem;
+  margin-bottom: 1.25rem;
+  font-size: .8125rem;
+  color: @muted;
+}

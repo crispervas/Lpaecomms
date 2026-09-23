@@ -1,0 +1,124 @@
+/*
+ * The appearance controls: the theme and text size pickers.
+ *
+ * Shared by the preferences page and the header panel, which is why nothing
+ * here positions itself — the surface around them decides where they sit.
+ */
+
+.appearance__group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  & + & { margin-top: 1.75rem; }
+}
+
+.appearance__legend {
+  padding: 0;
+  font-family: @font-display;
+  font-size: .9375rem;
+  font-weight: 600;
+}
+
+.appearance__error {
+  margin-top: .5rem;
+  font-size: .8125rem;
+  color: @danger-text;
+}
+
+.appearance__options {
+  display: grid;
+  gap: .5rem;
+  margin-top: .75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.appearance__options--thirds {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+// Off-screen rather than display:none, which would take the control out of the
+// tab order along with taking it out of sight.
+.appearance__input { .visually-hidden(); }
+
+.appearance__option {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .625rem .75rem;
+  border: 1px solid @line;
+  border-radius: @radius-lg;
+  background-color: @surface;
+  cursor: pointer;
+}
+
+.appearance__input:checked + .appearance__option {
+  border-color: @accent;
+  background-color: @tint;
+}
+
+// The ring belongs on the visible control, not on the off-screen input.
+.appearance__input:focus-visible + .appearance__option {
+  outline: 2px solid @accent;
+  outline-offset: 2px;
+}
+
+.appearance__text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.appearance__name {
+  font-size: .8125rem;
+  font-weight: 600;
+}
+
+.appearance__hint {
+  font-size: .6875rem;
+  color: @muted;
+}
+
+.appearance__swatch {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid @line-strong;
+  border-radius: @radius-full;
+}
+
+// Each swatch shows its own theme's colours, so it reads the preview properties
+// published on :root rather than the active theme's tokens.
+.appearance__swatch[data-swatch="daylight"] {
+  background: linear-gradient(135deg,
+    var(--preview-daylight-canvas) 0 34%,
+    var(--preview-daylight-ink) 34% 67%,
+    var(--preview-daylight-accent) 67% 100%);
+}
+
+.appearance__swatch[data-swatch="midnight"] {
+  background: linear-gradient(135deg,
+    var(--preview-midnight-canvas) 0 34%,
+    var(--preview-midnight-ink) 34% 67%,
+    var(--preview-midnight-accent) 67% 100%);
+}
+
+.appearance__swatch[data-swatch="forest"] {
+  background: linear-gradient(135deg,
+    var(--preview-forest-canvas) 0 34%,
+    var(--preview-forest-ink) 34% 67%,
+    var(--preview-forest-accent) 67% 100%);
+}
+
+.appearance__swatch[data-swatch="contrast"] {
+  background: linear-gradient(135deg,
+    var(--preview-contrast-canvas) 0 34%,
+    var(--preview-contrast-ink) 34% 67%,
+    var(--preview-contrast-accent) 67% 100%);
+}
+
+.appearance__status {
+  margin-top: .75rem;
+  font-size: .8125rem;
+  color: @danger-text;
+}

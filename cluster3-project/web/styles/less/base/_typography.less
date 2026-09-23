@@ -5,9 +5,20 @@
  * type sizes live with their components; only what every page shares is here.
  */
 
+// Percent rather than px: a reader who has already raised the default font size
+// in their browser keeps that as the baseline instead of having it overwritten.
+// The steps are what the text size control selects; see views/layouts/base.ejs.
+//
+// 125% is the ceiling. Past it the fixed header and the product grid stop
+// holding their shape, and a control that breaks the page is not a choice worth
+// offering.
 html {
   font-family: @font-sans;
+  font-size: 100%;
 }
+
+html[data-text-size="large"]  { font-size: 112.5%; }
+html[data-text-size="larger"] { font-size: 125%; }
 
 body {
   background-color: @canvas;

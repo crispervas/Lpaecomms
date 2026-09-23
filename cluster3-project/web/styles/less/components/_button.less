@@ -18,13 +18,13 @@
 
 .button--solid {
   background-color: @ink;
-  color: @white;
+  color: @on-ink;
 
-  &:hover:not(:disabled) { background-color: @black; }
+  &:hover:not(:disabled) { background-color: @ink-hover; }
 }
 
 .button--outline {
-  border: 1px solid @line-strong;
+  border: 1px solid @border-control;
   color: @ink;
 
   &:hover:not(:disabled) { background-color: @surface; }
@@ -41,7 +41,7 @@
   border-radius: @radius-10;
   // An arbitrary size, so unlike .button's named one it carries no paired
   // leading and takes the document's 1.5 ratio — 22.5px, not 20px.
-  font-size: 15px;
+  font-size: .9375rem;
   line-height: 1.5;
 }
 
@@ -56,7 +56,7 @@
   &.is-active {
     background-color: @ink;
     border-color: @ink;
-    color: @white;
+    color: @on-ink;
   }
 }
 
