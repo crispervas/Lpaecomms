@@ -58,6 +58,33 @@
     status.classList.toggle('u-hidden', message === '');
   }
 
+  /**
+   * Bring every other copy of the appearance form into agreement after a
+   * background save succeeds.
+   *
+   * `/preferences` renders this form twice — once in the header panel, once
+   * on the page itself — so the two can never offer different options. Only
+   * the panel's copy is bound above; the page's copy still submits normally.
+   * Without this, a visitor who changes theme in the panel and then presses
+   * the page copy's "Save appearance" would resubmit the page copy's stale
+   * radio value and silently undo the choice that was just saved. Setting
+   * `checked` directly does not dispatch a `change` event, so it cannot loop
+   * back into this handler.
+   *
+   * @param {HTMLInputElement} control - The radio that was just changed.
+   * @returns {void}
+   */
+  function syncOtherCopies(control) {
+    document.querySelectorAll('[data-appearance-form]').forEach((otherForm) => {
+      if (otherForm === form) return;
+
+      const twin = otherForm.querySelector(
+        `input[name="${control.name}"][value="${control.value}"]`,
+      );
+      if (twin) twin.checked = true;
+    });
+  }
+
   form.addEventListener('change', async (event) => {
     const control = event.target;
     if (control.name !== 'theme' && control.name !== 'text') return;
@@ -86,7 +113,9 @@
         body: new URLSearchParams(new FormData(form)),
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        syncOtherCopies(control);
+      } else {
         report('That choice could not be saved. It will reset on your next visit.');
       }
     } catch {

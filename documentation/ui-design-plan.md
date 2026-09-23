@@ -262,8 +262,12 @@ floors are not asserted; they are computed. `tests/themeContrast.test.js`
 parses the raw values out of `styles/less/abstracts/_palette.less`, resolves
 each theme's effective palette the same way the stylesheet does (a theme
 overrides the tokens it names and inherits the rest from `:root`), and checks
-every pairing the interface actually draws — body text, secondary text, link
-text, button labels, input borders, error borders, and feedback messages —
-against the floor that theme answers to. Every theme currently passes every
-pairing; section 8's floor is what a change to any theme's palette is checked
-against going forward, not a one-time measurement.
+the pairings enumerated in that file — 18 hand-maintained entries covering
+body text, secondary text, link text, button labels, input borders, error
+borders, and feedback messages — against the floor that theme answers to.
+Every theme currently passes every listed pairing; section 8's floor is what a
+change to any theme's palette is checked against going forward, not a
+one-time measurement. The guarantee covers exactly those 18 combinations, not
+every foreground-on-background combination the stylesheet can produce: a new
+component rule that pairs an existing colour in a new way is not covered until
+its pairing is added to the list.

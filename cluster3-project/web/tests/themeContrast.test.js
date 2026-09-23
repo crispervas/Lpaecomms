@@ -128,11 +128,24 @@ const PAIRINGS = [
  * means the test measures what a page actually renders rather than a list
  * someone kept in step by hand.
  *
+ * Each override is resolved by reading the assignment itself — `--ink:
+ * @midnight-ink-value;` inside a theme's block — and looking up the named
+ * palette variable, rather than by prefix-matching palette names against the
+ * theme name. Prefix matching only checks that a name *looks* right for the
+ * theme; it can't catch an assignment wired to the wrong palette variable,
+ * because it never reads the right-hand side at all. `_themes.less` is 95
+ * lines of near-identical `--token: @theme-token-value;` lines, exactly the
+ * shape a copy-paste slip produces — `--ink: @midnight-line-strong-value;`
+ * parses as a perfectly well-formed override and would pass a check that only
+ * confirms `midnight-line-strong` starts with `midnight-`. Reading the
+ * assignment is what makes the test measure what the browser will actually
+ * paint instead of what the stylesheet merely looks like it says.
+ *
  * The theme names themselves are parsed out of _themes.less rather than typed
  * here as a literal list, because a name written in two places can disagree
  * with itself — and this particular disagreement fails silently in the
  * passing direction. If a theme were deleted from the stylesheet but survived
- * in a hardcoded list, `withOverrides` would find no matching keys, return a
+ * in a hardcoded list, resolving it would find no matching block, return a
  * plain copy of the base palette, and every one of that theme's tests would
  * pass against daylight's numbers rather than its own. Deriving the list
  * closes that gap and means a theme added later extends this test instead of
@@ -150,20 +163,29 @@ function themes(palette) {
     ...[...themesSource.matchAll(/html\[data-theme="([\w-]+)"\]/g)].map((match) => match[1]),
   ];
 
-  const withOverrides = (prefix) => {
+  /** Matches `--token: @variable-value;` lines inside a theme's block. */
+  const ASSIGNMENT_PATTERN = /--([\w-]+):\s*@([\w-]+)-value\s*;/g;
+
+  const resolveTheme = (name) => {
+    const block = themesSource.match(
+      new RegExp(`html\\[data-theme="${name}"\\]\\s*\\{([^}]*)\\}`),
+    )?.[1];
+
+    if (!block) {
+      return palette;
+    }
+
     const overrides = {};
 
-    for (const [name, hex] of Object.entries(palette)) {
-      if (name.startsWith(`${prefix}-`)) {
-        overrides[name.slice(prefix.length + 1)] = hex;
-      }
+    for (const [, token, variable] of block.matchAll(ASSIGNMENT_PATTERN)) {
+      overrides[token] = palette[variable];
     }
 
     return { ...palette, ...overrides };
   };
 
   return Object.fromEntries(
-    themeNames.map((name) => [name, name === 'daylight' ? palette : withOverrides(name)]),
+    themeNames.map((name) => [name, name === 'daylight' ? palette : resolveTheme(name)]),
   );
 }
 

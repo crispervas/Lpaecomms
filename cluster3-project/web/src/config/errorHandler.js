@@ -16,6 +16,7 @@
  */
 
 import boom from "@hapi/boom";
+import { DEFAULT_PREFERENCES } from "../lib/preferences.js";
 
 /**
  * Whether the process is running in production.
@@ -161,6 +162,12 @@ const errorHandlerWeb = (err, req, res) => {
             // it, but an error raised before that middleware would leave it
             // undefined and break the error page itself.
             currentPath: res.locals.currentPath ?? req.path,
+            // The layout reads preferences.theme with no guard, same as
+            // currentPath above. An error raised ahead of preferencesLocals
+            // (e.g. a malformed JSON body, which throws inside express.json()
+            // before that middleware ever runs) would otherwise leave this
+            // local unset and break the error page itself.
+            preferences: res.locals.preferences ?? DEFAULT_PREFERENCES,
             // Outside production the message shortens the debugging loop; in
             // production the page stays generic.
             detail: isProduction() ? null : err.message,

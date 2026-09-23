@@ -57,6 +57,29 @@ test('the chosen theme reaches every page, including the 404', async () => {
   assert.match(missing.text, /data-theme="contrast"/);
 });
 
+test('the chosen theme also reaches the error page, raised before preferencesLocals runs', async () => {
+  // express.json() sits ahead of preferencesLocals in app.js, so a body it
+  // cannot parse throws before res.locals.preferences is ever set. The error
+  // page (rendered through the same base layout as every other page) must
+  // still render rather than fall back to errorHandlerWeb's plain-text catch,
+  // which is what a missing local used to produce.
+  const app = createApp();
+  const cookie = `${PREFERENCES_COOKIE}=theme=midnight&text=large`;
+
+  const response = await request(app)
+    .post('/preferences')
+    .set('Cookie', cookie)
+    .set('Content-Type', 'application/json')
+    .send('{bad');
+
+  assert.equal(response.status, 500);
+  // The regression sent plain text ("Error 500") because rendering the layout
+  // threw. Asserting the content type is HTML is enough to prove the layout
+  // rendered without reading its markup.
+  assert.match(response.headers['content-type'], /text\/html/);
+  assert.doesNotMatch(response.headers['content-type'], /text\/plain/);
+});
+
 test('a cookie someone edited cannot reach the markup', async () => {
   const response = await request(createApp())
     .get('/preferences')

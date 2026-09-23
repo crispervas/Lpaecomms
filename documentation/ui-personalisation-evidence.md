@@ -27,7 +27,7 @@ see it working.
 | 7. Recently viewed | Up to 8 product ids, newest first, deduplicated, written on every product view | `src/lib/recentlyViewed.js`, `src/controllers/productDetail.controller.js` | View several different products, then the home page — "Recently viewed" lists them newest first |
 | 7. Picked for you | Dominant-category inference over the history, excluding products already seen | `src/controllers/home.controller.js`, `src/models/product.model.js` (`findByCategoryExcluding`) | View several products in one category, then the home page — "Picked for you" shows other products from it |
 | 7. No history, no blocks | Neither section renders when the history cookie is absent or empty | `src/views/components/home/homeRecentlyViewed.ejs`, `src/controllers/home.controller.js` | Clear cookies, load the home page — neither "Recently viewed" nor "Picked for you" appears |
-| 8. Accessibility floor per theme | Computed contrast ratios checked against AA (AAA for `contrast`) for every pairing the interface draws | `tests/themeContrast.test.js` | `node --test tests/themeContrast.test.js` — 72 assertions, all passing, across the four themes |
+| 8. Accessibility floor per theme | Computed contrast ratios checked against AA (AAA for `contrast`) for the 18 pairings enumerated in the test file, not every combination the stylesheet can produce | `tests/themeContrast.test.js` | `node --test tests/themeContrast.test.js` — 72 assertions, all passing, across the four themes |
 
 ## Measured improvement (criterion 57)
 
@@ -40,7 +40,7 @@ computing WCAG 2.1 ratios against the values actually shipping in
 | Defect | Before | After | WCAG clause | Fix |
 | --- | --- | --- | --- | --- |
 | Secondary text on subtle panels | 4.43:1 | 4.69:1 | 1.4.3 (AA, 4.5:1) | `--muted` darkened to `#676B72` |
-| Form input borders | 1.39:1 | 3.45:1 | 1.4.11 (3:1) | new `--border-control` token at `#8E8A7F` |
+| Form input borders (against `--canvas`) | 1.39:1 | 3.30:1 | 1.4.11 (3:1) | new `--border-control` token at `#8E8A7F` |
 | Errored input borders | 2.77:1 | 3.48:1 | 1.4.11 (3:1) | `--danger-border` darkened to `#F05252` |
 
 `--subtle` (`#F1F0EC`) is the background of the header search field, the login
@@ -64,8 +64,8 @@ here.
 meter fills its segments with `--strength-1` through `--strength-4`
 (`styles/less/abstracts/_palette.less`). At least three of the four colours
 measure under 1.4.11's 3:1 against a white card in `daylight`. They were left
-unchanged: `styles/less/pages/_mashup.less` marks the segment bar
-`aria-hidden="true"`, and the strength label beside it
+unchanged: `src/views/components/mashup/mashupThree.ejs` marks the segment bar
+`aria-hidden="true"` (line 56), and the strength label beside it
 (`#mashup-strength-label`, written by `src/public/js/mashup-password.js`)
 states the same level in words — "Strength: Weak", "Strength: Strong", and so
 on — and that label's text colour does clear AA (`tests/themeContrast.test.js`
@@ -178,8 +178,8 @@ a pre-existing integration test unrelated to this feature. Run today, with
 `pnpm build:css` run first:
 
 ```
-ℹ tests 217
-ℹ pass 216
+ℹ tests 220
+ℹ pass 219
 ℹ fail 1
 ```
 
@@ -192,8 +192,8 @@ node --test $(ls tests/*.test.js | grep -v health)
 ```
 
 ```
-ℹ tests 215
-ℹ pass 215
+ℹ tests 218
+ℹ pass 218
 ℹ fail 0
 ```
 
@@ -201,14 +201,14 @@ What each named file substantiates:
 
 | Test file | Substantiates |
 | --- | --- |
-| `tests/themeContrast.test.js` | The three measured ratios above and every other pairing the interface draws, across all four themes (72 assertions) |
+| `tests/themeContrast.test.js` | The three measured ratios above and the other 15 pairings enumerated in the file, across all four themes (72 assertions) |
 | `tests/textScale.test.js` | The three text-size steps compiling to the right percentages, and the absence of any `px` `font-size` in the stylesheet (2 assertions) |
 | `tests/preferences.routes.test.js` | The `lpa_prefs` cookie's attributes, the theme/text-size whitelist rejecting an invalid value with `422`, the `returnTo` redirect guard, and the `204` background-save path (13 assertions) |
 | `tests/personalisation.test.js` | The dominant-category inference, the empty-history case, and that a failure in either personalisation block never costs the home page its render (5 assertions) |
 | `tests/stylesheetTokens.test.js` | The rule that every colour in the compiled stylesheet reaches a custom property — no literal colour escapes the token layer outside `:root` and the theme blocks (4 assertions) |
 | `tests/appearanceContract.test.js` | That `THEMES`/`TEXT_SIZES` in `src/lib/preferences.js` name exactly the themes and sizes the stylesheet actually renders, in both directions (2 assertions) |
 
-Three further test files exist from this plan but are not individually named
+Four further test files exist from this plan but are not individually named
 above because no claim in this document rests on them alone:
 `tests/preferences.test.js` (the whitelist and cookie parsing/serialisation at
 the unit level), `tests/cookies.test.js` (the `secure` flag and the other
