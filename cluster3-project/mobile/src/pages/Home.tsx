@@ -40,7 +40,7 @@ function TrendingGrid() {
     <div className="home__grid">
       {status === 'loading'
         ? Array.from({ length: TRENDING_COUNT }, (_, i) => <ProductCardSkeleton key={i} />)
-        : products.slice(0, TRENDING_COUNT).map((p) => <ProductCard key={p.id} product={p} to="/catalog" />)}
+        : products.slice(0, TRENDING_COUNT).map((p) => <ProductCard key={p.id} product={p} to={`/home/product/${p.id}`} />)}
     </div>
   );
 }

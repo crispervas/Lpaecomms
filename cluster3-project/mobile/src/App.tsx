@@ -23,6 +23,7 @@ import Catalog from './pages/Catalog';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
 import About from './pages/About';
+import ProductDetail from './pages/ProductDetail';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -59,7 +60,9 @@ const App: React.FC = () => (
         <IonRouterOutlet>
           <Route path="/home" element={<Home />} />
           <Route path="/home/about" element={<About />} />
+          <Route path="/home/product/:id" element={<ProductDetail />} />
           <Route path="/catalog" element={<Catalog />} />
+          <Route path="/catalog/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Navigate to="/home" replace />} />

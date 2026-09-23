@@ -50,7 +50,12 @@ function CatalogResults({ category }: { category: string | null }) {
       </p>
       <div className="catalog__grid">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} category={product.category} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            category={product.category}
+            to={`/catalog/product/${product.id}`}
+          />
         ))}
       </div>
       {loadMoreError ? <p className="catalog__message catalog__message--spaced">{loadMoreError}</p> : null}

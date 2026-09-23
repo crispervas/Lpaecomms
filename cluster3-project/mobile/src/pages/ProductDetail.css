@@ -1,0 +1,81 @@
+/* Product page, following Mobile Product in the mockups. */
+.product-page {
+  padding: 12px 20px 28px;
+}
+
+.product-page__badge {
+  display: inline-block;
+  margin-top: 22px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--lpa-accent-soft);
+  color: var(--lpa-accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.product-page__name {
+  margin: 12px 0 8px;
+  font-family: var(--lpa-font-display);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.product-page__price {
+  margin: 0 0 20px;
+  font-family: var(--lpa-font-display);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.product-page__description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--lpa-subtle);
+}
+
+.product-page__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-page__skeleton-media {
+  height: 280px;
+  border-radius: 18px;
+  background: var(--lpa-border);
+}
+
+.product-page__skeleton-bar {
+  display: block;
+  width: 70%;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--lpa-border);
+}
+
+.product-page__skeleton-bar--short {
+  width: 30%;
+}
+
+.product-page__missing {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-page__missing-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--lpa-subtle);
+}
+
+.product-page__missing-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lpa-accent);
+  text-decoration: none;
+}

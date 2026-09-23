@@ -41,7 +41,8 @@ bruno/lpaecomms-web/
 ├── health/
 │   └── get-health.bru             # A request + its docs (purpose, params, responses)
 ├── products/
-│   └── get-products.bru           # Product catalogue request + docs (pairing, truncation, caching)
+│   ├── get-products.bru           # Product catalogue request + docs (pairing, truncation, caching)
+│   └── get-product.bru            # One product by id + docs (400/404/502)
 ├── categories/
 │   └── get-categories.bru         # Category list request + docs (populated only, caching)
 ├── catalog/
@@ -149,8 +150,8 @@ what a failed map looks like.
 > down would turn a valid URL dead.
 
 > **`productDetail` vs `product`.** `controllers/product.controller.js` belongs
-> to the **API** — it serves `GET /api/v1/products` to the mobile and desktop
-> clients. The view controller for the product page is therefore
+> to the **API** — it serves `GET /api/v1/products` and `GET /api/v1/products/:id`
+> to the mobile and desktop clients. The view controller for the product page is therefore
 > `productDetail.controller.js`, with matching route and page names. Renaming
 > the API's controller for symmetry would move a file two other platforms
 > depend on, to buy nothing.
@@ -538,18 +539,21 @@ mobile/
     │   ├── products.ts       # fetchProducts → validated Product[]; parseProduct shared
     │   ├── categories.ts     # fetchCategories → validated CatalogCategory[]
     │   ├── catalog.ts        # fetchCatalogPage → one page + hasMore
+    │   ├── product.ts        # parseProductId, fetchProduct → validated ProductDetail
     │   └── contact.ts        # sendContact; fieldErrors maps 422 validation to fields
-    ├── hooks/                # useProducts, useCategories, useCatalog, useContactForm
-    ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules)
+    ├── hooks/                # useProducts, useCategories, useCatalog, useProductDetail,
+    │                         # useRelatedProducts, useContactForm
+    ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules), tabBase
     ├── data/                 # categories.tsx (fixed Home rail), studio.ts (studio location)
     ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard,
-    │                         # ContactChannels, ContactForm, StudioMap (Leaflet), ComingSoonPage
-    ├── pages/                # Home, Catalog, About (mockups), Cart / Login (placeholders)
+    │                         # ContactChannels, ContactForm, StudioMap (Leaflet), PageHeader,
+    │                         # ProductGallery, RelatedProducts, PurchaseBar, ComingSoonPage
+    ├── pages/                # Home, Catalog, ProductDetail, About (mockups), Cart / Login (placeholders)
     └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms. Home, Catalog and About implement their mockups; Cart and Login are
+platforms. Home, Catalog, Product and About implement their mockups; Cart and Login are
 placeholders. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.

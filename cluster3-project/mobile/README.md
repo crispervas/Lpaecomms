@@ -85,3 +85,9 @@ About & Contact (from Home's "Our story" card) sends its form to
 which need a connection; offline the studio card's "Open in Maps" link still
 works. Its copy follows the web's About and Contact pages rather than the
 mockup (no team section, no invented history).
+
+Product pages open from Home and Catalog inside the same tab
+(`/home/product/:id`, `/catalog/product/:id`), so back returns to where the
+user came from. They read `GET /api/v1/products/:id`, list related products
+through `GET /api/v1/catalog`, and keep the quantity and add-to-cart controls
+disabled until the cart exists.

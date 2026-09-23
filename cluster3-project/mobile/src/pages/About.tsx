@@ -6,9 +6,10 @@
  * company history. It lives in the Home tab's stack, so the back button and
  * the Home tab both return to Home.
  */
-import { IonBackButton, IonButtons, IonContent, IonHeader, IonPage, IonToolbar } from '@ionic/react';
+import { IonContent, IonPage } from '@ionic/react';
 import ContactChannels from '../components/ContactChannels';
 import ContactForm from '../components/ContactForm';
+import PageHeader from '../components/PageHeader';
 import StudioMap from '../components/StudioMap';
 import './About.css';
 
@@ -20,14 +21,7 @@ import './About.css';
 export default function About() {
   return (
     <IonPage>
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="about__toolbar">
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" text="" className="about__back" />
-          </IonButtons>
-          <span className="about__title">About &amp; Contact</span>
-        </IonToolbar>
-      </IonHeader>
+      <PageHeader title="About & Contact" backHref="/home" />
       <IonContent>
         <div className="about">
           <span className="about__eyebrow">Our mission</span>

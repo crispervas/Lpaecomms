@@ -1,32 +1,4 @@
 /* About & Contact page, following Mobile About in the mockups. */
-.about__toolbar {
-  --padding-start: 20px;
-  --padding-end: 20px;
-  --padding-top: 18px;
-  --padding-bottom: 12px;
-}
-
-.about__back {
-  --background: var(--lpa-surface);
-  --color: var(--lpa-ink);
-  --border-radius: 50%;
-  --padding-start: 0;
-  --padding-end: 0;
-  --icon-font-size: 18px;
-  width: 38px;
-  height: 38px;
-  margin-right: 14px;
-}
-
-.about__back::part(native) {
-  border: 1px solid var(--lpa-border);
-}
-
-.about__title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .about {
   padding: 8px 20px 28px;
 }
