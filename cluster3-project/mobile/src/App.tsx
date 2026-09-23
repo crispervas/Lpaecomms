@@ -24,6 +24,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import About from './pages/About';
 import ProductDetail from './pages/ProductDetail';
+import CartProvider from './context/CartProvider';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -55,38 +56,40 @@ setupIonicReact();
  */
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route path="/home" element={<Home />} />
-          <Route path="/home/about" element={<About />} />
-          <Route path="/home/product/:id" element={<ProductDetail />} />
-          <Route path="/catalog" element={<Catalog />} />
-          <Route path="/catalog/product/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/home" replace />} />
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="home" href="/home">
-            <IonIcon aria-hidden="true" icon={homeOutline} />
-            <IonLabel>Home</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="catalog" href="/catalog">
-            <IonIcon aria-hidden="true" icon={gridOutline} />
-            <IonLabel>Catalog</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="cart" href="/cart">
-            <IonIcon aria-hidden="true" icon={cartOutline} />
-            <IonLabel>Cart</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="login" href="/login">
-            <IonIcon aria-hidden="true" icon={personOutline} />
-            <IonLabel>Login</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
-    </IonReactRouter>
+    <CartProvider>
+      <IonReactRouter>
+        <IonTabs>
+          <IonRouterOutlet>
+            <Route path="/home" element={<Home />} />
+            <Route path="/home/about" element={<About />} />
+            <Route path="/home/product/:id" element={<ProductDetail />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/catalog/product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+          </IonRouterOutlet>
+          <IonTabBar slot="bottom">
+            <IonTabButton tab="home" href="/home">
+              <IonIcon aria-hidden="true" icon={homeOutline} />
+              <IonLabel>Home</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="catalog" href="/catalog">
+              <IonIcon aria-hidden="true" icon={gridOutline} />
+              <IonLabel>Catalog</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="cart" href="/cart">
+              <IonIcon aria-hidden="true" icon={cartOutline} />
+              <IonLabel>Cart</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="login" href="/login">
+              <IonIcon aria-hidden="true" icon={personOutline} />
+              <IonLabel>Login</IonLabel>
+            </IonTabButton>
+          </IonTabBar>
+        </IonTabs>
+      </IonReactRouter>
+    </CartProvider>
   </IonApp>
 );
 
