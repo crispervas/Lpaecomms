@@ -40,7 +40,8 @@ describe('fetchProducts', () => {
   });
 
   it('normalises a missing image URL to an empty string', async () => {
-    const { imageUrl: _omitted, ...withoutImage } = apiProduct;
+    const withoutImage: Partial<typeof apiProduct> = { ...apiProduct };
+    delete withoutImage.imageUrl;
     mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { products: [withoutImage] }, error: null });
 
     const result = await fetchProducts();

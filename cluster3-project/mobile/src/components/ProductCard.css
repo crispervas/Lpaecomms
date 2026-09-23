@@ -1,0 +1,81 @@
+/* Product tile for the Home grid, plus its loading skeleton. */
+.product-card {
+  position: relative;
+  min-width: 0;
+}
+
+.product-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--lpa-ink);
+  text-decoration: none;
+}
+
+.product-card__media {
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.product-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card__placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--lpa-border);
+}
+
+.product-card__name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.product-card__price {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.product-card__cart {
+  position: absolute;
+  top: 92px; /* 130px media height - 30px button - 8px inset */
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--lpa-ink);
+  color: var(--lpa-on-ink);
+}
+
+.product-card.is-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-card__bar {
+  display: block;
+  width: 80%;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--lpa-border);
+}
+
+.product-card__bar--short {
+  width: 40%;
+}
