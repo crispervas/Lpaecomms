@@ -3,7 +3,7 @@
  *
  * Content follows the web product page, which drops what the feed does not
  * have (reviews, compare-at price, variants, specs). The purchase bar shows
- * only once the product is known, and stays disabled until the cart exists.
+ * only once the product is known, and adds to the device cart.
  */
 import { IonButton, IonContent, IonIcon, IonPage } from '@ionic/react';
 import { cartOutline } from 'ionicons/icons';
@@ -15,6 +15,7 @@ import RelatedProducts from '../components/RelatedProducts';
 import RetryNotice from '../components/RetryNotice';
 import { parseProductId } from '../api/product';
 import { useProductDetail } from '../hooks/useProductDetail';
+import { cartProductFromDetail } from '../lib/cart';
 import { formatPrice } from '../lib/formatPrice';
 import { productPath, tabBase } from '../lib/tabBase';
 import './ProductDetail.css';
@@ -81,7 +82,7 @@ export default function ProductDetail() {
       <IonContent>
         <div className="product-page">{body}</div>
       </IonContent>
-      {status === 'ready' && product ? <PurchaseBar priceAud={product.priceAud} /> : null}
+      {status === 'ready' && product ? <PurchaseBar key={product.id} product={cartProductFromDetail(product)} /> : null}
     </IonPage>
   );
 }

@@ -25,6 +25,7 @@ import Login from './pages/Login';
 import About from './pages/About';
 import ProductDetail from './pages/ProductDetail';
 import CartProvider from './context/CartProvider';
+import CartTabBadge from './components/CartTabBadge';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -81,6 +82,7 @@ const App: React.FC = () => (
             <IonTabButton tab="cart" href="/cart">
               <IonIcon aria-hidden="true" icon={cartOutline} />
               <IonLabel>Cart</IonLabel>
+              <CartTabBadge />
             </IonTabButton>
             <IonTabButton tab="login" href="/login">
               <IonIcon aria-hidden="true" icon={personOutline} />

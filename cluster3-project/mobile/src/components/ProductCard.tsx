@@ -6,11 +6,12 @@
  * router link: a push without a direction leaves Ionic's stack showing the
  * previous page on top when both share a parameterised route, which is exactly
  * what opening a related product from a product page does.
- * The cart button sits beside the tile body, not inside it, because a button
- * nested in a link is invalid and ambiguous to tap.
+ * The cart button adds one unit to the cart. It sits beside the tile body, not
+ * inside it, because a button nested in a link is invalid and ambiguous to tap.
  */
 import { useState } from 'react';
 import { useIonRouter } from '@ionic/react';
+import { useAddToCart } from '../hooks/useAddToCart';
 import type { Product } from '../api/products';
 import { formatPrice } from '../lib/formatPrice';
 import './ProductCard.css';
@@ -33,6 +34,7 @@ export interface ProductCardProps {
  */
 export default function ProductCard({ product, category, to }: ProductCardProps) {
   const router = useIonRouter();
+  const addToCart = useAddToCart();
   // The demo feed's image links are often dead; a failed load falls back to
   // the same placeholder block as a product with no image at all.
   const [imageFailed, setImageFailed] = useState(false);
@@ -77,8 +79,14 @@ export default function ProductCard({ product, category, to }: ProductCardProps)
       ) : (
         <div className="product-card__body">{body}</div>
       )}
-      {/* Inert until the cart exists; aria-disabled keeps it focusable and announced. */}
-      <button type="button" className="product-card__cart" aria-label={`Add ${product.name} to cart`} aria-disabled="true">
+      <button
+        type="button"
+        className="product-card__cart"
+        aria-label={`Add ${product.name} to cart`}
+        onClick={() =>
+          addToCart({ id: product.id, name: product.name, priceAud: product.priceAud, imageUrl: product.imageUrl })
+        }
+      >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <path d="M6 6h15l-1.5 9h-12z" />
           <circle cx="9" cy="20" r="1" />
