@@ -69,6 +69,14 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const catalogueCache = new Map();
 
 /**
+ * Most feed responses the cache holds at once. The paged catalogue API lets
+ * any client choose the offset and page size, so the set of URLs is no longer
+ * fixed; without a cap, walking offsets would grow memory without end. Two
+ * hundred comfortably covers every page real browsing touches in one TTL.
+ */
+const MAX_CACHE_ENTRIES = 200;
+
+/**
  * Lpaecomms store locations on the Gold Coast, assigned to products by index.
  * The external feed carries no coordinates, and the map mashup needs one point
  * per product, so the pairing lives here rather than being invented downstream.
@@ -179,18 +187,22 @@ export class ProductModel {
    * distinct cache entry, which is why the home page's eight products, the
    * mashup's five, and each category's twelve can never overwrite one another.
    *
+   * Offset joins them for the same reason: each page of a paged listing is its
+   * own cache entry, so page two can never be served page one's products.
+   *
    * @param {number} limit - How many products to request.
    * @param {number|null} [categoryId] - Category to scope to, or null for all.
+   * @param {number} [offset] - How many products to skip; 0 for the first page.
    * @returns {string} The absolute feed URL.
    */
-  #catalogueUrl(limit, categoryId = null) {
+  #catalogueUrl(limit, categoryId = null, offset = 0) {
     const url = new URL(
       categoryId === null
         ? this.catalogueBaseUrl
         : `${this.categoriesBaseUrl}/${categoryId}/products`,
     );
 
-    url.searchParams.set('offset', '0');
+    url.searchParams.set('offset', String(offset));
     url.searchParams.set('limit', String(limit));
 
     return url.toString();
@@ -249,6 +261,12 @@ export class ProductModel {
 
     // Written only once the fetch succeeded, so a failure can never overwrite —
     // and therefore can never evict — a still-valid entry.
+    // A Map iterates in insertion order, so re-inserting makes this entry the
+    // newest and the first key is always the oldest — the one to evict.
+    catalogueCache.delete(url);
+    if (catalogueCache.size >= MAX_CACHE_ENTRIES) {
+      catalogueCache.delete(catalogueCache.keys().next().value);
+    }
     catalogueCache.set(url, { payload, expiresAt: Date.now() + CACHE_TTL_MS });
 
     return payload;
@@ -286,13 +304,14 @@ export class ProductModel {
    * @param {number|null} categoryId - Category to scope to, or null for every
    *   category.
    * @param {number} [limit] - How many products to return.
+   * @param {number} [offset] - How many products to skip, for paging.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
    *   Products in feed order.
    * @throws {Error} When the feed is unreachable, times out, or answers a
    *   non-2xx status.
    */
-  async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT) {
-    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId));
+  async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT, offset = 0) {
+    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId, offset));
 
     return products.slice(0, limit).map((product) => ({
       id: product.id,

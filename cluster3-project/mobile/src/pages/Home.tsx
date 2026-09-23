@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import CategoryRail from '../components/CategoryRail';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
+import RetryNotice from '../components/RetryNotice';
 import StoryCard from '../components/StoryCard';
 import { useProducts } from '../hooks/useProducts';
 import './Home.css';
@@ -28,14 +29,7 @@ function TrendingGrid() {
   const { status, products, error, retry } = useProducts();
 
   if (status === 'error') {
-    return (
-      <div className="home__notice">
-        <p className="home__notice-text">{error}</p>
-        <IonButton size="small" fill="outline" className="home__retry" onClick={retry}>
-          Retry
-        </IonButton>
-      </div>
-    );
+    return <RetryNotice message={error ?? ''} onRetry={retry} />;
   }
 
   if (status === 'ready' && products.length === 0) {
@@ -46,7 +40,7 @@ function TrendingGrid() {
     <div className="home__grid">
       {status === 'loading'
         ? Array.from({ length: TRENDING_COUNT }, (_, i) => <ProductCardSkeleton key={i} />)
-        : products.slice(0, TRENDING_COUNT).map((p) => <ProductCard key={p.id} product={p} />)}
+        : products.slice(0, TRENDING_COUNT).map((p) => <ProductCard key={p.id} product={p} to="/catalog" />)}
     </div>
   );
 }

@@ -74,6 +74,8 @@ the page still renders.
 ## Current scope
 
 The app shell is an `IonTabs` bar with Home, Catalog, Cart and Login. Home
-implements the Mobile Home mockup; the other three tabs are "coming soon"
-placeholders until their own views are built. Categories on Home are a fixed
-client-side list, because the API has no categories endpoint yet.
+and Catalog implement their mockups; Cart and Login are "coming soon"
+placeholders until their own views are built. Catalog reads
+`GET /api/v1/categories` and `GET /api/v1/catalog` — restart the web server
+after pulling so it serves them. Categories on Home are still a fixed
+client-side list; the Catalog's chips come from the API.

@@ -419,3 +419,50 @@ test('getById falls back when the feed omits a category or a description', async
   assert.equal(product.description, '');
   assert.deepEqual(product.imageUrls, []);
 });
+
+test('listByCategory puts the offset into the feed URL', async () => {
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(url);
+    return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  const model = new ProductModel(
+    'https://example.test/offset/products',
+    'https://example.test/offset/categories',
+  );
+
+  await model.listByCategory(2, 7, 6);
+  await model.listByCategory(null, 7, 12);
+
+  assert.deepEqual(requested, [
+    'https://example.test/offset/categories/2/products?offset=6&limit=7',
+    'https://example.test/offset/products?offset=12&limit=7',
+  ]);
+});
+
+test('the catalogue cache is bounded: the oldest page is evicted once the cap is reached', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  const model = new ProductModel(
+    'https://example.test/bounded/products',
+    'https://example.test/bounded/categories',
+  );
+
+  // Client-chosen offsets make every page a distinct cache key; far more of
+  // them than any cap should allow.
+  for (let offset = 0; offset <= 1000; offset += 1) {
+    await model.listByCategory(null, 6, offset);
+  }
+  const afterFill = calls;
+
+  await model.listByCategory(null, 6, 1000);
+  assert.equal(calls, afterFill, 'the newest page is still cached');
+
+  await model.listByCategory(null, 6, 0);
+  assert.equal(calls, afterFill + 1, 'the oldest page was evicted');
+});
