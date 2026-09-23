@@ -159,14 +159,31 @@ export class HomeController {
       return { recentlyViewed: [], pickedForYou: [] };
     }
 
+    let recentlyViewed;
+
     try {
-      const recentlyViewed = await this.productModel.findByIds(history);
-      const categoryId = dominantCategoryId(recentlyViewed);
+      recentlyViewed = await this.productModel.findByIds(history);
+    } catch (error) {
+      // The history lookup itself failed, and "Picked for you" has nothing to
+      // infer from without it, so this one failure costs both blocks rather
+      // than one being rebuilt on data that could not be read.
+      console.error('🪵 Home: browsing history unavailable:', {
+        message: error.message,
+      });
 
-      if (categoryId === null) {
-        return { recentlyViewed, pickedForYou: [] };
-      }
+      return { recentlyViewed: [], pickedForYou: [] };
+    }
 
+    const categoryId = dominantCategoryId(recentlyViewed);
+
+    if (categoryId === null) {
+      return { recentlyViewed, pickedForYou: [] };
+    }
+
+    // Kept in its own try/catch, separate from the history lookup above: this
+    // call is the one documented to throw, and its failure must cost only the
+    // inferred strip, not the history the visitor already has in hand.
+    try {
       const pickedForYou = await this.productModel.findByCategoryExcluding(
         categoryId,
         recentlyViewed.map((product) => product.id),
@@ -175,11 +192,11 @@ export class HomeController {
 
       return { recentlyViewed, pickedForYou };
     } catch (error) {
-      console.error('🪵 Home: personalisation unavailable:', {
+      console.error('🪵 Home: recommendation unavailable:', {
         message: error.message,
       });
 
-      return { recentlyViewed: [], pickedForYou: [] };
+      return { recentlyViewed, pickedForYou: [] };
     }
   }
 }

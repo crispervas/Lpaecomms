@@ -13,19 +13,27 @@ import assert from 'node:assert/strict';
 import { HomeController } from '../src/controllers/home.controller.js';
 import { ProductDetailController } from '../src/controllers/productDetail.controller.js';
 import { RECENT_COOKIE } from '../src/lib/recentlyViewed.js';
+import { persistentCookieOptions } from '../src/config/cookies.js';
 
 /**
  * A response double recording what a controller did to it.
  *
- * @returns {Object} The double, with `rendered` and `cookies` to assert on.
+ * Records the cookie's options alongside its value, not just the value: a
+ * write that silently dropped `persistentCookieOptions()` and fell back to a
+ * session cookie would otherwise be invisible to every assertion here.
+ *
+ * @returns {Object} The double, with `rendered`, `cookies` and `cookieOptions`
+ *   to assert on.
  */
 function fakeResponse() {
   return {
     rendered: null,
     cookies: {},
+    cookieOptions: {},
     locals: {},
-    cookie(name, value) {
+    cookie(name, value, options) {
       this.cookies[name] = value;
+      this.cookieOptions[name] = options;
     },
     render(view, locals) {
       this.rendered = { view, locals };
@@ -54,6 +62,9 @@ test('viewing a product records it at the front of the history', async () => {
   );
 
   assert.equal(res.cookies[RECENT_COOKIE], '42,7,3');
+  // Not just written, but written to persist: a session cookie would vanish
+  // the moment the browser closes, and the history is supposed to outlive that.
+  assert.deepEqual(res.cookieOptions[RECENT_COOKIE], persistentCookieOptions());
 });
 
 test('the home page recommends from the category viewed most', async () => {
@@ -99,12 +110,37 @@ test('a first-time visitor gets neither block and no lookups', async () => {
   assert.equal(looked, false);
 });
 
-test('a failing recommendation costs a section, never the home page', async () => {
+test('a failing history lookup costs both blocks, never the home page', async () => {
   const model = {
     listFeatured: async () => [{ id: 1, name: 'A', category: 'X', priceAud: 1, imageUrl: '' }],
     findByIds: async () => {
       throw new Error('feed down');
     },
+    // Never reached: without a history there is nothing to infer a category
+    // from, so a real implementation would not even call this.
+    findByCategoryExcluding: async () => {
+      throw new Error('should not be called');
+    },
+  };
+
+  const res = fakeResponse();
+  await new HomeController(model).index({ cookies: { [RECENT_COOKIE]: '12' } }, res);
+
+  assert.equal(res.rendered.view, 'layouts/base');
+  assert.deepEqual(res.rendered.locals.recentlyViewed, []);
+  assert.deepEqual(res.rendered.locals.pickedForYou, []);
+  assert.equal(res.rendered.locals.products.length, 1);
+});
+
+test('a failing recommendation costs only its own section, never the history beside it', async () => {
+  const model = {
+    listFeatured: async () => [{ id: 1, name: 'A', category: 'X', priceAud: 1, imageUrl: '' }],
+    // The history lookup succeeds — this is the realistic failure shape, since
+    // findByIds swallows its own per-id errors and findByCategoryExcluding is
+    // the call documented to throw.
+    findByIds: async () => [
+      { id: 12, name: 'K1', category: 'Keyboards', categoryId: 9, priceAud: 10, imageUrl: '' },
+    ],
     findByCategoryExcluding: async () => {
       throw new Error('feed down');
     },
@@ -114,7 +150,10 @@ test('a failing recommendation costs a section, never the home page', async () =
   await new HomeController(model).index({ cookies: { [RECENT_COOKIE]: '12' } }, res);
 
   assert.equal(res.rendered.view, 'layouts/base');
-  assert.deepEqual(res.rendered.locals.recentlyViewed, []);
+  // The history the visitor already has must survive a recommendation that
+  // could not be built — losing it here would mean one section's failure
+  // reaching into its neighbour.
+  assert.deepEqual(res.rendered.locals.recentlyViewed.map((p) => p.id), [12]);
   assert.deepEqual(res.rendered.locals.pickedForYou, []);
   assert.equal(res.rendered.locals.products.length, 1);
 });
