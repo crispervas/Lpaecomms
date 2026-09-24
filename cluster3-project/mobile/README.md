@@ -89,5 +89,11 @@ mockup (no team section, no invented history).
 Product pages open from Home and Catalog inside the same tab
 (`/home/product/:id`, `/catalog/product/:id`), so back returns to where the
 user came from. They read `GET /api/v1/products/:id`, list related products
-through `GET /api/v1/catalog`, and keep the quantity and add-to-cart controls
-disabled until the cart exists.
+through `GET /api/v1/catalog`, and add to the device cart.
+
+The cart lives on the device, stored with `@capacitor/preferences` (native
+storage on iOS and Android, `localStorage` in the browser); run `npx cap sync`
+after `pnpm install` so the native projects get the plugin. Products are added
+from their page (with a quantity) or from a card's cart button, and the Cart
+tab covers the mockup's first checkout step. Shipping, Payment and placing an
+order need a signed-in user and a server-side order, so they come after Login.

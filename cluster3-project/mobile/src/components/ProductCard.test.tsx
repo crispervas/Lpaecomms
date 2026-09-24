@@ -9,6 +9,10 @@ vi.mock('@ionic/react', async (importOriginal) => ({
   useIonRouter: () => ({ push }),
 }));
 
+const addToCart = vi.fn();
+
+vi.mock('../hooks/useAddToCart', () => ({ useAddToCart: () => addToCart }));
+
 import ProductCard from './ProductCard';
 
 const product = { id: 2, name: 'Blue Cap', priceAud: 20, imageUrl: '' };
@@ -26,5 +30,17 @@ describe('ProductCard navigation', () => {
     fireEvent.click(screen.getByRole('link'));
 
     expect(push).toHaveBeenCalledWith('/home/product/2', 'forward', 'push');
+  });
+
+  it('adds one unit of its product from the cart button', () => {
+    render(
+      <MemoryRouter>
+        <ProductCard product={product} to="/home/product/2" />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Blue Cap to cart' }));
+
+    expect(addToCart).toHaveBeenCalledWith({ id: 2, name: 'Blue Cap', priceAud: 20, imageUrl: '' });
   });
 });

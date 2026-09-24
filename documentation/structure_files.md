@@ -541,20 +541,23 @@ mobile/
     │   ├── catalog.ts        # fetchCatalogPage → one page + hasMore
     │   ├── product.ts        # parseProductId, fetchProduct → validated ProductDetail
     │   └── contact.ts        # sendContact; fieldErrors maps 422 validation to fields
+    ├── context/              # cartContext (useCart), CartProvider (Preferences-backed device cart)
     ├── hooks/                # useProducts, useCategories, useCatalog, useProductDetail,
-    │                         # useRelatedProducts, useContactForm
-    ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules), tabBase
+    │                         # useRelatedProducts, useContactForm, useAddToCart
+    ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules), tabBase,
+    │                         # cart (reducer, totals, stored format)
     ├── data/                 # categories.tsx (fixed Home rail), studio.ts (studio location)
     ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard,
     │                         # ContactChannels, ContactForm, StudioMap (Leaflet), PageHeader,
-    │                         # ProductGallery, RelatedProducts, PurchaseBar, ComingSoonPage
-    ├── pages/                # Home, Catalog, ProductDetail, About (mockups), Cart / Login (placeholders)
+    │                         # ProductGallery, RelatedProducts, PurchaseBar, CartTabBadge,
+    │                         # CheckoutSteps, CartLine, CartSummary, ComingSoonPage
+    ├── pages/                # Home, Catalog, ProductDetail, About, Cart (mockups), Login (placeholder)
     └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms. Home, Catalog, Product and About implement their mockups; Cart and Login are
-placeholders. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
+platforms. Home, Catalog, Product, About and Cart implement their mockups (Cart
+covers the first checkout step); Login is a placeholder. Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.
 

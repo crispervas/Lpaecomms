@@ -1,0 +1,58 @@
+/* Checkout step indicator. */
+.checkout-steps__track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.checkout-steps__step {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkout-steps__step:last-child {
+  flex: none;
+}
+
+.checkout-steps__number {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--lpa-track);
+  color: var(--lpa-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.checkout-steps__step.is-active .checkout-steps__number,
+.checkout-steps__step.is-done .checkout-steps__number {
+  background: var(--lpa-ink);
+  color: var(--lpa-on-ink);
+}
+
+.checkout-steps__line {
+  flex: 1;
+  height: 2px;
+  background: var(--lpa-border);
+}
+
+.checkout-steps__step.is-done .checkout-steps__line {
+  background: var(--lpa-ink);
+}
+
+.checkout-steps__label {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lpa-subtle);
+}
