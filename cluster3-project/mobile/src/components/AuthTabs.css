@@ -1,0 +1,27 @@
+/* Log in / Sign up segmented control. */
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--lpa-track);
+}
+
+.auth-tabs__tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lpa-subtle);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-tabs__tab.is-active {
+  background: var(--lpa-surface);
+  color: var(--lpa-ink);
+}
