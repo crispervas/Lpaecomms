@@ -50,4 +50,31 @@ describe('useAuthForm', () => {
     expect(result.current.errors.email).toBeUndefined();
     expect(result.current.errors.password).toBe('Please enter your password.');
   });
+
+  it('reports the first invalid field so the page can move focus to it', () => {
+    const { result } = renderHook(() => useAuthForm('signup'));
+    act(() => result.current.setValue('name', 'Ana'));
+
+    let first: string | null = 'unset';
+    act(() => {
+      first = result.current.submit();
+    });
+
+    expect(first).toBe('email');
+  });
+
+  it('reports no field for a valid submit', () => {
+    const { result } = renderHook(() => useAuthForm());
+    act(() => {
+      result.current.setValue('email', 'ana@example.com');
+      result.current.setValue('password', 'x');
+    });
+
+    let first: string | null = 'unset';
+    act(() => {
+      first = result.current.submit();
+    });
+
+    expect(first).toBeNull();
+  });
 });

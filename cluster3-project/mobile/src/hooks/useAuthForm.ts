@@ -6,7 +6,7 @@
  * submit so it never lingers on screen.
  */
 import { useState } from 'react';
-import { validateAuth, type AuthErrors, type AuthField, type AuthMode, type AuthValues } from '../lib/authRules';
+import { authFields, validateAuth, type AuthErrors, type AuthField, type AuthMode, type AuthValues } from '../lib/authRules';
 
 /** The web's notice for a valid sign-in or sign-up. */
 export const AUTH_PREVIEW_NOTICE =
@@ -26,8 +26,13 @@ export interface UseAuthFormResult {
   setMode: (mode: AuthMode) => void;
   /** Change one field; clears its error and the notice. */
   setValue: (field: AuthField, value: string) => void;
-  /** Validate; show errors or the preview notice. */
-  submit: () => void;
+  /**
+   * Validate; show errors or the preview notice.
+   *
+   * @returns The first invalid field in form order, so the page can move focus
+   *   there, or null when the form was valid.
+   */
+  submit: () => AuthField | null;
 }
 
 const EMPTY: AuthValues = { name: '', email: '', password: '' };
@@ -65,12 +70,14 @@ export function useAuthForm(initialMode: AuthMode = 'login'): UseAuthFormResult 
   const submit = () => {
     const found = validateAuth(mode, values);
     setErrors(found);
-    if (Object.keys(found).length > 0) {
+    const firstInvalid = authFields(mode).find((field) => found[field] !== undefined) ?? null;
+    if (firstInvalid) {
       setNotice(null);
-      return;
+      return firstInvalid;
     }
     setValues((current) => ({ ...current, password: '' }));
     setNotice(AUTH_PREVIEW_NOTICE);
+    return null;
   };
 
   return { mode, values, errors, notice, setMode, setValue, submit };

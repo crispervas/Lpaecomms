@@ -61,7 +61,10 @@ export default function Login() {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    submit();
+    const firstInvalid = submit();
+    // Like the web form: a blocked submit moves focus to the first problem,
+    // so a screen reader hears it instead of nothing happening.
+    if (firstInvalid) document.getElementById(`auth-${firstInvalid}`)?.focus();
   };
 
   return (

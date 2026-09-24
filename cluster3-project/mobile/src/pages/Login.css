@@ -2,7 +2,8 @@
 .login {
   display: flex;
   flex-direction: column;
-  padding: 56px 28px 28px;
+  /* No IonHeader here, so nothing else clears the status bar / notch. */
+  padding: calc(56px + var(--ion-safe-area-top, 0px)) 28px 28px;
 }
 
 .login__brand {
@@ -39,8 +40,11 @@
   color: var(--lpa-subtle);
 }
 
+/* Empty but still rendered: a live region hidden with display:none is dropped
+   from the accessibility tree, and some readers skip it when it reappears. */
 .login__notice:empty {
-  display: none;
+  margin: 0;
+  padding: 0;
 }
 
 .login__notice {
