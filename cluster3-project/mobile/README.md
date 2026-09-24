@@ -96,4 +96,9 @@ storage on iOS and Android, `localStorage` in the browser); run `npx cap sync`
 after `pnpm install` so the native projects get the plugin. Products are added
 from their page (with a quantity) or from a card's cart button, and the Cart
 tab covers the mockup's first checkout step. Shipping, Payment and placing an
-order need a signed-in user and a server-side order, so they come after Login.
+order need a signed-in user and a server-side order, so they come with
+authentication.
+
+Login is a preview, like the web login page: Log in and Sign up validate with
+the web's rules and, when valid, say authentication is not available yet.
+Real authentication, the Account view and the checkout come together later.
