@@ -5,9 +5,9 @@
  * have (reviews, compare-at price, variants, specs). The purchase bar shows
  * only once the product is known, and adds to the device cart.
  */
-import { IonButton, IonContent, IonIcon, IonPage } from '@ionic/react';
-import { cartOutline } from 'ionicons/icons';
+import { IonContent, IonPage } from '@ionic/react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import CartButton from '../components/CartButton';
 import PageHeader from '../components/PageHeader';
 import ProductGallery from '../components/ProductGallery';
 import PurchaseBar from '../components/PurchaseBar';
@@ -73,11 +73,7 @@ export default function ProductDetail() {
         title="Product"
         backHref={tabBase(pathname)}
         centered
-        end={
-          <IonButton routerLink="/cart" className="page-header__action" aria-label="Cart">
-            <IonIcon slot="icon-only" icon={cartOutline} />
-          </IonButton>
-        }
+        end={<CartButton />}
       />
       <IonContent>
         <div className="product-page">{body}</div>
