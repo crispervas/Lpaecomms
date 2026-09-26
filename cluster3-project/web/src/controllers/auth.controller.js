@@ -8,9 +8,10 @@
  *
  * **Authentication itself does not exist.** There is no user model, no password
  * hashing and no session; the POST handler validates the shape of a submission
- * and then says plainly that it cannot sign anyone in. The page is fully
- * navigable so the rest of the site can be built around it, and nothing here
- * pretends otherwise.
+ * and nothing more. A well-formed log in opens the Account preview, as the
+ * mobile app's does, so the page behind a sign-in can be reached and built; a
+ * well-formed sign-up says plainly that no account can be created. Neither
+ * signs anyone in.
  */
 
 import {
@@ -49,10 +50,12 @@ export class AuthController {
   }
 
   /**
-   * Validate a submission and report that it cannot be completed.
+   * Validate a submission, then open the Account preview or report that it
+   * cannot be completed.
    *
-   * A malformed submission answers 422 with the errors; a well-formed one
-   * answers 200 with the notice. Neither signs anybody in.
+   * A malformed submission answers 422 with the errors. A well-formed log in
+   * redirects to /account; a well-formed sign-up answers 200 with the notice.
+   * Neither signs anybody in.
    *
    * @param {import('express').Request} req - Incoming request with form body.
    * @param {import('express').Response} res - Outgoing response.
@@ -69,6 +72,13 @@ export class AuthController {
       // 422 rather than 400: the body parsed fine, it just failed the rules.
       res.status(422);
       this.#render(res, { mode, values, errors });
+      return;
+    }
+
+    if (mode === 'login') {
+      // 303 so the browser follows with a GET: a refresh of /account must not
+      // offer to resubmit the password.
+      res.redirect(303, '/account');
       return;
     }
 

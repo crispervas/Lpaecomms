@@ -1,0 +1,73 @@
+<%# The Profile tab: personal details form, then the password row.
+
+    The form posts back to /account and is judged by lib/accountValidation.js;
+    `data-validate` lets form-validation.js show the same messages before
+    submitting. A well-formed submission is not saved — the controller answers
+    it with the preview notice.
+
+    "Change password" is disabled with a "Coming soon" title, as the header's
+    inert controls are: there is no account whose password could change.
+
+    Expected locals:
+      profile — the stored profile (for the password date)
+      fields  — PROFILE_FIELDS, the rule table
+      values  — what to put back in each control
+      errors  — field name to message, empty when there is nothing to report
+      notice  — a sentence to show above the form, or null %>
+<%
+  const nameFields = [
+    { field: 'firstName', label: 'First name', type: 'text', placeholder: 'Jordan', autocomplete: 'given-name' },
+    { field: 'lastName', label: 'Last name', type: 'text', placeholder: 'Kim', autocomplete: 'family-name' },
+  ];
+  const contactFields = [
+    { field: 'email', label: 'Email', type: 'email', placeholder: 'you@email.com', autocomplete: 'email' },
+    { field: 'phone', label: 'Phone', type: 'tel', placeholder: '+61 412 345 678', autocomplete: 'tel' },
+  ];
+  // Parsed as UTC so the stored calendar date is the one displayed, whatever
+  // the server's own time zone.
+  const dateFormatter = new Intl.DateTimeFormat('en-AU', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
+  const passwordChanged = dateFormatter.format(new Date(`${profile.passwordChangedOn}T00:00:00Z`));
+
+  const renderField = (item) => include('../shared/formField', {
+    field: item.field,
+    label: item.label,
+    rules: fields[item.field],
+    value: values[item.field] || '',
+    error: errors[item.field],
+    type: item.type,
+    placeholder: item.placeholder,
+    autocomplete: item.autocomplete,
+    rows: null,
+  });
+%>
+<h1 class="account__title">Profile</h1>
+<p class="account__lead">Manage your personal details and password.</p>
+
+<% if (notice) { %>
+  <%# role="status": submitting moves focus nowhere, so without it a screen
+      reader user is given no sign anything happened. %>
+  <div role="status" class="notice account__notice"><%= notice %></div>
+<% } %>
+
+<form method="post" action="/account" novalidate data-validate class="account-panel account-form">
+  <div class="account-form__row">
+    <% nameFields.forEach((item) => { %><%- renderField(item) %><% }) %>
+  </div>
+  <% contactFields.forEach((item) => { %><%- renderField(item) %><% }) %>
+
+  <div>
+    <button type="submit" class="button button--solid account-form__submit">Save changes</button>
+  </div>
+</form>
+
+<div class="account-panel account-password">
+  <div>
+    <p class="account-password__title">Password</p>
+    <p class="account-password__meta">Last changed <%= passwordChanged %></p>
+  </div>
+  <button type="button" disabled title="Coming soon" class="button button--outline account-password__button">
+    Change password
+  </button>
+</div>

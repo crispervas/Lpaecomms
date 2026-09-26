@@ -1,0 +1,54 @@
+<%# The Orders tab: one card per past order, newest first.
+
+    The mockup ends each card with a "View →" link to a product page. It is
+    left out: there is no order detail page, and the sample orders name items
+    the live catalogue feed may not carry, so the link would lead nowhere
+    reliable. The thumbnail is a neutral tile for the same reason — the mockup
+    draws an empty image slot there too.
+
+    Expected locals:
+      orders — OrderSummary[] from models/account.model.js %>
+<%
+  const STATUS_LABELS = {
+    delivered: 'Delivered',
+    'in-transit': 'In transit',
+    cancelled: 'Cancelled',
+  };
+  const priceFormatter = new Intl.NumberFormat('en-AU', {
+    style: 'currency', currency: 'AUD', maximumFractionDigits: 0,
+  });
+  // Parsed as UTC so the stored calendar date is the one displayed, whatever
+  // the server's own time zone.
+  const dateFormatter = new Intl.DateTimeFormat('en-AU', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+  });
+%>
+<h1 class="account__title">Orders</h1>
+<p class="account__lead">Track and review your past purchases.</p>
+
+<% if (orders.length === 0) { %>
+  <p class="account-panel account-orders__empty">You have not placed any orders yet.</p>
+<% } else { %>
+  <ul class="account-orders">
+    <% orders.forEach((order) => { %>
+      <li class="account-panel order-card">
+        <span class="order-card__thumb" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 8l-9-5-9 5 9 5 9-5z"></path>
+            <path d="M3 8v8l9 5 9-5V8"></path>
+            <path d="M12 13v8"></path>
+          </svg>
+        </span>
+        <div class="order-card__body">
+          <p class="order-card__title"><%= order.title %></p>
+          <p class="order-card__meta">
+            Order #<%= order.number %> · Placed
+            <time datetime="<%= order.placedOn %>"><%= dateFormatter.format(new Date(`${order.placedOn}T00:00:00Z`)) %></time>
+          </p>
+        </div>
+        <span class="order-status order-status--<%= order.status %>"><%= STATUS_LABELS[order.status] %></span>
+        <p class="order-card__total"><%= priceFormatter.format(order.totalAud) %></p>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>
