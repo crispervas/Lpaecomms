@@ -20,14 +20,18 @@ Lpaecomms/
 ├── cluster3-project/    # The product, delivered on three platforms
 │   ├── web/             # Server-rendered site + REST API (Express + EJS)
 │   ├── mobile/          # Ionic + React client (consumes the REST API)
-│   └── desktop/         # Electron client (consumes the REST API)
+│   ├── desktop/         # Electron client (consumes the REST API)
+│   └── brand/           # LPA logo masters + export to every platform (see brand/README.md)
 └── documentation/       # Human-written docs, including this file
 ```
 
 One product, three platforms, integrated through a **single REST API**. That API
 lives in `cluster3-project/web`, which is both the website and the API server.
 The mobile and desktop apps do not share UI code with the web; the REST API is
-the only contract that binds all three together.
+the only contract that binds all three together. The logo is the one asset
+they share: `cluster3-project/brand` holds its masters and exports a copy into
+each platform (mobile `assets/`, web `src/public/favicon.*`, desktop
+`resources/icon.*`).
 
 ### `bruno/` — API contracts
 
@@ -338,6 +342,8 @@ src/
 │       ├── 404.ejs       # Not Found page
 │       └── error.ejs     # Generic error page (any failed browser request)
 └── public/               # Static assets served as-is
+    ├── favicon.svg|.ico  # LPA logo for browser tabs, exported from cluster3-project/brand
+    ├── apple-touch-icon.png # iOS home-screen bookmark icon, same export
     ├── css/
     │   └── main.css      # Compiled stylesheet (build output, gitignored)
     ├── img/              # Image assets (hero-product.webp|jpg|png, supplied by hand)
@@ -526,11 +532,14 @@ this order and update this document:
 ```
 mobile/
 ├── .env.example              # Documents VITE_API_BASE_URL (read by api/client.ts)
+├── assets/                   # Icon + splash PNGs for `pnpm assets`, exported from brand/
+├── scripts/resize-ios-splash.mjs  # `pnpm assets` step: shrinks the iOS splash so it renders
 ├── capacitor.config.ts       # App id com.lpaecomms.mobile, webDir: dist
 ├── ionic.config.json         # Ionic CLI project metadata
 ├── ios/                      # Gitignored — regenerate with `npx cap add ios`
 ├── android/                  # Gitignored — regenerate with `npx cap add android`
 ├── public/img/hero-product.png  # Home hero, copied from the web platform
+├── public/favicon.png        # Browser-build favicon, exported from brand/
 └── src/
     ├── main.tsx              # React root; loads the bundled fonts
     ├── App.tsx               # IonTabs shell: Home, Catalog, Cart, Login
