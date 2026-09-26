@@ -27,6 +27,10 @@
   color: var(--lpa-subtle);
 }
 
+.login__tabs {
+  margin-bottom: 28px;
+}
+
 .login__title {
   margin: 0 0 6px;
   font-family: var(--lpa-font-display);
@@ -38,22 +42,6 @@
   margin: 0 0 26px;
   font-size: 13px;
   color: var(--lpa-subtle);
-}
-
-/* Empty but still rendered: a live region hidden with display:none is dropped
-   from the accessibility tree, and some readers skip it when it reappears. */
-.login__notice:empty {
-  margin: 0;
-  padding: 0;
-}
-
-.login__notice {
-  margin: 0 0 20px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--lpa-accent-soft);
-  color: var(--lpa-accent);
-  font-size: 13px;
 }
 
 .login__form {

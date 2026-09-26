@@ -1,0 +1,60 @@
+/* Order row on the Account tab, following Mobile Account (Orders) in the mockups. */
+.order-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--lpa-border);
+  border-radius: 14px;
+  background: var(--lpa-surface);
+}
+
+.order-card__thumb {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: var(--lpa-track);
+  color: var(--lpa-subtle);
+}
+
+.order-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-card__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.order-card__date {
+  margin: 0;
+  font-size: 11px;
+  color: var(--lpa-subtle);
+}
+
+.order-card__status {
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.order-card__status--delivered {
+  background: var(--lpa-success-soft);
+  color: var(--lpa-success);
+}
+
+.order-card__status--in-transit {
+  background: var(--lpa-accent-soft);
+  color: var(--lpa-accent);
+}

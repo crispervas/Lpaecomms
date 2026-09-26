@@ -33,7 +33,7 @@ npx cap add ios
 
 # Android's platform add runs a Gradle sync, which needs these three set —
 # Gradle's own error text will not tell you which one is missing:
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 npx cap add android
@@ -81,10 +81,18 @@ image up for 2 s and fades it out; its settings live under
 | `npx cap open ios` | Open the iOS project in Xcode |
 | `npx cap open android` | Open the Android project in Android Studio |
 
-Android builds need `JAVA_HOME` pointed at a JDK 17+ (Android Studio's
-bundled JBR works) and `ANDROID_HOME`/`ANDROID_SDK_ROOT` pointed at the SDK —
-a fresh shell has neither set. Capacitor 8 resolves its default plugins
-through Swift Package Manager, so there is no `Podfile`/`.xcworkspace` on
+Android builds need `JAVA_HOME` pointed at **JDK 21** (`brew install
+openjdk@21`): Capacitor 8 compiles for Java 21, and the Gradle 8.14 wrapper
+fails on anything newer — Android Studio's bundled JBR is now Java 25 and
+breaks with "Unsupported class file major version 69". They also need
+`ANDROID_HOME`/`ANDROID_SDK_ROOT` pointed at the SDK — a fresh shell has
+neither set.
+
+To run on a phone, enable USB debugging, connect it, then `npx cap run
+android`. `adb reverse tcp:3000 tcp:3000` lets the app reach the local API at
+`http://localhost:3000`; it resets whenever the cable is unplugged.
+
+Capacitor 8 resolves its default plugins through Swift Package Manager, so there is no `Podfile`/`.xcworkspace` on
 iOS — build or open `ios/App/App.xcodeproj` directly.
 
 ## Running against the local API
@@ -97,9 +105,8 @@ the page still renders.
 
 ## Current scope
 
-The app shell is an `IonTabs` bar with Home, Catalog, Cart and Login. Home
-and Catalog implement their mockups; Cart and Login are "coming soon"
-placeholders until their own views are built. Catalog reads
+The app shell is an `IonTabs` bar with Home, Catalog, Cart and Login; every
+view implements its mockup. Catalog reads
 `GET /api/v1/categories` and `GET /api/v1/catalog` — restart the web server
 after pulling so it serves them. Categories on Home are still a fixed
 client-side list; the Catalog's chips come from the API.
@@ -123,6 +130,9 @@ tab covers the mockup's first checkout step. Shipping, Payment and placing an
 order need a signed-in user and a server-side order, so they come with
 authentication.
 
-Login is a preview, like the web login page: Log in and Sign up validate with
-the web's rules and, when valid, say authentication is not available yet.
-Real authentication, the Account view and the checkout come together later.
+Login is a preview: Log in and Sign up validate with the web's rules and,
+when valid, open the Account view (`/login/account`, inside the Login tab).
+Account follows its mockup with a sample person and order history from
+`src/data/account.ts`, labelled as a preview; Save changes validates and says
+nothing is saved, and Sign out returns to the form. Real authentication, the
+profile and orders APIs and the checkout come together later.

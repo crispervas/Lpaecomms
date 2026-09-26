@@ -1,0 +1,99 @@
+/* Account preview, following Mobile Account in the mockups. */
+.account__toolbar {
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 20px;
+  --padding-bottom: 14px;
+}
+
+.account__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.account__title {
+  margin: 0;
+  font-family: var(--lpa-font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.account__sign-out {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--lpa-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.account__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--lpa-border);
+  border-radius: 14px;
+  background: var(--lpa-surface);
+}
+
+.account__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--lpa-ink);
+  color: var(--lpa-on-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.account__identity {
+  min-width: 0;
+}
+
+.account__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account__email {
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--lpa-subtle);
+  text-overflow: ellipsis;
+}
+
+/* The mockup's Profile / Orders switch is a touch tighter than Login's. */
+.account__tabs .segmented-tabs__tab {
+  padding: 10px;
+}
+
+.account {
+  padding: 6px 20px 24px;
+}
+
+.account__preview {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--lpa-subtle);
+}
+
+.account__orders {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

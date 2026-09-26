@@ -17,6 +17,9 @@
   --lpa-subtle: #6b6f76;
   /* Field error text; the web's --error-text, since the mockups define none. */
   --lpa-danger: #b91c1c;
+  /* "Delivered" order badge, from Mobile Account. */
+  --lpa-success: #227a3c;
+  --lpa-success-soft: #e9f6ec;
 
   --lpa-font-body: 'IBM Plex Sans', sans-serif;
   --lpa-font-display: 'Space Grotesk', sans-serif;
