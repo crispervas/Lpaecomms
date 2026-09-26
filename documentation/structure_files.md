@@ -562,21 +562,23 @@ mobile/
     │   └── contact.ts        # sendContact; fieldErrors maps 422 validation to fields
     ├── context/              # cartContext (useCart), CartProvider (Preferences-backed device cart)
     ├── hooks/                # useProducts, useCategories, useCatalog, useProductDetail,
-    │                         # useRelatedProducts, useContactForm, useAddToCart, useAuthForm
+    │                         # useRelatedProducts, useContactForm, useAddToCart, useAuthForm, useProfileForm
     ├── lib/                  # formatPrice (AUD), contactRules (mirror of the web rules), tabBase,
-    │                         # cart (reducer, totals, stored format), authRules (mirror of the web rules)
-    ├── data/                 # categories.tsx (fixed Home rail), studio.ts (studio location)
+    │                         # cart (reducer, totals, stored format), authRules (mirror of the web rules),
+    │                         # profileRules (Account form + initials), formatDate (order dates)
+    ├── data/                 # categories.tsx (fixed Home rail), studio.ts (studio location),
+    │                         # account.ts (sample person + orders for the Account preview)
     ├── components/           # CategoryRail, CategoryChips, ProductCard(+Skeleton), RetryNotice, StoryCard,
     │                         # ContactChannels, ContactForm, StudioMap (Leaflet), PageHeader,
     │                         # ProductGallery, RelatedProducts, PurchaseBar, CartTabBadge,
-    │                         # CheckoutSteps, CartLine, CartSummary, AuthTabs
-    ├── pages/                # Home, Catalog, ProductDetail, About, Cart, Login (mockups)
+    │                         # CheckoutSteps, CartLine, CartSummary, SegmentedTabs, ProfileForm, OrderCard
+    ├── pages/                # Home, Catalog, ProductDetail, About, Cart, Login, Account (mockups)
     └── theme/variables.css   # Mockup tokens mapped onto Ionic variables
 ```
 
 This is the Ionic CLI's own `blank` template plus Capacitor's iOS and Android
-platforms. Every mobile mockup except Account is implemented (Cart covers the
-first checkout step; Login is a preview until authentication exists). Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
+platforms. Every mobile mockup is implemented (Cart covers the first checkout
+step; Login and Account are previews until authentication exists). Unit tests sit beside the code they cover (`*.test.ts`). Unlike `web` and `desktop` (plain
 JavaScript), this platform is TypeScript, because Ionic's React starters ship
 that way and there is no JavaScript variant of the same template.
 

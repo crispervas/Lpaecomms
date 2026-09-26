@@ -1,13 +1,14 @@
 /**
  * @file Login tab: a preview of signing in and signing up.
  *
- * Mirrors the web login page — same copy, same rules, and the same notice on
- * a valid submit, because authentication does not exist yet. There is no
- * "Forgot password?" link: without accounts there is nothing to reset.
+ * Mirrors the web login page's copy and rules. Authentication does not exist
+ * yet, so a valid submit opens the Account preview with a sample person
+ * instead of checking anything. There is no "Forgot password?" link: without
+ * accounts there is nothing to reset.
  */
 import type { FormEvent } from 'react';
-import { IonContent, IonPage } from '@ionic/react';
-import AuthTabs from '../components/AuthTabs';
+import { IonContent, IonPage, useIonRouter } from '@ionic/react';
+import SegmentedTabs, { type SegmentedOption } from '../components/SegmentedTabs';
 import { useAuthForm } from '../hooks/useAuthForm';
 import { AUTH_MAX_LENGTH, authFields, type AuthField, type AuthMode } from '../lib/authRules';
 import './Login.css';
@@ -30,6 +31,11 @@ const COPY: Record<AuthMode, { title: string; lead: string; submit: string; prom
     switchLabel: 'Log in',
   },
 };
+
+const MODES: SegmentedOption<AuthMode>[] = [
+  { value: 'login', label: 'Log in' },
+  { value: 'signup', label: 'Sign up' },
+];
 
 const FIELD: Record<AuthField, { label: string; type: string; placeholder: string }> = {
   name: { label: 'Full name', type: 'text', placeholder: 'Jordan Kim' },
@@ -56,7 +62,8 @@ function autocomplete(mode: AuthMode, field: AuthField): string {
  * @returns The page.
  */
 export default function Login() {
-  const { mode, values, errors, notice, setMode, setValue, submit } = useAuthForm();
+  const { mode, values, errors, setMode, setValue, submit } = useAuthForm();
+  const router = useIonRouter();
   const copy = COPY[mode];
 
   const onSubmit = (event: FormEvent) => {
@@ -64,7 +71,11 @@ export default function Login() {
     const firstInvalid = submit();
     // Like the web form: a blocked submit moves focus to the first problem,
     // so a screen reader hears it instead of nothing happening.
-    if (firstInvalid) document.getElementById(`auth-${firstInvalid}`)?.focus();
+    if (firstInvalid) {
+      document.getElementById(`auth-${firstInvalid}`)?.focus();
+      return;
+    }
+    router.push('/login/account', 'forward', 'push');
   };
 
   return (
@@ -76,14 +87,10 @@ export default function Login() {
             <span className="login__tagline">ECOMMS</span>
           </div>
 
-          <AuthTabs mode={mode} onChange={setMode} />
+          <SegmentedTabs options={MODES} value={mode} onChange={setMode} label="Account" className="login__tabs" />
 
           <h1 className="login__title">{copy.title}</h1>
           <p className="login__lead">{copy.lead}</p>
-
-          <p className="login__notice" role="status">
-            {notice}
-          </p>
 
           <form className="login__form" noValidate onSubmit={onSubmit}>
             {authFields(mode).map((field) => {

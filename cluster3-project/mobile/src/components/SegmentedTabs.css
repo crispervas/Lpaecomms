@@ -1,14 +1,13 @@
-/* Log in / Sign up segmented control. */
-.auth-tabs {
+/* Segmented switch: Log in / Sign up, Profile / Orders. */
+.segmented-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 28px;
   padding: 4px;
   border-radius: 10px;
   background: var(--lpa-track);
 }
 
-.auth-tabs__tab {
+.segmented-tabs__tab {
   flex: 1;
   padding: 12px;
   border: none;
@@ -21,7 +20,7 @@
   cursor: pointer;
 }
 
-.auth-tabs__tab.is-active {
+.segmented-tabs__tab.is-active {
   background: var(--lpa-surface);
   color: var(--lpa-ink);
 }

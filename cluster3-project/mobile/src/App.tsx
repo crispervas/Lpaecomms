@@ -22,6 +22,7 @@ import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
+import Account from './pages/Account';
 import About from './pages/About';
 import ProductDetail from './pages/ProductDetail';
 import CartProvider from './context/CartProvider';
@@ -68,6 +69,7 @@ const App: React.FC = () => (
             <Route path="/catalog/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/login/account" element={<Account />} />
             <Route path="/" element={<Navigate to="/home" replace />} />
           </IonRouterOutlet>
           <IonTabBar slot="bottom">
