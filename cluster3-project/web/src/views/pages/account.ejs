@@ -1,0 +1,17 @@
+<%# Account page: the mockup's sidebar beside whichever tab is selected.
+
+    Two tabs share this URL — the profile form and the order history — and the
+    server picks one from `?tab=`, so the sidebar's switch is plain links. The
+    page is a preview: the account is sample data and nothing is saved; see the
+    account controller. %>
+<div class="account">
+  <%- include('../components/account/accountSidebar', { tab, profile, initials }) %>
+
+  <div class="account__content">
+    <% if (tab === 'orders') { %>
+      <%- include('../components/account/accountOrders', { orders }) %>
+    <% } else { %>
+      <%- include('../components/account/accountProfile', { profile, fields, values, errors, notice }) %>
+    <% } %>
+  </div>
+</div>

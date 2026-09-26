@@ -94,6 +94,7 @@ web/
 │   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
 │   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
+│   ├── account.test.js            # Account page: profile rules, tab whitelist, controller locals (preview never saves)
 │   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
 │   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
 │   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
@@ -247,6 +248,7 @@ src/
 │   │   ├── about.routes.js
 │   │   ├── contact.routes.js
 │   │   ├── auth.routes.js
+│   │   ├── account.routes.js # GET/POST /account (Profile and Orders tabs; preview, nothing saved)
 │   │   ├── mashup.routes.js
 │   │   ├── catalog.routes.js
 │   │   ├── productDetail.routes.js
@@ -263,7 +265,8 @@ src/
 │   ├── home.controller.js
 │   ├── about.controller.js
 │   ├── contact.controller.js
-│   ├── auth.controller.js
+│   ├── auth.controller.js # Login page; a well-formed log in redirects to the Account preview
+│   ├── account.controller.js # Account page: show() by ?tab=, saveProfile() validates and answers with a preview notice
 │   ├── mashup.controller.js
 │   ├── health.controller.js
 │   ├── product.controller.js
@@ -280,12 +283,14 @@ src/
 │   ├── product.model.js  # External catalogue: storefront list + store locations
 │   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
 │   ├── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
-│   └── category.model.js  # Catalogue categories, empty ones filtered out
+│   ├── category.model.js  # Catalogue categories, empty ones filtered out
+│   └── account.model.js  # Sample profile and order history until authentication exists
 ├── lib/                  # Shared infrastructure helpers
 │   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
 │   ├── formRules.js      # Applies a field table: normalise, validate, derive HTML patterns
 │   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
 │   ├── authValidation.js # Login and sign-up rules, keyed by mode
+│   ├── accountValidation.js # Profile form rules, the ?tab= whitelist, avatar initials
 │   ├── preferences.js    # THEMES/TEXT_SIZES whitelists, cookie parse/serialise, safe-return-path guard — no Express import
 │   └── recentlyViewed.js # Browsing-history cookie: parse, push (dedupe + move-to-front), serialise, RECENT_LIMIT (8)
 ├── views/                # VIEW: server-rendered EJS templates
@@ -325,6 +330,10 @@ src/
 │   │   │   ├── authPanel.ejs  # Tinted left half: illustration and the account promise
 │   │   │   ├── authTabs.ejs   # Log in / Sign up switch, rendered as links
 │   │   │   └── authForm.ejs   # The form itself, both modes, with the hidden mode field
+│   │   ├── account/
+│   │   │   ├── accountSidebar.ejs # Avatar card, Profile/Orders links, Log out
+│   │   │   ├── accountProfile.ejs # Personal details form and the (disabled) password change
+│   │   │   └── accountOrders.ejs  # One card per order: status pill and AUD total
 │   │   ├── preferences/
 │   │   │   └── appearanceForm.ejs # The theme and text-size radio groups; included by both preferences.ejs and appearancePanel.ejs via idPrefix
 │   │   └── shared/           # Fragments no single page owns
@@ -335,6 +344,7 @@ src/
 │       ├── about.ejs
 │       ├── contact.ejs
 │       ├── login.ejs
+│       ├── account.ejs  # Sidebar beside the Profile or Orders tab
 │       ├── mashup.ejs
 │       ├── catalog.ejs
 │       ├── productDetail.ejs

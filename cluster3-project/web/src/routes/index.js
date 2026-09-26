@@ -14,6 +14,7 @@ import productDetailRoutes from './views/productDetail.routes.js';
 import aboutRoutes from './views/about.routes.js';
 import contactRoutes from './views/contact.routes.js';
 import authRoutes from './views/auth.routes.js';
+import accountRoutes from './views/account.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
 import preferencesRoutes from './views/preferences.routes.js';
 import healthRoutes from './api/health.routes.js';
@@ -41,6 +42,7 @@ export function registerRoutes(app) {
   viewRouter.use('/', aboutRoutes);
   viewRouter.use('/', contactRoutes);
   viewRouter.use('/', authRoutes);
+  viewRouter.use('/', accountRoutes);
   viewRouter.use('/', preferencesRoutes);
   viewRouter.use('/', mashupRoutes);
 
