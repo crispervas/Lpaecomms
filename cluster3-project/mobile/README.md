@@ -37,13 +37,36 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 npx cap add android
+
+# App icons and splash screens are generated from assets/, not stored natively:
+pnpm assets
 ```
 
 The moment anything in `ios/` or `android/` is hand-edited — permissions
-in `Info.plist`, entries in `AndroidManifest.xml`, app icons, a signing
-config, a deep-link scheme — regenerating destroys that edit. That is the
+in `Info.plist`, entries in `AndroidManifest.xml`, a signing config, a deep-link scheme — regenerating destroys that edit. That is the
 point to revisit this gitignore policy and start committing the native
-projects, not to work around it.
+projects, not to work around it. App icons and splash screens are the
+exception: they are regenerated from the committed sources in `assets/`
+(see below), so they survive a platform re-add.
+
+### App icon and splash screen
+
+`assets/` holds the sources `@capacitor/assets` reads: `icon-only.png`
+(iOS and legacy Android), `icon-foreground.png` + `icon-background.png`
+(Android adaptive icon) and `splash.png`/`splash-dark.png`. They are exported
+from `cluster3-project/brand`, the single source of the LPA logo shared with
+web and desktop — change the logo there, run `pnpm build` in `brand/`, then run
+`pnpm assets` here. `public/favicon.png` comes from the same export.
+
+`pnpm assets` then runs `scripts/resize-ios-splash.mjs`: the generator writes
+every iOS splash scale at 2732x2732, which exceeds the launch screen's memory
+budget and leaves it plain black. The script sizes each scale to a 683 pt
+square instead.
+
+On its own the launch screen disappears as soon as the web view paints, which
+on a real device is too quick to see. `@capacitor/splash-screen` keeps the same
+image up for 2 s and fades it out; its settings live under
+`plugins.SplashScreen` in `capacitor.config.ts`.
 
 ## Commands
 
@@ -53,6 +76,7 @@ projects, not to work around it.
 | `pnpm build` | Compile the web assets into `dist/` |
 | `pnpm test.unit` | Run the Vitest unit tests |
 | `pnpm test.e2e` | Run the Cypress end-to-end tests (needs `pnpm dev` running) |
+| `pnpm assets` | Regenerate the iOS/Android icons and splash screens from `assets/` |
 | `npx cap sync` | Copy the latest web build into both native projects |
 | `npx cap open ios` | Open the iOS project in Xcode |
 | `npx cap open android` | Open the Android project in Android Studio |
