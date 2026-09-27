@@ -9,8 +9,10 @@
  * a different size; the catalog page's `listByCategory`, which scopes the same
  * records to one category; and the product detail page's `getById`, which reads
  * one product instead of a list. Caches the raw feed response for a short TTL,
- * the same way `CurrencyModel` caches rates: it protects the demo feed's quota
- * and, because both mashup scripts call this model's endpoint on every
+ * the same way `CurrencyModel` caches rates, and past that TTL keeps serving the
+ * expired copy while it refreshes in the background, so a visitor only waits
+ * on the feed when nothing has been fetched yet. It protects the demo feed's
+ * quota and, because both mashup scripts call this model's endpoint on every
  * `/mashup` page load, keeps them looking at one consistent catalogue instead
  * of two responses that could disagree. Knows nothing about HTTP responses: it
  * returns products or throws, and the controller decides what a failure means
@@ -52,6 +54,16 @@ const REQUEST_TIMEOUT_MS = 5000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
+ * How long an expired entry may still be served while a fresh copy is fetched
+ * in the background (stale-while-revalidate). Only one response per URL is ever
+ * served stale — the refresh it starts replaces the entry for the next caller —
+ * so this bounds how old that one answer can be, not how long the site shows
+ * old data. A day covers a quiet night without a visitor paying for the feed's
+ * cold latency (~2 s measured) the next morning.
+ */
+const STALE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
  * Raw feed responses, shared by every `ProductModel` instance and keyed by the
  * full catalogue URL (base URL plus the requested size, and which base it was
  * composed from — the products path or a category's path) rather than held
@@ -64,9 +76,21 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * the production URL's entry, even though the cache itself lives at module
  * scope. Holds whatever a feed URL returns — an array for the list endpoints,
  * a single object for one product — not products specifically.
- * @type {Map<string, {payload: Object|Array<Object>, expiresAt: number}>}
+ *
+ * `expiresAt` ends the entry's fresh window; `staleUntil` ends the window in
+ * which it may still be served while a refresh runs.
+ * @type {Map<string, {payload: Object|Array<Object>, expiresAt: number, staleUntil: number}>}
  */
 const catalogueCache = new Map();
+
+/**
+ * Feed requests currently in flight, keyed by URL. Concurrent callers of one
+ * URL share a single request — ten visitors arriving on a cold home page cost
+ * the feed one call, not ten — and a background refresh is never started
+ * twice for the same entry.
+ * @type {Map<string, Promise<Object|Array<Object>>>}
+ */
+const inflightRequests = new Map();
 
 /**
  * Most feed responses the cache holds at once. The paged catalogue API lets
@@ -176,6 +200,7 @@ export class ProductModel {
    */
   static clearCache() {
     catalogueCache.clear();
+    inflightRequests.clear();
   }
 
   /**
@@ -223,7 +248,12 @@ export class ProductModel {
   }
 
   /**
-   * Fetch a feed URL, serving a still-fresh cached copy when there is one.
+   * Fetch a feed URL through the cache.
+   *
+   * A fresh entry is served as is. An expired one still inside its stale
+   * window is served immediately while a refresh runs in the background, so a
+   * visitor never waits on the feed for data the site already has. Only a
+   * missing entry, or one past its stale window, makes the caller wait.
    *
    * Caches the feed's own JSON rather than any caller's transformation of it:
    * the list methods shape the same records differently, and caching a shaped
@@ -234,42 +264,83 @@ export class ProductModel {
    *
    * @param {string} url - Absolute feed URL.
    * @returns {Promise<Object|Array<Object>>} The feed's parsed JSON.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status. A non-2xx error carries the response's `status` as a
-   *   property so a caller can tell "this does not exist" from "this could not
-   *   be read" without parsing the message.
+   * @throws {Error} When nothing servable is cached and the feed is
+   *   unreachable, times out, or answers a non-2xx status. A non-2xx error
+   *   carries the response's `status` as a property so a caller can tell "this
+   *   does not exist" from "this could not be read" without parsing the
+   *   message.
    */
   async #fetchFromFeed(url) {
     const cached = catalogueCache.get(url);
-    if (cached && cached.expiresAt > Date.now()) {
+    const now = Date.now();
+
+    if (cached && cached.expiresAt > now) {
       return cached.payload;
     }
 
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-
-    // fetch only rejects on a network failure: a 4xx/5xx arrives as a resolved
-    // response, so without this check an error body would be parsed as products.
-    if (!response.ok) {
-      const error = new Error(`Catalogue source responded ${response.status}`);
-      error.status = response.status;
-      throw error;
+    if (cached && cached.staleUntil > now) {
+      // The caller is already answered, so a failed refresh has nobody to
+      // reject to: it is logged, and the stale entry stays for the next try.
+      this.#requestFromFeed(url).catch((error) => {
+        console.error('🪵 Catalogue: background refresh failed:', { url, message: error.message });
+      });
+      return cached.payload;
     }
 
-    const payload = await response.json();
+    return this.#requestFromFeed(url);
+  }
 
-    // Written only once the fetch succeeded, so a failure can never overwrite —
-    // and therefore can never evict — a still-valid entry.
-    // A Map iterates in insertion order, so re-inserting makes this entry the
-    // newest and the first key is always the oldest — the one to evict.
-    catalogueCache.delete(url);
-    if (catalogueCache.size >= MAX_CACHE_ENTRIES) {
-      catalogueCache.delete(catalogueCache.keys().next().value);
-    }
-    catalogueCache.set(url, { payload, expiresAt: Date.now() + CACHE_TTL_MS });
+  /**
+   * Request a feed URL, sharing one request among concurrent callers, and
+   * store a successful answer in the cache.
+   *
+   * @param {string} url - Absolute feed URL.
+   * @returns {Promise<Object|Array<Object>>} The feed's parsed JSON.
+   * @throws {Error} See `#fetchFromFeed`.
+   */
+  #requestFromFeed(url) {
+    const pending = inflightRequests.get(url);
+    if (pending) return pending;
 
-    return payload;
+    const request = (async () => {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+
+      // fetch only rejects on a network failure: a 4xx/5xx arrives as a resolved
+      // response, so without this check an error body would be parsed as products.
+      if (!response.ok) {
+        const error = new Error(`Catalogue source responded ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+
+      const payload = await response.json();
+
+      // Written only once the fetch succeeded, so a failure can never overwrite —
+      // and therefore can never evict — an entry that can still be served.
+      // A Map iterates in insertion order, so re-inserting makes this entry the
+      // newest and the first key is always the oldest — the one to evict.
+      catalogueCache.delete(url);
+      if (catalogueCache.size >= MAX_CACHE_ENTRIES) {
+        catalogueCache.delete(catalogueCache.keys().next().value);
+      }
+      const storedAt = Date.now();
+      catalogueCache.set(url, {
+        payload,
+        expiresAt: storedAt + CACHE_TTL_MS,
+        staleUntil: storedAt + STALE_TTL_MS,
+      });
+
+      return payload;
+    })();
+
+    // Removed however it ends, so a failure is retried by the next caller
+    // rather than handed to every caller from now on.
+    inflightRequests.set(url, request);
+    request.finally(() => inflightRequests.delete(url)).catch(() => {});
+
+    return request;
   }
 
   /**

@@ -96,6 +96,7 @@ web/
 │   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
 │   ├── account.test.js            # Account page: profile rules, tab whitelist, controller locals (preview never saves)
 │   ├── cart.test.js               # Cart cookie rules (parse, limits, merge) and the controller's pricing, pruning and redirects
+│   ├── catalogueCache.test.js     # Catalogue cache: stale-while-revalidate, shared in-flight requests, home fetching side by side
 │   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
 │   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
 │   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
