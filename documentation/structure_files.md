@@ -42,15 +42,23 @@ bruno/lpaecomms-web/
 │   ├── development.bru
 │   ├── staging.bru
 │   └── production.bru
+├── auth/
+│   └── login.bru                  # POST /auth/login; its script stores {{token}} for protected requests
 ├── health/
 │   └── get-health.bru             # A request + its docs (purpose, params, responses)
-├── products/
-│   ├── get-products.bru           # Product catalogue request + docs (pairing, truncation, caching)
-│   └── get-product.bru            # One product by id + docs (400/404/502)
-├── categories/
-│   └── get-categories.bru         # Category list request + docs (populated only, caching)
-├── catalog/
-│   └── get-catalog.bru            # Paged catalogue request + docs (filter, offset/limit, hasMore)
+├── categories/                    # CRUD, one request per operation, each with its docs:
+│   ├── list-categories.bru        #   GET  list (page, limit, sort, order, search, filters)
+│   ├── get-category.bru           #   GET  one by id
+│   ├── create-category.bru        #   POST (ADMIN)
+│   ├── update-category.bru        #   PUT  partial update (ADMIN)
+│   └── delete-category.bru        #   DELETE soft delete (ADMIN)
+├── products/                      # Same five requests (list-/get-/create-/update-/delete-)
+├── roles/                         # Same five requests
+├── genders/                       # Same five requests
+├── document-types/                # Same five requests
+├── templates/                     # Same five requests
+├── users/                         # Same five requests (password write-only)
+├── purchases/                     # Same five requests (server-computed totals)
 ├── contact/
 │   └── post-contact.bru           # Contact message request + docs (202/422/400, no delivery)
 ├── currency/
@@ -61,7 +69,9 @@ bruno/lpaecomms-web/
 
 Bruno is the **single source of truth for the API**. Every endpoint has a `.bru`
 request whose `docs` block documents purpose, auth, parameters, and responses.
-An endpoint without its Bruno request is considered unfinished.
+An endpoint without its Bruno request is considered unfinished. Each environment
+defines `baseUrl` and `adminEmail`, and declares `adminPassword` as a secret
+(never committed).
 
 ---
 
@@ -75,7 +85,9 @@ web/
 ├── package.json          # Scripts and dependencies
 ├── prisma.config.js      # Prisma configuration
 ├── prisma/
-│   └── schema.prisma     # Database schema (models, relations)
+│   ├── schema.prisma     # Database schema (models, relations)
+│   ├── migrations/       # Generated SQL migrations (first one: <timestamp>_init)
+│   └── seed.js           # Idempotent seed: roles, genders, document types, demo catalogue, admin
 ├── styles/
 │   └── less/             # Hand-authored stylesheet SOURCE (input to the build)
 │       ├── main.less             # The only entry point; @imports everything below in cascade order
@@ -86,17 +98,30 @@ web/
 │       └── pages/                # Per-page composition (home, catalog, product, about…)
 ├── tests/
 │   ├── health.test.js             # Health endpoint (needs the dev database running)
-│   ├── errorHandler.test.js       # Error middleware: JSON for API, HTML for the browser
-│   ├── products.api.test.js       # Product catalogue endpoint, response shape, and caching
+│   ├── errorHandler.test.js       # Error middleware: JSON envelope for API, HTML for the browser, Prisma 409
+│   ├── helpers/
+│   │   └── fakePrisma.js          # Recording fake Prisma client: tests assert on the queries built
+│   ├── apiResponse.test.js        # Envelope builders ({ message, data, pagination })
+│   ├── pagination.test.js         # page/limit/sort/search parsing, clamping, pagination block
+│   ├── prismaErrors.test.js       # P2002/P2025/P2003 → 409/404/400, engine and pg-adapter shapes
+│   ├── audit.test.js              # created/updated stamps: pinned clock, per-request time, actor
+│   ├── validate.test.js           # zod middleware: coercion, stripped keys, per-field 400
+│   ├── auth.middleware.test.js    # authenticate/authorize: valid, missing, forged, expired, "none" tokens
+│   ├── modelFields.test.js        # Scalar fields per model from the Prisma DMMF
+│   ├── crudModel.test.js          # CrudModel queries: active filter, search, paging, soft delete
+│   ├── crud.routes.test.js        # CRUD router: envelope, paging, 401/403, 400, 404, forged audit fields
+│   ├── resources.routes.test.js   # Every resource mounted with its access level; product filters
+│   ├── userModel.test.js          # Password hashing and omission, soft delete sets deletedAt
+│   ├── auth.api.test.js           # POST /auth/login: token, identical 401s
+│   ├── purchaseModel.test.js      # Server-side totals, missing products, immutable money
 │   ├── convert.api.test.js        # Currency conversion endpoint, validation order, and caching
 │   ├── passwordBreaches.api.test.js # Breached password lookup endpoint (k-anonymity)
-│   ├── productModel.test.js       # ProductModel.listFeatured: field mapping, limit, cache isolation
-│   ├── categoryModel.test.js      # CategoryModel: empty-category filtering, probes, cache
+│   ├── productModel.test.js       # Storefront ProductModel on Prisma: card/detail shapes, order, exclusions
+│   ├── categoryModel.test.js      # Storefront CategoryModel: only categories with active products, code → slug
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
 │   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
 │   ├── account.test.js            # Account page: profile rules, tab whitelist, controller locals (preview never saves)
 │   ├── cart.test.js               # Cart cookie rules (parse, limits, merge) and the controller's pricing, pruning and redirects
-│   ├── catalogueCache.test.js     # Catalogue cache: stale-while-revalidate, shared in-flight requests, home fetching side by side
 │   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
 │   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
 │   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
@@ -105,7 +130,6 @@ web/
 │   ├── cookies.test.js            # persistentCookieOptions(): the secure flag by environment and the other cookie attributes
 │   ├── preferences.routes.test.js # GET/POST /preferences: cookie round-trip, whitelist rejection, returnTo guard, the 204 background-save path
 │   ├── recentlyViewed.test.js     # Browsing-history cookie: ordering, dedupe, truncation at RECENT_LIMIT
-│   ├── recommendations.test.js    # ProductModel.findByIds and findByCategoryExcluding against the external feed
 │   └── personalisation.test.js    # Home page's dominant-category inference and its failure isolation between the two blocks
 └── src/                  # Application code — see section 3
 ```
@@ -150,18 +174,16 @@ what a failed map looks like.
 
 > **Catalog filtering.** The catalog's filter lives in the URL
 > (`/catalog?category=<slug>`), not in memory, so a filtered view is shareable
-> and the back button works. `CategoryModel.listCategories()` keeps only
-> categories that hold products: the demo feed accepts writes from anyone and
-> accumulates other people's test categories. An unknown slug answers 404 —
-> but only when the category list loaded, since otherwise a third party being
-> down would turn a valid URL dead.
+> and the back button works. The slug is the category's `code`.
+> `CategoryModel.listCategories()` keeps only active categories that hold an
+> active product, so a filter never leads to an empty page. An unknown slug
+> answers 404 — but only when the category list loaded, since otherwise a
+> database outage would turn a valid URL dead.
 
-> **`productDetail` vs `product`.** `controllers/product.controller.js` belongs
-> to the **API** — it serves `GET /api/v1/products` and `GET /api/v1/products/:id`
-> to the mobile and desktop clients. The view controller for the product page is therefore
-> `productDetail.controller.js`, with matching route and page names. Renaming
-> the API's controller for symmetry would move a file two other platforms
-> depend on, to buy nothing.
+> **`productDetail` vs `product`.** The products API is served by the generic
+> CRUD controller (`crud.controller.js` + `resources/product.resource.js`). The
+> view controller for the product page is `productDetail.controller.js`, with
+> matching route and page names, so the page and the API never share a file.
 
 > **The detail page fails outright.** The home and catalog pages own content of
 > their own, so a catalogue they cannot read costs them one section. The product
@@ -257,11 +279,10 @@ src/
 │   │   ├── catalog.routes.js
 │   │   ├── productDetail.routes.js
 │   │   └── preferences.routes.js # GET/POST /preferences
-│   └── api/              # API routes (return JSON)
-│       ├── health.routes.js
-│       ├── product.routes.js
-│       ├── category.routes.js
-│       ├── catalog.routes.js
+│   └── api/              # API routes (return the JSON envelope)
+│       ├── crud.routes.js    # buildCrudRouter(resource, prisma): list/get/create/update/delete
+│       ├── auth.routes.js    # buildAuthRouter(prisma): POST /auth/login
+│       ├── health.routes.js  # buildHealthRouter(prisma): GET /health
 │       ├── contact.routes.js
 │       ├── currency.routes.js
 │       └── password.routes.js
@@ -274,9 +295,8 @@ src/
 │   ├── cart.controller.js # Cart page priced from the catalogue; add/update/remove write lpa_cart and redirect 303
 │   ├── mashup.controller.js
 │   ├── health.controller.js
-│   ├── product.controller.js
-│   ├── category.controller.js # API: GET /api/v1/categories
-│   ├── catalogApi.controller.js # API: GET /api/v1/catalog (paged, category filter)
+│   ├── crud.controller.js # API: generic list/show/create/update/destroy for every resource
+│   ├── authApi.controller.js # API: POST /api/v1/auth/login (JWT, identical 401s)
 │   ├── contactApi.controller.js # API: POST /api/v1/contact (web form rules, 202/422)
 │   ├── currency.controller.js
 │   ├── password.controller.js
@@ -285,13 +305,38 @@ src/
 │   └── preferences.controller.js # /preferences: show(), save() (whitelist check, cookie write, redirect or 204)
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
-│   ├── product.model.js  # External catalogue: storefront list + store locations
+│   ├── crud.model.js     # CrudModel: paged list, get, create, update, soft delete over one Prisma model
+│   ├── user.model.js     # UserModel: bcrypt hashing, password never read back, login lookup
+│   ├── purchase.model.js # PurchaseModel: purchase + lines in one transaction, server-side totals
+│   ├── product.model.js  # Storefront reads of the catalogue (Prisma): cards, detail, history
 │   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
 │   ├── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
-│   ├── category.model.js  # Catalogue categories, empty ones filtered out
+│   ├── category.model.js  # Storefront categories (Prisma), empty ones filtered out
 │   └── account.model.js  # Sample profile and order history until authentication exists
+├── middlewares/          # API request pipeline
+│   ├── requestTime.js    # req.time / req.clientTime, fixed once per request
+│   ├── audit.js          # createTime / updateTime: created/updated audit stamps (APP_TIMEZONE)
+│   ├── validate.js       # zod params/query/body parsing → req.valid, 400 with per-field errors
+│   ├── authenticate.js   # Bearer JWT → req.user, 401 otherwise
+│   └── authorize.js      # authorize('ADMIN') → 403 for other roles
+├── resources/            # One declarative file per CRUD resource (schemas, search, filters, access)
+│   ├── index.js          # The registry routes/index.js mounts; Resource typedef
+│   ├── category.resource.js
+│   ├── product.resource.js
+│   ├── role.resource.js
+│   ├── gender.resource.js
+│   ├── documentType.resource.js
+│   ├── template.resource.js
+│   ├── user.resource.js
+│   └── purchase.resource.js
 ├── lib/                  # Shared infrastructure helpers
 │   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
+│   ├── apiResponse.js    # The { message, data, pagination } envelope builders
+│   ├── pagination.js     # List query schema and the pagination block
+│   ├── prismaErrors.js   # Prisma P2002/P2025/P2003 → Boom 409/404/400
+│   ├── modelFields.js    # Scalar fields per model (Prisma DMMF), to drop keys a model lacks
+│   ├── jwt.js            # signToken / verifyToken (HS256)
+│   ├── storeLocations.js # Gold Coast stores the map mashup pairs with products
 │   ├── formRules.js      # Applies a field table: normalise, validate, derive HTML patterns
 │   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
 │   ├── authValidation.js # Login and sign-up rules, keyed by mode
@@ -481,7 +526,7 @@ controllers/health.controller.js   .check()
 models/health.model.js   → queries the database via lib/prisma.js
    │
    ▼
-res.json({ status, db })   → JSON response to the client
+sendOk(res, { status, db }, message)   → { message, data, pagination: null }
 ```
 
 Here the Controller uses a **Model** to reach the database and returns JSON, not
@@ -497,10 +542,10 @@ Something calls next(err)                      Unmatched request
    │                                               │
    ▼                                               ▼
 config/errorHandler.js:                         config/notFoundHandler.js:
-   logErrors    (log — every environment)          /api/*  → notFoundHandlerApi  → JSON 404
-   wrapErrors   (force a Boom error)               others  → notFoundHandlerWeb → renders pages/404.ejs
+   logErrors    (log — every environment)          /api/*  → notFoundHandlerApi  → JSON 404 (envelope)
+   wrapErrors   (Prisma → Boom, force a Boom error) others  → notFoundHandlerWeb → renders pages/404.ejs
    errorHandler (send the response)
-      /api/*  → JSON body
+      /api/*  → JSON envelope { message, data: null, pagination: null, errors }
       others  → renders pages/error.ejs
 ```
 
@@ -522,7 +567,9 @@ Two rules the error chain follows deliberately:
 ## 5. How to add a new feature (checklist)
 
 When adding, for example, a `products` page or endpoint, touch the layers in
-this order and update this document:
+this order and update this document. A plain CRUD resource needs only a
+`src/resources/<name>.resource.js` added to `resources/index.js` (plus its
+Bruno requests); the steps below are for anything else.
 
 1. **Model** — add `src/models/products.model.js` if it needs the database, and
    update `prisma/schema.prisma`.

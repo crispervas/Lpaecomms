@@ -22,9 +22,12 @@ new tools are introduced.
 | **dotenv** | Loads environment variables from a local `.env` file so configuration stays per-environment and out of the source code. |
 | **node:test** | Node's built-in test runner. Runs the automated tests with no extra framework. |
 | **supertest** | Sends HTTP requests to the Express app inside tests to assert route behaviour. |
+| **zod** | Parses and validates API params, query strings and bodies; undeclared keys never reach Prisma. |
+| **jsonwebtoken** | Signs and verifies the API's access tokens (HS256). |
+| **bcrypt** | Hashes user passwords (cost 12). |
 | **Bruno** | API client and documentation. The `bruno/` collection at the repository root is the source of truth for every REST endpoint and its three environments. |
 
-## Planned folder structure
+## Folder structure (abridged)
 
 ```
 cluster3-project/web/
@@ -34,7 +37,11 @@ cluster3-project/web/
 │   ├── config/
 │   │   └── env.js                  # Reads and validates env vars; fails fast if one is missing
 │   ├── lib/
-│   │   └── prisma.js               # Prisma client singleton
+│   │   ├── prisma.js               # Prisma client singleton
+│   │   ├── apiResponse.js          # { message, data, pagination } envelope
+│   │   └── pagination.js           # List query parsing and the pagination block
+│   ├── middlewares/                # requestTime, audit, validate, authenticate, authorize
+│   ├── resources/                  # One declarative file per CRUD resource
 │   ├── routes/
 │   │   ├── index.js                # Mounts the view router and the API router
 │   │   ├── views/
@@ -60,7 +67,9 @@ cluster3-project/web/
 ├── styles/
 │   └── less/                       # Hand-authored source: abstracts, base, layout, components, pages
 ├── prisma/
-│   └── schema.prisma               # datasource + generator (no models yet)
+│   ├── schema.prisma               # Models: reference tables, users, catalogue, purchases
+│   ├── migrations/                 # Generated SQL migrations
+│   └── seed.js                     # Idempotent seed (reference data, demo catalogue, admin)
 ├── tests/
 │   └── health.test.js              # GET /api/v1/health with node:test + supertest
 ├── docker-compose.yml              # postgres:16
@@ -79,3 +88,62 @@ cluster3-project/web/
   JSON. Neither depends on the other — they are two separate routers.
 - **Controllers and models are ES2022 classes** with the model injected through
   the constructor, which keeps controllers testable with a fake model.
+- **Injectable Prisma client.** `createApp({ prisma })` passes the client to the
+  API routers; tests pass a recording fake (`tests/helpers/fakePrisma.js`), so
+  the suite runs without a database except `tests/health.test.js`.
+
+## Database
+
+```bash
+docker compose up -d        # PostgreSQL 16
+pnpm prisma migrate dev     # Development: apply migrations (and create new ones)
+pnpm db:migrate             # Staging/production: apply committed migrations only
+pnpm db:seed                # Reference data, 5 categories, 20 products, one admin
+pnpm db:reset               # Drop, re-migrate and re-seed (destroys local data)
+```
+
+The seed is idempotent (upserts on unique codes/emails) and reads the admin's
+credentials from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`.
+
+## Environment variables
+
+Documented in `.env.example`. Beyond the database and port:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `JWT_SECRET` | yes | Signs API access tokens; at least 32 characters. |
+| `JWT_EXPIRES_IN` | no | Token lifetime (default `1h`). |
+| `APP_TIMEZONE` | no | IANA zone for the audit stamps' local date/time (default `Australia/Brisbane`). |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | seed only | The administrator `prisma/seed.js` creates. |
+| `NINJA_API_KEY` | no | Currency conversion; without it `/convert` answers 503. |
+
+## REST API
+
+Base path `/api/v1`, documented request by request in `bruno/lpaecomms-web`.
+
+**Envelope.** Every response — success, error or 404 — is
+`{ message, data, pagination }`. `pagination` is `null` except on lists, where it
+is `{ total, page, limit, totalPages, count, hasNextPage, hasPrevPage }`. Errors
+set `data: null` and add `errors: [{ field?, message }]` (plus `stack` outside
+production).
+
+**Lists** accept `page` (default 1), `limit` (default 10, max 100), `sort`,
+`order` (`asc`/`desc`) and `search`, plus per-resource filters.
+
+**Auth.** `POST /auth/login` with `{ email, password }` returns a JWT. Send it
+as `Authorization: Bearer <token>`.
+
+| Resource | Read | Write |
+| --- | --- | --- |
+| `categories`, `products` | public | `ADMIN` |
+| `users`, `roles`, `genders`, `document-types`, `templates`, `purchases` | `ADMIN` | `ADMIN` |
+
+Each resource has `GET /{resource}`, `GET /{resource}/:id`, `POST /{resource}`,
+`PUT /{resource}/:id` (partial) and `DELETE /{resource}/:id`. Deletes are soft:
+`status: 0`, `statusName: "INACTIVE"` (and `deletedAt` on users), and deleted
+rows vanish from every read. Purchases compute their totals server-side.
+
+**Audit.** Writes fill the `created` / `updated` JSON columns with
+`{ client, server, serverDate, serverTime, unixTime, user, role }`, taken from
+the request time, `APP_TIMEZONE` and the token. Validation runs first and drops
+any audit or status field a client sends, so the stamp cannot be forged.
