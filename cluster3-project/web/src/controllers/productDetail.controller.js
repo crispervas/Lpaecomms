@@ -7,10 +7,8 @@
  * the JSON route would tie the site's rendering to the API's response shape,
  * which mobile and desktop must stay free to change.
  *
- * Named `productDetail` rather than `product` because
- * `controllers/product.controller.js` already belongs to the API, which serves
- * the mobile and desktop clients. Renaming that one for symmetry would move a
- * file two other platforms depend on, to buy nothing.
+ * Named `productDetail` rather than `product` to keep the page's controller
+ * apart from the products API, which the generic CRUD controller serves.
  */
 
 import { persistentCookieOptions } from '../config/cookies.js';

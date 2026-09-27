@@ -19,13 +19,12 @@ import cartRoutes from './views/cart.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
 import preferencesRoutes from './views/preferences.routes.js';
 import { buildHealthRouter } from './api/health.routes.js';
-import productRoutes from './api/product.routes.js';
 import currencyRoutes from './api/currency.routes.js';
 import passwordRoutes from './api/password.routes.js';
-import categoryRoutes from './api/category.routes.js';
-import catalogApiRoutes from './api/catalog.routes.js';
 import contactApiRoutes from './api/contact.routes.js';
 import { requestTime } from '../middlewares/requestTime.js';
+import { buildCrudRouter } from './api/crud.routes.js';
+import { resources } from '../resources/index.js';
 
 /**
  * Mount the view and API routers on the application.
@@ -53,9 +52,8 @@ export function registerRoutes(app, { prisma }) {
 
   // API routes (JSON).
   apiRouter.use('/', buildHealthRouter(prisma));
-  apiRouter.use('/', productRoutes);
-  apiRouter.use('/', categoryRoutes);
-  apiRouter.use('/', catalogApiRoutes);
+  // One router per CRUD resource; see src/resources/.
+  for (const resource of resources) apiRouter.use('/', buildCrudRouter(resource, prisma));
   apiRouter.use('/', contactApiRoutes);
   apiRouter.use('/', currencyRoutes);
   apiRouter.use('/', passwordRoutes);
