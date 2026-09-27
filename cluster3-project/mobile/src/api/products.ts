@@ -2,42 +2,43 @@
  * @file Product catalogue access for the mobile storefront.
  *
  * Wraps GET /products (documented in bruno/lpaecomms-web/products) and turns
- * its body into typed products. The response comes from an external demo
- * feed, so each item is validated: a malformed item is dropped rather than
- * failing the whole list, and a body without a products array is a failure.
+ * the API's product rows into the shape the storefront displays. Each item is
+ * validated: a malformed item is dropped rather than failing the whole list,
+ * and a response whose data is not a list is a failure.
  */
 import { apiGet, MESSAGES, type ApiResult } from './client';
 
 /** A product as the storefront displays it. */
 export interface Product {
-  /** Identifier from the catalogue feed. */
+  /** Product id. */
   id: number;
   /** Display name. */
   name: string;
-  /** Price, assumed to be Australian dollars (see the Bruno docs). */
+  /** Price in Australian dollars (the API's `price`). */
   priceAud: number;
-  /** Image URL; empty string when the feed has none. */
+  /** First image URL; empty string when the product has none. */
   imageUrl: string;
 }
 
 /**
- * Validate one raw catalogue item. Shared by every module that reads products.
+ * Validate one API product row. Shared by every module that reads products.
  *
- * @param raw - An element of the response's products array.
- * @returns The typed product, or null when a required field is missing or mistyped.
+ * @param raw - An element of the response's data list.
+ * @returns The display product, or null when a required field is missing or mistyped.
  */
 export function parseProduct(raw: unknown): Product | null {
   if (typeof raw !== 'object' || raw === null) return null;
 
-  const { id, name, priceAud, imageUrl } = raw as Record<string, unknown>;
+  const { id, name, price, img } = raw as Record<string, unknown>;
   if (typeof id !== 'number' || typeof name !== 'string') return null;
-  if (typeof priceAud !== 'number' || !Number.isFinite(priceAud)) return null;
+  if (typeof price !== 'number' || !Number.isFinite(price)) return null;
 
-  return { id, name, priceAud, imageUrl: typeof imageUrl === 'string' ? imageUrl : '' };
+  const imageUrl = Array.isArray(img) && typeof img[0] === 'string' ? img[0] : '';
+  return { id, name, priceAud: price, imageUrl };
 }
 
 /**
- * Fetch the product catalogue.
+ * Fetch the first page of the product catalogue.
  *
  * @returns The result envelope holding the valid products, in API order.
  */
@@ -45,15 +46,10 @@ export async function fetchProducts(): Promise<ApiResult<Product[]>> {
   const result = await apiGet<unknown>('/products');
   if (!result.ok) return result;
 
-  const list =
-    typeof result.data === 'object' && result.data !== null
-      ? (result.data as { products?: unknown }).products
-      : undefined;
-
-  if (!Array.isArray(list)) {
+  if (!Array.isArray(result.data)) {
     return { ok: false, status: result.status, data: null, error: MESSAGES.unreadable };
   }
 
-  const products = list.map(parseProduct).filter((p): p is Product => p !== null);
-  return { ok: true, status: result.status, data: products, error: null };
+  const products = result.data.map(parseProduct).filter((p): p is Product => p !== null);
+  return { ok: true, status: result.status, data: products, pagination: result.pagination, error: null };
 }

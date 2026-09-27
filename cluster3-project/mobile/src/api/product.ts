@@ -39,21 +39,19 @@ export function parseProductId(raw: string | undefined): number | null {
 }
 
 /**
- * Validate the product in a response body.
+ * Validate the API product row in a response's data.
  *
- * @param body - The parsed response.
+ * @param raw - The response's `data`.
  * @returns The typed product, or null when a required field is invalid.
  */
-function parseProductDetail(body: unknown): ProductDetail | null {
-  if (typeof body !== 'object' || body === null) return null;
-  const raw = (body as { product?: unknown }).product;
+function parseProductDetail(raw: unknown): ProductDetail | null {
   if (typeof raw !== 'object' || raw === null) return null;
 
-  const { id, name, priceAud, description, category, imageUrls } = raw as Record<string, unknown>;
+  const { id, name, price, description, category, img } = raw as Record<string, unknown>;
   if (typeof id !== 'number' || typeof name !== 'string') return null;
-  if (typeof priceAud !== 'number' || !Number.isFinite(priceAud)) return null;
+  if (typeof price !== 'number' || !Number.isFinite(price)) return null;
 
-  const { name: categoryName, slug } =
+  const { name: categoryName, code: slug } =
     typeof category === 'object' && category !== null ? (category as Record<string, unknown>) : {};
 
   return {
@@ -63,9 +61,9 @@ function parseProductDetail(body: unknown): ProductDetail | null {
       name: typeof categoryName === 'string' ? categoryName : '',
       slug: typeof slug === 'string' ? slug : '',
     },
-    priceAud,
+    priceAud: price,
     description: typeof description === 'string' ? description : '',
-    imageUrls: Array.isArray(imageUrls) ? imageUrls.filter((url): url is string => typeof url === 'string') : [],
+    imageUrls: Array.isArray(img) ? img.filter((url): url is string => typeof url === 'string') : [],
   };
 }
 
@@ -84,5 +82,5 @@ export async function fetchProduct(id: number): Promise<ApiResult<ProductDetail>
     return { ok: false, status: result.status, data: null, error: MESSAGES.unreadable };
   }
 
-  return { ok: true, status: result.status, data: product, error: null };
+  return { ok: true, status: result.status, data: product, pagination: null, error: null };
 }

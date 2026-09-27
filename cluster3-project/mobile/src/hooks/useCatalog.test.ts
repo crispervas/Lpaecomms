@@ -10,14 +10,14 @@ import { CATALOG_PAGE_SIZE, useCatalog } from './useCatalog';
 
 const mockedFetch = vi.mocked(fetchCatalogPage);
 
-/** A successful page holding products with the given ids. */
-const page = (ids: number[], hasMore: boolean, received = ids.length): ApiResult<CatalogPage> => ({
+/** A successful page, numbered `pageNo`, holding products with the given ids. */
+const page = (ids: number[], hasMore: boolean, pageNo = 1): ApiResult<CatalogPage> => ({
   ok: true,
   status: 200,
   data: {
     products: ids.map((id) => ({ id, name: `P${id}`, priceAud: 10, imageUrl: '', category: 'Clothes' })),
     hasMore,
-    received,
+    page: pageNo,
   },
   error: null,
 });
@@ -38,7 +38,7 @@ describe('useCatalog', () => {
 
     expect(result.current.status).toBe('loading');
     await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(mockedFetch).toHaveBeenCalledWith({ category: null, offset: 0, limit: CATALOG_PAGE_SIZE });
+    expect(mockedFetch).toHaveBeenCalledWith({ category: null, page: 1, limit: CATALOG_PAGE_SIZE });
     expect(ids(result)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(result.current.hasMore).toBe(true);
   });
@@ -54,11 +54,11 @@ describe('useCatalog', () => {
     rerender({ category: 'shoes' });
 
     await waitFor(() => expect(ids(result)).toEqual([9]));
-    expect(mockedFetch).toHaveBeenLastCalledWith({ category: 'shoes', offset: 0, limit: CATALOG_PAGE_SIZE });
+    expect(mockedFetch).toHaveBeenLastCalledWith({ category: 'shoes', page: 1, limit: CATALOG_PAGE_SIZE });
   });
 
-  it('appends the next page from the current offset', async () => {
-    mockedFetch.mockResolvedValueOnce(page([1, 2, 3, 4, 5, 6], true)).mockResolvedValueOnce(page([7, 8], false));
+  it('appends the next page', async () => {
+    mockedFetch.mockResolvedValueOnce(page([1, 2, 3, 4, 5, 6], true)).mockResolvedValueOnce(page([7, 8], false, 2));
 
     const { result } = renderHook(() => useCatalog(null));
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -66,16 +66,16 @@ describe('useCatalog', () => {
     act(() => result.current.loadMore());
 
     await waitFor(() => expect(ids(result)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]));
-    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, offset: 6, limit: CATALOG_PAGE_SIZE });
+    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, page: 2, limit: CATALOG_PAGE_SIZE });
     expect(result.current.hasMore).toBe(false);
     expect(result.current.loadingMore).toBe(false);
   });
 
-  it('drops repeated products but still advances the offset by the page received', async () => {
+  it('drops repeated products and still asks for the following page', async () => {
     mockedFetch
       .mockResolvedValueOnce(page([1, 2, 3, 4, 5, 6], true))
-      .mockResolvedValueOnce(page([6, 7, 8, 9, 10, 11], true))
-      .mockResolvedValueOnce(page([12], false));
+      .mockResolvedValueOnce(page([6, 7, 8, 9, 10, 11], true, 2))
+      .mockResolvedValueOnce(page([12], false, 3));
 
     const { result } = renderHook(() => useCatalog(null));
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -85,7 +85,7 @@ describe('useCatalog', () => {
 
     act(() => result.current.loadMore());
     await waitFor(() => expect(result.current.hasMore).toBe(false));
-    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, offset: 12, limit: CATALOG_PAGE_SIZE });
+    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, page: 3, limit: CATALOG_PAGE_SIZE });
   });
 
   it('advances past items the client rejected as malformed', async () => {
@@ -93,8 +93,8 @@ describe('useCatalog', () => {
       .mockResolvedValueOnce(page([1, 2, 3, 4, 5, 6], true))
       // The server sent six items, all malformed: nothing shows, but the next
       // request must still move past them instead of asking for them again.
-      .mockResolvedValueOnce(page([], true, 6))
-      .mockResolvedValueOnce(page([13], false));
+      .mockResolvedValueOnce(page([], true, 2))
+      .mockResolvedValueOnce(page([13], false, 3));
 
     const { result } = renderHook(() => useCatalog(null));
     await waitFor(() => expect(result.current.status).toBe('ready'));
@@ -105,7 +105,7 @@ describe('useCatalog', () => {
 
     act(() => result.current.loadMore());
     await waitFor(() => expect(result.current.hasMore).toBe(false));
-    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, offset: 12, limit: CATALOG_PAGE_SIZE });
+    expect(mockedFetch).toHaveBeenLastCalledWith({ category: null, page: 3, limit: CATALOG_PAGE_SIZE });
   });
 
   it('keeps the loaded products when a later page fails', async () => {

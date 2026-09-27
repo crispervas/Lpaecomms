@@ -43,11 +43,11 @@ interface CatalogState {
   loadingMore: boolean;
   loadMoreError: string | null;
   /**
-   * Where the next page starts. Tracked apart from products.length because
-   * repeated and malformed products are dropped, and the offset must still
-   * advance by what the server actually returned.
+   * The next page to request. Tracked from the page the server reported,
+   * not from products.length, because repeated and malformed products are
+   * dropped and paging must still move past them.
    */
-  nextOffset: number;
+  nextPage: number;
 }
 
 const INITIAL: CatalogState = {
@@ -57,7 +57,7 @@ const INITIAL: CatalogState = {
   error: null,
   loadingMore: false,
   loadMoreError: null,
-  nextOffset: 0,
+  nextPage: 1,
 };
 
 /**
@@ -95,7 +95,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
     const current = ++generation.current;
     setState(INITIAL);
 
-    fetchCatalogPage({ category, offset: 0, limit: CATALOG_PAGE_SIZE }).then((result) => {
+    fetchCatalogPage({ category, page: 1, limit: CATALOG_PAGE_SIZE }).then((result) => {
       if (current !== generation.current) return;
       setState(
         result.ok
@@ -104,7 +104,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
               status: 'ready',
               products: result.data.products,
               hasMore: result.data.hasMore,
-              nextOffset: result.data.received,
+              nextPage: result.data.page + 1,
             }
           : { ...INITIAL, status: 'error', error: result.error },
       );
@@ -122,7 +122,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
     const current = generation.current;
     setState({ ...shown, loadingMore: true, loadMoreError: null });
 
-    fetchCatalogPage({ category, offset: shown.nextOffset, limit: CATALOG_PAGE_SIZE }).then((result) => {
+    fetchCatalogPage({ category, page: shown.nextPage, limit: CATALOG_PAGE_SIZE }).then((result) => {
       if (current !== generation.current) return;
       const latest = stateRef.current;
       setState(
@@ -132,7 +132,7 @@ export function useCatalog(category: string | null): UseCatalogResult {
               loadingMore: false,
               products: appendUnique(latest.products, result.data.products),
               hasMore: result.data.hasMore,
-              nextOffset: latest.nextOffset + result.data.received,
+              nextPage: result.data.page + 1,
             }
           : { ...latest, loadingMore: false, loadMoreError: result.error },
       );

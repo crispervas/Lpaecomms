@@ -14,7 +14,7 @@ const page = (ids: number[]) => ({
   data: {
     products: ids.map((id) => ({ id, name: `P${id}`, priceAud: 10, imageUrl: '', category: 'Clothes' })),
     hasMore: false,
-    received: ids.length,
+    page: 1,
   },
   error: null,
 });
@@ -29,7 +29,7 @@ describe('useRelatedProducts', () => {
 
     renderHook(() => useRelatedProducts('clothes', 3));
 
-    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith({ category: 'clothes', offset: 0, limit: 5 }));
+    await waitFor(() => expect(mockedFetch).toHaveBeenCalledWith({ category: 'clothes', page: 1, limit: 5 }));
   });
 
   it('leaves out the product being viewed and shows at most four', async () => {

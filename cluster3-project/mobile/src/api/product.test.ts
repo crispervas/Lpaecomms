@@ -12,11 +12,14 @@ const mockedApiGet = vi.mocked(apiGet);
 
 const apiProduct = {
   id: 7,
+  categoryId: 2,
   name: 'Wireless Keyboard',
-  category: { id: 2, name: 'Electronics', slug: 'electronics' },
-  priceAud: 120,
+  code: 'wireless-keyboard',
+  category: { id: 2, name: 'Electronics', code: 'electronics' },
+  price: 120,
+  stock: 4,
   description: 'Quiet keys.',
-  imageUrls: ['https://img.test/a.jpg', 'https://img.test/b.jpg'],
+  img: ['https://img.test/a.jpg', 'https://img.test/b.jpg'],
 };
 
 describe('parseProductId', () => {
@@ -35,7 +38,7 @@ describe('fetchProduct', () => {
   });
 
   it('requests the product and keeps the fields the page uses', async () => {
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { product: apiProduct }, error: null });
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: apiProduct, pagination: null, error: null });
 
     const result = await fetchProduct(7);
 
@@ -51,6 +54,7 @@ describe('fetchProduct', () => {
         description: 'Quiet keys.',
         imageUrls: ['https://img.test/a.jpg', 'https://img.test/b.jpg'],
       },
+      pagination: null,
       error: null,
     });
   });
@@ -59,7 +63,8 @@ describe('fetchProduct', () => {
     mockedApiGet.mockResolvedValue({
       ok: true,
       status: 200,
-      data: { product: { id: 7, name: 'Keyboard', priceAud: 120, imageUrls: ['https://img.test/a.jpg', 3] } },
+      data: { id: 7, name: 'Keyboard', price: 120, img: ['https://img.test/a.jpg', 3] },
+      pagination: null,
       error: null,
     });
 
@@ -76,7 +81,7 @@ describe('fetchProduct', () => {
   });
 
   it('fails when the product is malformed', async () => {
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { product: { id: 7 } }, error: null });
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { id: 7 }, pagination: null, error: null });
 
     expect(await fetchProduct(7)).toEqual({ ok: false, status: 200, data: null, error: MESSAGES.unreadable });
   });

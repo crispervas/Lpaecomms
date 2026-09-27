@@ -3,6 +3,8 @@
  *
  * Every call, GET or POST, resolves to a result envelope instead of throwing,
  * so views branch on a value rather than wrapping each request in try/catch.
+ * The API itself answers `{ message, data, pagination }`; this client unwraps
+ * it, so `data` here is the API's `data` and `pagination` rides alongside.
  * `ok` means a 2xx arrived; `status` stays set on failures so an API error
  * (for example a 502 from an unavailable catalogue) remains distinguishable
  * from an unreachable server (`status: null`).
@@ -16,9 +18,28 @@ export interface ApiValidationEntry {
   message: string;
 }
 
+/** The API's pagination block, present on list responses. */
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  count: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 /** Outcome of an API call. Never thrown; always resolved. */
 export type ApiResult<T> =
-  | { ok: true; status: number; data: T; error: null }
+  | {
+      ok: true;
+      status: number;
+      data: T;
+      /** The list's pagination block; null for single records. Optional so
+       * results built by hand (parsers, tests) need not repeat it. */
+      pagination?: Pagination | null;
+      error: null;
+    }
   | {
       ok: false;
       status: number | null;
@@ -72,17 +93,17 @@ function messageFrom(body: unknown): string | null {
 }
 
 /**
- * Extract the API's validation list from an error body.
+ * Extract the API's per-field `errors` list from an error body.
  *
  * @param body - A parsed error body.
  * @returns The well-formed entries; empty when there are none.
  */
 function validationFrom(body: unknown): ApiValidationEntry[] {
   if (typeof body !== 'object' || body === null) return [];
-  const { validation } = body as { validation?: unknown };
-  if (!Array.isArray(validation)) return [];
+  const { errors } = body as { errors?: unknown };
+  if (!Array.isArray(errors)) return [];
 
-  return validation.flatMap((entry) => {
+  return errors.flatMap((entry) => {
     if (typeof entry !== 'object' || entry === null) return [];
     const { field, message } = entry as { field?: unknown; message?: unknown };
     if (typeof message !== 'string') return [];
@@ -130,11 +151,23 @@ async function request<T>(path: string, init: RequestInit): Promise<ApiResult<T>
       };
     }
 
-    if (body === undefined) {
+    // A 2xx that is not the { message, data, pagination } envelope is not
+    // something this client knows how to read.
+    const envelope =
+      typeof body === 'object' && body !== null && 'data' in body
+        ? (body as { data: unknown; pagination?: unknown })
+        : undefined;
+    if (envelope === undefined) {
       return { ok: false, status: response.status, data: null, error: MESSAGES.unreadable };
     }
 
-    return { ok: true, status: response.status, data: body as T, error: null };
+    return {
+      ok: true,
+      status: response.status,
+      data: envelope.data as T,
+      pagination: (envelope.pagination ?? null) as Pagination | null,
+      error: null,
+    };
   } catch {
     // Network failures and the timeout abort both land here; neither carries
     // an HTTP status, which is exactly what `status: null` reports.

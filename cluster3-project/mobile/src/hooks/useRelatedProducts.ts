@@ -26,7 +26,7 @@ export function useRelatedProducts(categorySlug: string, excludeId: number): Cat
 
     let current = true;
     // One extra, because the viewed product may be among them.
-    fetchCatalogPage({ category: categorySlug, offset: 0, limit: RELATED_COUNT + 1 }).then((result) => {
+    fetchCatalogPage({ category: categorySlug, page: 1, limit: RELATED_COUNT + 1 }).then((result) => {
       if (!current || !result.ok) return;
       setRelated(result.data.products.filter((product) => product.id !== excludeId).slice(0, RELATED_COUNT));
     });

@@ -1,95 +1,88 @@
 /**
  * @file Paged catalogue access for the mobile Catalog view.
  *
- * Wraps GET /catalog (bruno/lpaecomms-web/catalog): one page of products,
- * optionally for one category, plus whether another page exists. Items are
- * validated with the same rules as the Home products.
+ * Wraps GET /products with `page`, `limit` and an optional `category` code
+ * (bruno/lpaecomms-web/products): one page of products plus whether another
+ * page exists, read from the API's pagination block. Items are validated with
+ * the same rules as the Home products.
  */
 import { apiGet, MESSAGES, type ApiResult } from './client';
 import { parseProduct, type Product } from './products';
 
 /** A catalogue product, which also names its category. */
 export interface CatalogProduct extends Product {
-  /** Category name; empty when the feed has none. */
+  /** Category name; empty string when the row carries none. */
   category: string;
 }
 
 /** One page of the catalogue. */
 export interface CatalogPage {
-  /** The page's valid products, in API order. */
+  /** Valid products on this page. */
   products: CatalogProduct[];
-  /** Whether another page exists after this one. */
+  /** Whether a further page exists. */
   hasMore: boolean;
-  /**
-   * How many items the server sent, before malformed ones were dropped. The
-   * next page starts this far on, so a rejected item is skipped, not re-requested.
-   */
-  received: number;
+  /** The page the server returned (1-based). */
+  page: number;
 }
 
 /** Which page to request. */
 export interface CatalogQuery {
-  /** Category slug, or null for every category. */
+  /** Category code, or null for every category. */
   category: string | null;
-  /** Products to skip. */
-  offset: number;
-  /** Page size. */
+  /** Page number, starting at 1. */
+  page: number;
+  /** Products per page. */
   limit: number;
 }
 
 /**
  * Build the request path for one catalogue page.
  *
- * @param query - Category, offset and page size.
+ * @param query - Category, page and page size.
  * @returns The path below the API base URL.
  */
-export function catalogPath({ category, offset, limit }: CatalogQuery): string {
-  const params = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+export function catalogPath({ category, page, limit }: CatalogQuery): string {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (category) params.set('category', category);
-  return `/catalog?${params.toString()}`;
+  return `/products?${params.toString()}`;
 }
 
 /**
- * Validate one raw catalogue item.
+ * Validate one API product row as a catalogue product.
  *
- * @param raw - An element of the response's products array.
+ * @param raw - An element of the response's data list.
  * @returns The typed product, or null when a required field is invalid.
  */
 function parseCatalogProduct(raw: unknown): CatalogProduct | null {
   const product = parseProduct(raw);
   if (product === null) return null;
 
-  const { category } = raw as { category?: unknown };
-  return { ...product, category: typeof category === 'string' ? category : '' };
+  const { category } = raw as { category?: { name?: unknown } | null };
+  return { ...product, category: typeof category?.name === 'string' ? category.name : '' };
 }
 
 /**
  * Fetch one page of the catalogue.
  *
- * @param query - Category, offset and page size.
+ * @param query - Category, page and page size.
  * @returns The result envelope holding the page.
  */
 export async function fetchCatalogPage(query: CatalogQuery): Promise<ApiResult<CatalogPage>> {
   const result = await apiGet<unknown>(catalogPath(query));
   if (!result.ok) return result;
 
-  const body =
-    typeof result.data === 'object' && result.data !== null
-      ? (result.data as { products?: unknown; hasMore?: unknown })
-      : {};
-
-  if (!Array.isArray(body.products) || typeof body.hasMore !== 'boolean') {
+  const { pagination } = result;
+  if (!Array.isArray(result.data) || !pagination) {
     return { ok: false, status: result.status, data: null, error: MESSAGES.unreadable };
   }
 
-  const products = body.products
-    .map(parseCatalogProduct)
-    .filter((p): p is CatalogProduct => p !== null);
+  const products = result.data.map(parseCatalogProduct).filter((p): p is CatalogProduct => p !== null);
 
   return {
     ok: true,
     status: result.status,
-    data: { products, hasMore: body.hasMore, received: body.products.length },
+    data: { products, hasMore: pagination.hasNextPage, page: pagination.page },
+    pagination,
     error: null,
   };
 }

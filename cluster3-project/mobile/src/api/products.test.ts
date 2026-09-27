@@ -12,13 +12,17 @@ const mockedApiGet = vi.mocked(apiGet);
 
 const apiProduct = {
   id: 1,
+  categoryId: 2,
   name: 'Aria 87 Mechanical',
-  priceAud: 149,
-  imageUrl: 'https://img.test/aria.jpg',
-  store: 'Surfers Paradise',
-  latitude: -28.0023,
-  longitude: 153.4145,
+  code: 'aria-87-mechanical',
+  price: 149,
+  stock: 3,
+  img: ['https://img.test/aria.jpg', 'https://img.test/aria-2.jpg'],
+  description: 'Clicky.',
+  category: { id: 2, name: 'Electronics', code: 'electronics' },
 };
+
+const pagination = { total: 1, page: 1, limit: 10, totalPages: 1, count: 1, hasNextPage: false, hasPrevPage: false };
 
 describe('fetchProducts', () => {
   beforeEach(() => {
@@ -26,7 +30,7 @@ describe('fetchProducts', () => {
   });
 
   it('requests /products and keeps only the fields the storefront uses', async () => {
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { products: [apiProduct] }, error: null });
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: [apiProduct], pagination, error: null });
 
     const result = await fetchProducts();
 
@@ -35,14 +39,14 @@ describe('fetchProducts', () => {
       ok: true,
       status: 200,
       data: [{ id: 1, name: 'Aria 87 Mechanical', priceAud: 149, imageUrl: 'https://img.test/aria.jpg' }],
+      pagination,
       error: null,
     });
   });
 
   it('normalises a missing image URL to an empty string', async () => {
-    const withoutImage: Partial<typeof apiProduct> = { ...apiProduct };
-    delete withoutImage.imageUrl;
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { products: [withoutImage] }, error: null });
+    const withoutImage = { ...apiProduct, img: [] };
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: [withoutImage], pagination, error: null });
 
     const result = await fetchProducts();
 
@@ -50,21 +54,16 @@ describe('fetchProducts', () => {
   });
 
   it('drops a malformed item and keeps the rest', async () => {
-    const broken = { ...apiProduct, id: 2, priceAud: 'free' };
-    mockedApiGet.mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: { products: [broken, apiProduct] },
-      error: null,
-    });
+    const broken = { ...apiProduct, id: 2, price: 'free' };
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: [broken, apiProduct], pagination, error: null });
 
     const result = await fetchProducts();
 
     expect(result.ok && result.data.map((p) => p.id)).toEqual([1]);
   });
 
-  it('fails when the body has no products array', async () => {
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { items: [] }, error: null });
+  it('fails when the data is not a list', async () => {
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: { items: [] }, pagination: null, error: null });
 
     const result = await fetchProducts();
 

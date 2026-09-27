@@ -20,24 +20,43 @@ describe('apiGet', () => {
     vi.useRealTimers();
   });
 
-  it('returns the parsed body on a 2xx response', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { hello: 'world' }));
+  it('unwraps the envelope on a 2xx response', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(200, { message: 'OK', data: { hello: 'world' }, pagination: null }));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await apiGet('/products');
 
-    expect(result).toEqual({ ok: true, status: 200, data: { hello: 'world' }, error: null });
+    expect(result).toEqual({ ok: true, status: 200, data: { hello: 'world' }, pagination: null, error: null });
     expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/products`);
   });
 
   it('tolerates a trailing slash on the base URL', async () => {
     vi.stubEnv('VITE_API_BASE_URL', `${BASE}/`);
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, {}));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(200, { message: 'OK', data: [], pagination: null }));
     vi.stubGlobal('fetch', fetchMock);
 
     await apiGet('/products');
 
     expect(fetchMock.mock.calls[0][0]).toBe(`${BASE}/products`);
+  });
+
+  it('passes the pagination block through', async () => {
+    const pagination = { total: 7, page: 1, limit: 6, totalPages: 2, count: 6, hasNextPage: true, hasPrevPage: false };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { message: 'OK', data: [], pagination })));
+
+    const result = await apiGet('/products');
+
+    expect(result.ok && result.pagination).toEqual(pagination);
+  });
+
+  it('reports a 2xx body that is not an envelope as unreadable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, { products: [] })));
+
+    const result = await apiGet('/products');
+
+    expect(result).toEqual({ ok: false, status: 200, data: null, error: MESSAGES.unreadable });
   });
 
   it('keeps the status and the API message on a non-2xx response', async () => {
@@ -130,12 +149,14 @@ describe('apiPost', () => {
   });
 
   it('sends the body as JSON with a POST', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(202, { received: true }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(202, { message: 'Message received', data: { received: true }, pagination: null }));
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await apiPost('/contact', { name: 'Ana' });
 
-    expect(result).toEqual({ ok: true, status: 202, data: { received: true }, error: null });
+    expect(result).toEqual({ ok: true, status: 202, data: { received: true }, pagination: null, error: null });
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(`${BASE}/contact`);
     expect(init.method).toBe('POST');
@@ -143,11 +164,13 @@ describe('apiPost', () => {
     expect(init.body).toBe('{"name":"Ana"}');
   });
 
-  it('carries the field-tagged validation list of a 422', async () => {
+  it('carries the field-tagged errors of a 422 as validation', async () => {
     const validation = [{ field: 'email', message: 'Please enter a valid email address.' }];
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse(422, { message: 'Some fields need attention.', validation })),
+      vi.fn().mockResolvedValue(
+        jsonResponse(422, { message: 'Some fields need attention.', data: null, pagination: null, errors: validation }),
+      ),
     );
 
     const result = await apiPost('/contact', {});
@@ -162,7 +185,7 @@ describe('apiPost', () => {
   });
 
   it('omits validation when the error body has none', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(400, { message: 'Bad.', validation: [] })));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(400, { message: 'Bad.', data: null, pagination: null, errors: [] })));
 
     const result = await apiPost('/contact', {});
 

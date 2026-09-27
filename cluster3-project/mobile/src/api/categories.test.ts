@@ -15,21 +15,23 @@ describe('fetchCategories', () => {
     mockedApiGet.mockReset();
   });
 
-  it('requests /categories and keeps id, name and slug', async () => {
+  it('requests every category by name and maps code to slug', async () => {
     mockedApiGet.mockResolvedValue({
       ok: true,
       status: 200,
-      data: { categories: [{ id: 1, name: 'Clothes', slug: 'clothes', extra: true }] },
+      data: [{ id: 1, name: 'Clothes', code: 'clothes', extra: true }],
+      pagination: null,
       error: null,
     });
 
     const result = await fetchCategories();
 
-    expect(mockedApiGet).toHaveBeenCalledWith('/categories');
+    expect(mockedApiGet).toHaveBeenCalledWith('/categories?limit=100&sort=name&order=asc');
     expect(result).toEqual({
       ok: true,
       status: 200,
       data: [{ id: 1, name: 'Clothes', slug: 'clothes' }],
+      pagination: null,
       error: null,
     });
   });
@@ -38,7 +40,8 @@ describe('fetchCategories', () => {
     mockedApiGet.mockResolvedValue({
       ok: true,
       status: 200,
-      data: { categories: [{ id: 1, name: 'Clothes' }, { id: 2, name: 'Shoes', slug: 'shoes' }] },
+      data: [{ id: 1, name: 'Clothes' }, { id: 2, name: 'Shoes', code: 'shoes' }],
+      pagination: null,
       error: null,
     });
 
@@ -47,8 +50,8 @@ describe('fetchCategories', () => {
     expect(result.ok && result.data.map((c) => c.slug)).toEqual(['shoes']);
   });
 
-  it('fails when the body has no categories array', async () => {
-    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: {}, error: null });
+  it('fails when the data is not a list', async () => {
+    mockedApiGet.mockResolvedValue({ ok: true, status: 200, data: {}, pagination: null, error: null });
 
     expect(await fetchCategories()).toEqual({ ok: false, status: 200, data: null, error: MESSAGES.unreadable });
   });
