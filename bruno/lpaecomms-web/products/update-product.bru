@@ -1,0 +1,163 @@
+meta {
+  name: Update product
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/products/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "price": 99.95,
+    "stock": 25
+  }
+}
+
+docs {
+  # Update a product
+
+  Partial update: send only the fields to change (at least one). The server fills `updated` with an audit stamp; undeclared keys are ignored.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Body (JSON)
+
+  Any subset of the fields below (none is required on update).
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `categoryId` | integer | yes on create | Id of an existing category. |
+  | `name` | string | yes on create | 1–150 characters; unique. |
+  | `code` | string | yes on create | Lowercase letters, digits and hyphens; unique; max 60. |
+  | `price` | number | yes on create | Price in AUD; ≥ 0. |
+  | `stock` | integer | no | Units in stock; ≥ 0; defaults to 0 on create, unchanged on update when omitted. |
+  | `img` | string[] (URLs) | no | Up to 10 image URLs; defaults to [] on create, unchanged on update when omitted. |
+  | `description` | string \| null | no | Max 5000 characters. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Product updated",
+      "data": {
+        "id": 1,
+        "categoryId": 4,
+        "name": "Beach Towel",
+        "code": "beach-towel",
+        "price": 99.95,
+        "stock": 25,
+        "img": [
+          "https://picsum.photos/seed/lpa-beach-towel/640/640"
+        ],
+        "description": "Quick-dry towel for Gold Coast beaches.",
+        "category": {
+          "id": 4,
+          "name": "Sports",
+          "code": "sports"
+        },
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is invalid, the body is empty, or a field is invalid. Also returned when a referenced id does not exist.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "categoryId",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 404 Not Found — no active product with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "Product not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 409 Conflict — a unique field is already in use
+
+  Unique fields: `name`, `code`. Soft-deleted records still hold their values.
+
+    {
+      "message": "A record with this name already exists.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "name",
+          "message": "name is already in use."
+        }
+      ]
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

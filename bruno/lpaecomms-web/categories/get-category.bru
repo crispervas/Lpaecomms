@@ -1,0 +1,86 @@
+meta {
+  name: Get category
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/categories/1
+  body: none
+  auth: none
+}
+
+docs {
+  # Get one category
+
+  Returns one active category by id.
+
+  ## Auth
+
+  None. Public.
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Category found",
+      "data": {
+        "id": 1,
+        "name": "Garden",
+        "code": "garden",
+        "img": "https://picsum.photos/seed/lpa-garden/640/640",
+        "description": "Garden gear from Lpaecomms.",
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": null,
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is not a positive integer.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "id",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 404 Not Found — no active category with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "Category not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

@@ -1,0 +1,124 @@
+meta {
+  name: Create document type
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/document-types
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Medicare card",
+    "code": "MEDICARE",
+    "description": "Australian Medicare card."
+  }
+}
+
+docs {
+  # Create a document type
+
+  Reference table of identity document types a user profile can reference.
+
+  The server fills `created` with an audit stamp (`client`, `server`, `serverDate`, `serverTime` in APP_TIMEZONE, `unixTime`, `user`, `role` from the token). `status`, `statusName`, `created`, `updated`, `createdAt`, `updatedAt` and any other undeclared key are ignored if sent. An optional top-level `time` (ISO string) is recorded as `created.client`.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Body (JSON)
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `name` | string | yes on create | 1–100 characters; unique. |
+  | `code` | string | yes on create | Letters, digits and underscores, stored upper-case; unique; max 50. |
+  | `description` | string \| null | no | Max 2000 characters. |
+
+  ## Responses
+
+  ### 201 Created
+
+    {
+      "message": "Document type created",
+      "data": {
+        "id": 1,
+        "name": "Medicare card",
+        "code": "MEDICARE",
+        "description": "Australian Medicare card.",
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": null,
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  A body field is missing or invalid; one `errors` entry per field.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "name",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 409 Conflict — a unique field is already in use
+
+  Unique fields: `name`, `code`. Soft-deleted records still hold their values.
+
+    {
+      "message": "A record with this name already exists.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "name",
+          "message": "name is already in use."
+        }
+      ]
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

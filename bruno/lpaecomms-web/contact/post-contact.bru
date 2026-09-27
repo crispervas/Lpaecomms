@@ -46,23 +46,24 @@ docs {
 
   ## Responses
 
+  Every response uses the shared envelope `{ message, data, pagination }`;
+  errors add `errors` (and `stack` outside production).
+
   ### 202 Accepted
 
-  { "received": true }
+  { "message": "Message received", "data": { "received": true }, "pagination": null }
 
   ### 422 Unprocessable Entity — a field failed validation
 
   One entry per failing field, in field order, each naming its field.
 
   {
-    "statusCode": 422,
-    "error": "Unprocessable Entity",
     "message": "Some fields need attention.",
-    "validation": [
+    "data": null,
+    "pagination": null,
+    "errors": [
       { "field": "email", "message": "Please enter a valid email address." }
-    ],
-    "url": "/api/v1/contact",
-    "method": "POST"
+    ]
   }
 
   ### 400 Bad Request — no usable body
@@ -72,12 +73,10 @@ docs {
   JSON object.").
 
   {
-    "statusCode": 400,
-    "error": "Bad Request",
     "message": "Send the message as a JSON object.",
-    "validation": [],
-    "url": "/api/v1/contact",
-    "method": "POST"
+    "data": null,
+    "pagination": null,
+    "errors": []
   }
 
   ## CORS

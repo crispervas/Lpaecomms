@@ -1,0 +1,90 @@
+meta {
+  name: Delete user
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/users/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Delete a user
+
+  Soft delete: sets `status` to 0 and `statusName` to `INACTIVE`, sets `deletedAt`, and records who did it in `updated`. The row stays in the database but disappears from every read.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "User deleted",
+      "data": {
+        "id": 1
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is not a positive integer.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "id",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 404 Not Found — no active user with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "User not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

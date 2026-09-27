@@ -1,0 +1,97 @@
+meta {
+  name: Log in
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+  }
+}
+
+script:post-response {
+  // Protected requests send Authorization: Bearer {{token}}.
+  if (res.status === 200) {
+    bru.setVar("token", res.body.data.token);
+  }
+}
+
+docs {
+  # Log in
+
+  Exchanges an email and password for an access token (JWT, HS256). Send this
+  first: its post-response script stores the token as the runtime variable
+  `token`, which every protected request sends as `Authorization: Bearer {{token}}`.
+
+  The token carries the user id (`sub`) and role code (`role`) only, and
+  expires after `JWT_EXPIRES_IN` (default 1 hour). Write endpoints, and reads
+  of everything except categories and products, require the `ADMIN` role.
+
+  Set `adminEmail` in the environment and `adminPassword` as a secret
+  environment variable (never committed); for development they are the
+  `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` values from the web `.env`.
+
+  ## Auth
+
+  None.
+
+  ## Body (JSON)
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `email` | string | yes | Valid email; matched case-insensitively. |
+  | `password` | string | yes | 1–72 characters. |
+
+  ## Responses
+
+  Every response uses the shared envelope `{ message, data, pagination }`;
+  errors add `errors` (and `stack` outside production).
+
+  ### 200 OK — signed in
+
+  {
+    "message": "Signed in",
+    "data": {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "user": {
+        "id": 1,
+        "name": "Store",
+        "lastName": "Administrator",
+        "email": "admin@lpaecomms.test",
+        "role": "ADMIN"
+      }
+    },
+    "pagination": null
+  }
+
+  ### 400 Bad Request — malformed body
+
+  {
+    "message": "Some fields need attention.",
+    "data": null,
+    "pagination": null,
+    "errors": [
+      { "field": "email", "message": "Invalid email address" }
+    ]
+  }
+
+  ### 401 Unauthorized — wrong credentials
+
+  Returned alike for an unknown email, a wrong password, and an inactive or
+  deleted account, so the response never reveals which emails exist.
+
+  {
+    "message": "Email or password is incorrect.",
+    "data": null,
+    "pagination": null,
+    "errors": []
+  }
+}

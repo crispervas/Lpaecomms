@@ -46,18 +46,25 @@ docs {
 
   ## Responses
 
+  Every response uses the shared envelope `{ message, data, pagination }`;
+  errors add `errors` (and `stack` outside production).
+
   ### 200 OK — conversion performed
 
   {
-    "have": "AUD",
-    "want": "USD",
-    "amount": 899,
-    "rate": 0.659,
-    "converted": 592.44,
-    "cached": false
+    "message": "Converted",
+    "data": {
+      "have": "AUD",
+      "want": "USD",
+      "amount": 899,
+      "rate": 0.659,
+      "converted": 592.44,
+      "cached": false
+    },
+    "pagination": null
   }
 
-  Fields:
+  Fields (under `data`):
 
   - `rate` (number) — exchange rate applied.
   - `converted` (number) — amount in the target currency, rounded to cents.
@@ -70,12 +77,10 @@ docs {
   number.
 
   {
-    "statusCode": 400,
-    "error": "Bad Request",
     "message": "Parameters \"have\" and \"want\" must be one of: AUD, USD, GBP, EUR.",
-    "validation": [],
-    "url": "/api/v1/convert?have=AUD&want=JPY&amount=899",
-    "method": "GET"
+    "data": null,
+    "pagination": null,
+    "errors": []
   }
 
   ### 502 Bad Gateway — provider unavailable
@@ -85,12 +90,10 @@ docs {
   surface here too: a client is never told the key is wrong.
 
   {
-    "statusCode": 502,
-    "error": "Bad Gateway",
     "message": "The currency provider is unavailable.",
-    "validation": [],
-    "url": "/api/v1/convert?have=AUD&want=USD&amount=899",
-    "method": "GET"
+    "data": null,
+    "pagination": null,
+    "errors": []
   }
 
   ### 503 Service Unavailable — not configured
@@ -99,11 +102,9 @@ docs {
   working; only conversion is unavailable.
 
   {
-    "statusCode": 503,
-    "error": "Service Unavailable",
     "message": "Currency conversion is not configured.",
-    "validation": [],
-    "url": "/api/v1/convert?have=AUD&want=USD&amount=899",
-    "method": "GET"
+    "data": null,
+    "pagination": null,
+    "errors": []
   }
 }

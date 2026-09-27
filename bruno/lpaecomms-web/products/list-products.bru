@@ -1,0 +1,113 @@
+meta {
+  name: List products
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/products
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  limit: 10
+  ~sort: id
+  ~order: desc
+  ~search: a
+  ~categoryId: 1
+  ~category: books
+}
+
+docs {
+  # List products
+
+  The store catalogue. Every product belongs to a category, returned inline as `category: { id, name, code }`.
+
+  Returns one page of active products. Soft-deleted records never appear.
+
+  ## Auth
+
+  None. Public.
+
+  ## Query parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `page` | integer | no | 1-based page; default 1. A page past the end returns `data: []` with correct `pagination`. |
+  | `limit` | integer | no | Page size; default 10; values above 100 are clamped to 100. |
+  | `sort` | string | no | One of: id, name, price, stock, createdAt. Default `id`. |
+  | `order` | string | no | `asc` or `desc`; default `desc`. |
+  | `search` | string | no | Case-insensitive match against: name, code, description. |
+  | `categoryId` | integer | no | Only products in this category (by id). |
+  | `category` | string | no | Only products in this category (by code, case-insensitive), e.g. `books`. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Product list",
+      "data": [
+        {
+          "id": 1,
+          "categoryId": 4,
+          "name": "Beach Towel",
+          "code": "beach-towel",
+          "price": 24.95,
+          "stock": 40,
+          "img": [
+            "https://picsum.photos/seed/lpa-beach-towel/640/640"
+          ],
+          "description": "Quick-dry towel for Gold Coast beaches.",
+          "category": {
+            "id": 4,
+            "name": "Sports",
+            "code": "sports"
+          },
+          "created": {
+            "client": "2026-09-27T02:30:14.000Z",
+            "server": "2026-09-27T02:30:14.000Z",
+            "serverDate": "2026-09-27",
+            "serverTime": "12:30:14",
+            "unixTime": 1790476214,
+            "user": 1,
+            "role": "ADMIN"
+          },
+          "updated": null,
+          "statusName": "ACTIVE",
+          "status": 1,
+          "createdAt": "2026-09-27T02:30:14.000Z",
+          "updatedAt": "2026-09-27T02:30:14.000Z"
+        }
+      ],
+      "pagination": {
+        "total": 1,
+        "page": 1,
+        "limit": 10,
+        "totalPages": 1,
+        "count": 1,
+        "hasNextPage": false,
+        "hasPrevPage": false
+      }
+    }
+
+  ### 400 Bad Request — validation failed
+
+  A paging, sort or filter parameter is invalid (e.g. `page=0`, an unknown `sort`).
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "page",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

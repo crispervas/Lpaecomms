@@ -1,0 +1,136 @@
+meta {
+  name: List users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/users
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+  ~sort: id
+  ~order: desc
+  ~search: a
+  ~roleId: 1
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # List users
+
+  Store users — customers and administrators. `password` is write-only: it is hashed with bcrypt and never returned. Users created here are ACTIVE immediately. The role is returned inline as `role: { id, name, code }`.
+
+  Returns one page of active users. Soft-deleted records never appear.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Query parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `page` | integer | no | 1-based page; default 1. A page past the end returns `data: []` with correct `pagination`. |
+  | `limit` | integer | no | Page size; default 10; values above 100 are clamped to 100. |
+  | `sort` | string | no | One of: id, name, lastName, email, createdAt. Default `id`. |
+  | `order` | string | no | `asc` or `desc`; default `desc`. |
+  | `search` | string | no | Case-insensitive match against: name, lastName, email, document. |
+  | `roleId` | integer | no | Only users with this role. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "User list",
+      "data": [
+        {
+          "id": 1,
+          "roleId": 2,
+          "genderId": 4,
+          "documentTypeId": 1,
+          "name": "Ada",
+          "lastName": "Lovelace",
+          "email": "ada@lpaecomms.test",
+          "document": "PA1234567",
+          "phone": "+61 400 000 000",
+          "address": "1 Cavill Ave, Surfers Paradise QLD",
+          "emailVerified": false,
+          "session": null,
+          "deletedAt": null,
+          "role": {
+            "id": 2,
+            "name": "Customer",
+            "code": "CUSTOMER"
+          },
+          "created": {
+            "client": "2026-09-27T02:30:14.000Z",
+            "server": "2026-09-27T02:30:14.000Z",
+            "serverDate": "2026-09-27",
+            "serverTime": "12:30:14",
+            "unixTime": 1790476214,
+            "user": 1,
+            "role": "ADMIN"
+          },
+          "updated": null,
+          "statusName": "ACTIVE",
+          "status": 1,
+          "createdAt": "2026-09-27T02:30:14.000Z",
+          "updatedAt": "2026-09-27T02:30:14.000Z"
+        }
+      ],
+      "pagination": {
+        "total": 1,
+        "page": 1,
+        "limit": 10,
+        "totalPages": 1,
+        "count": 1,
+        "hasNextPage": false,
+        "hasPrevPage": false
+      }
+    }
+
+  ### 400 Bad Request — validation failed
+
+  A paging, sort or filter parameter is invalid (e.g. `page=0`, an unknown `sort`).
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "page",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

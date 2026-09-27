@@ -5,90 +5,92 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/api/v1/products/4
+  url: {{baseUrl}}/api/v1/products/1
   body: none
   auth: none
 }
 
 docs {
-  # Get product
+  # Get one product
 
-  Returns one product with its category, description and every image. Backs
-  the mobile product page; desktop can use it too. Related products are not
-  included: ask `GET /api/v1/catalog?category=<slug>` for them, so a failure
-  there costs a section rather than the product.
-
-  The product comes from the external demo feed
-  (`https://api.escuelajs.co/api/v1/products/{id}`), cached in process for
-  **5 minutes** per id. Failures and unknown ids are never cached.
+  Returns one active product by id.
 
   ## Auth
 
-  None. This endpoint is public.
+  None. Public.
 
-  ## Parameters
+  ## Path parameters
 
-  - `id` (path, integer, required) — the product's feed id. Plain digits,
-    `1` or greater.
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
 
   ## Responses
 
   ### 200 OK
 
-  {
-    "product": {
-      "id": 4,
-      "name": "Classic Grey Hooded Sweatshirt",
-      "category": { "id": 1, "name": "Clothes", "slug": "clothes" },
-      "priceAud": 90,
-      "description": "Elevate your casual wear with this classic grey hooded sweatshirt.",
-      "imageUrls": [
-        "https://i.imgur.com/R2PN9Wq.jpeg",
-        "https://i.imgur.com/IvxMPFr.jpeg"
+    {
+      "message": "Product found",
+      "data": {
+        "id": 1,
+        "categoryId": 4,
+        "name": "Beach Towel",
+        "code": "beach-towel",
+        "price": 24.95,
+        "stock": 40,
+        "img": [
+          "https://picsum.photos/seed/lpa-beach-towel/640/640"
+        ],
+        "description": "Quick-dry towel for Gold Coast beaches.",
+        "category": {
+          "id": 4,
+          "name": "Sports",
+          "code": "sports"
+        },
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": null,
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is not a positive integer.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "id",
+          "message": "Invalid input"
+        }
       ]
     }
-  }
 
-  - `product.id` (number) — feed identifier.
-  - `product.name` (string) — product name.
-  - `product.category.id` (number|null), `.name` (string), `.slug` (string) —
-    empty strings and null when the feed has no category.
-  - `product.priceAud` (number) — price, assumed AUD (see `GET /api/v1/products`).
-  - `product.description` (string) — empty when the feed has none.
-  - `product.imageUrls` (string[]) — every image, feed order; may be empty.
+  ### 404 Not Found — no active product with this id
 
-  ### 400 Bad Request — invalid id
+  Soft-deleted records answer 404 too.
 
-  The id is not plain digits, is 0, or is too large. The feed is not contacted.
+    {
+      "message": "Product not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
 
-  {
-    "statusCode": 400,
-    "error": "Bad Request",
-    "message": "Product id must be a positive whole number.",
-    "validation": [],
-    "url": "/api/v1/products/abc",
-    "method": "GET"
-  }
-
-  ### 404 Not Found — unknown product
-
-  {
-    "statusCode": 404,
-    "error": "Not Found",
-    "message": "Product 999999 does not exist.",
-    "validation": [],
-    "url": "/api/v1/products/999999",
-    "method": "GET"
-  }
-
-  ### 502 Bad Gateway — catalogue source unavailable
-
-  {
-    "statusCode": 502,
-    "error": "Bad Gateway",
-    "message": "The product catalogue source is unavailable.",
-    "validation": [],
-    "url": "/api/v1/products/4",
-    "method": "GET"
-  }
+  Outside production, error bodies also carry `stack`.
 }

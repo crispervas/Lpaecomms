@@ -1,0 +1,158 @@
+meta {
+  name: List purchases
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/purchases
+  body: none
+  auth: bearer
+}
+
+params:query {
+  page: 1
+  limit: 10
+  ~sort: id
+  ~order: desc
+  ~search: a
+  ~userId: 1
+  ~paymentStatus: PENDING
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # List purchases
+
+  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `invoice`, `paymentDate` and `data` can change.
+
+  Returns one page of active purchases. Soft-deleted records never appear.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Query parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `page` | integer | no | 1-based page; default 1. A page past the end returns `data: []` with correct `pagination`. |
+  | `limit` | integer | no | Page size; default 10; values above 100 are clamped to 100. |
+  | `sort` | string | no | One of: id, createdAt, finalAmount, paymentDate. Default `id`. |
+  | `order` | string | no | `asc` or `desc`; default `desc`. |
+  | `search` | string | no | Case-insensitive match against: reference, invoice. |
+  | `userId` | integer | no | Only this user's purchases. |
+  | `paymentStatus` | string | no | One of `PENDING`, `SUCCESS`, `FAILED`, `REJECTED`. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Purchase list",
+      "data": [
+        {
+          "id": 1,
+          "userId": 1,
+          "reference": "WEB-1001",
+          "totalAmount": "29.9",
+          "taxes": "2.99",
+          "discountAmount": "0",
+          "finalAmount": "32.89",
+          "paymentStatus": "PENDING",
+          "invoice": null,
+          "paymentDate": null,
+          "data": {
+            "lines": [
+              {
+                "productId": 1,
+                "quantity": 2,
+                "unitPrice": "14.95"
+              }
+            ]
+          },
+          "user": {
+            "id": 1,
+            "name": "Store",
+            "lastName": "Administrator",
+            "email": "admin@lpaecomms.test"
+          },
+          "products": [
+            {
+              "id": 1,
+              "purchaseId": 1,
+              "productId": 1,
+              "amount": "29.9",
+              "product": {
+                "id": 1,
+                "name": "Wireless Headphones",
+                "code": "wireless-headphones"
+              }
+            }
+          ],
+          "created": {
+            "client": "2026-09-27T02:30:14.000Z",
+            "server": "2026-09-27T02:30:14.000Z",
+            "serverDate": "2026-09-27",
+            "serverTime": "12:30:14",
+            "unixTime": 1790476214,
+            "user": 1,
+            "role": "ADMIN"
+          },
+          "updated": null,
+          "statusName": "ACTIVE",
+          "status": 1,
+          "createdAt": "2026-09-27T02:30:14.000Z",
+          "updatedAt": "2026-09-27T02:30:14.000Z"
+        }
+      ],
+      "pagination": {
+        "total": 1,
+        "page": 1,
+        "limit": 10,
+        "totalPages": 1,
+        "count": 1,
+        "hasNextPage": false,
+        "hasPrevPage": false
+      }
+    }
+
+  ### 400 Bad Request — validation failed
+
+  A paging, sort or filter parameter is invalid (e.g. `page=0`, an unknown `sort`).
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "page",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

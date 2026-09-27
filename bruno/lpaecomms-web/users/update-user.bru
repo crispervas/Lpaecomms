@@ -1,0 +1,168 @@
+meta {
+  name: Update user
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/v1/users/1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "phone": "+61 411 111 111"
+  }
+}
+
+docs {
+  # Update a user
+
+  Partial update: send only the fields to change (at least one). The server fills `updated` with an audit stamp; undeclared keys are ignored.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Body (JSON)
+
+  Any subset of the fields below (none is required on update).
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `roleId` | integer | yes on create | Id of an existing role. |
+  | `genderId` | integer | yes on create | Id of an existing gender. |
+  | `documentTypeId` | integer | yes on create | Id of an existing document type. |
+  | `name` | string | yes on create | 1–100 characters. |
+  | `lastName` | string | yes on create | 1–100 characters. |
+  | `email` | string | yes on create | Valid email, stored lower-case; unique. |
+  | `password` | string | yes on create | 8–72 characters, at least one letter and one digit. Write-only. |
+  | `document` | string \| null | no | Identity document number; unique; max 50. |
+  | `phone` | string \| null | no | Max 30 characters. |
+  | `address` | string \| null | no | Max 300 characters. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "User updated",
+      "data": {
+        "id": 1,
+        "roleId": 2,
+        "genderId": 4,
+        "documentTypeId": 1,
+        "name": "Ada",
+        "lastName": "Lovelace",
+        "email": "ada@lpaecomms.test",
+        "document": "PA1234567",
+        "phone": "+61 411 111 111",
+        "address": "1 Cavill Ave, Surfers Paradise QLD",
+        "emailVerified": false,
+        "session": null,
+        "deletedAt": null,
+        "role": {
+          "id": 2,
+          "name": "Customer",
+          "code": "CUSTOMER"
+        },
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is invalid, the body is empty, or a field is invalid. Also returned when a referenced id does not exist.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "roleId",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 404 Not Found — no active user with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "User not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 409 Conflict — a unique field is already in use
+
+  Unique fields: `email`, `document`. Soft-deleted records still hold their values.
+
+    {
+      "message": "A record with this email already exists.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "email",
+          "message": "email is already in use."
+        }
+      ]
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

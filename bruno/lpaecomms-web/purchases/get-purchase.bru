@@ -1,0 +1,141 @@
+meta {
+  name: Get purchase
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/purchases/1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get one purchase
+
+  Returns one active purchase by id.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Purchase found",
+      "data": {
+        "id": 1,
+        "userId": 1,
+        "reference": "WEB-1001",
+        "totalAmount": "29.9",
+        "taxes": "2.99",
+        "discountAmount": "0",
+        "finalAmount": "32.89",
+        "paymentStatus": "PENDING",
+        "invoice": null,
+        "paymentDate": null,
+        "data": {
+          "lines": [
+            {
+              "productId": 1,
+              "quantity": 2,
+              "unitPrice": "14.95"
+            }
+          ]
+        },
+        "user": {
+          "id": 1,
+          "name": "Store",
+          "lastName": "Administrator",
+          "email": "admin@lpaecomms.test"
+        },
+        "products": [
+          {
+            "id": 1,
+            "purchaseId": 1,
+            "productId": 1,
+            "amount": "29.9",
+            "product": {
+              "id": 1,
+              "name": "Wireless Headphones",
+              "code": "wireless-headphones"
+            }
+          }
+        ],
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": null,
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is not a positive integer.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "id",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 404 Not Found — no active purchase with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "Purchase not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

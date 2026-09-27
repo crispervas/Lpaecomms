@@ -27,13 +27,17 @@ docs {
 
   ## Responses
 
+  Every response uses the shared envelope `{ message, data, pagination }`;
+  errors add `errors` (and `stack` outside production).
+
   ### 200 OK — service healthy
 
   The service is up and the database is reachable.
 
   {
-    "status": "ok",
-    "db": "connected"
+    "message": "Service healthy",
+    "data": { "status": "ok", "db": "connected" },
+    "pagination": null
   }
 
   ### 503 Service Unavailable — database unreachable
@@ -42,7 +46,8 @@ docs {
   monitors detect the degraded state without parsing the body.
 
   {
-    "status": "degraded",
-    "db": "unreachable"
+    "message": "Database unreachable",
+    "data": { "status": "degraded", "db": "unreachable" },
+    "pagination": null
   }
 }

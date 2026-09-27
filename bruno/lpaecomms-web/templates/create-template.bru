@@ -1,0 +1,115 @@
+meta {
+  name: Create template
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/templates
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Order confirmation",
+    "code": "ORDER_CONFIRMATION",
+    "subject": "Your Lpaecomms order",
+    "html": "<p>Thanks for your order!</p>",
+    "description": null
+  }
+}
+
+docs {
+  # Create a template
+
+  Email/message templates. `html` is stored as sent and never rendered by the API; whoever renders it owns escaping. Templates also carry `unixTime`, set from the audit stamp on every write.
+
+  The server fills `created` with an audit stamp (`client`, `server`, `serverDate`, `serverTime` in APP_TIMEZONE, `unixTime`, `user`, `role` from the token). `status`, `statusName`, `created`, `updated`, `createdAt`, `updatedAt` and any other undeclared key are ignored if sent. An optional top-level `time` (ISO string) is recorded as `created.client`.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Body (JSON)
+
+  | Field | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `name` | string | yes on create | 1–100 characters. |
+  | `code` | string | yes on create | Letters, digits and underscores, stored upper-case; max 50. |
+  | `subject` | string | yes on create | 1–200 characters. |
+  | `html` | string | yes on create | 1–100000 characters. |
+  | `description` | string \| null | no | Max 2000 characters. |
+
+  ## Responses
+
+  ### 201 Created
+
+    {
+      "message": "Template created",
+      "data": {
+        "id": 1,
+        "name": "Order confirmation",
+        "code": "ORDER_CONFIRMATION",
+        "subject": "Your Lpaecomms order",
+        "html": "<p>Thanks for your order!</p>",
+        "description": null,
+        "unixTime": 1790476214,
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": null,
+        "statusName": "ACTIVE",
+        "status": 1,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  A body field is missing or invalid; one `errors` entry per field.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "name",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}
