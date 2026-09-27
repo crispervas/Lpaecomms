@@ -2,9 +2,8 @@
  * Product detail page: breadcrumb, gallery, the buying column, and the related
  * row.
  *
- * Every purchase control is disabled — there is no cart yet — and `disabled`
- * already keeps them out of the tab order, so nothing else is needed to stop
- * the block offering something the site cannot do.
+ * The purchase block is a form posting to /cart/items. Its quantity stepper
+ * is the shared components/_quantity.less.
  */
 
 // ── Breadcrumb ─────────────────────────────────────────────────────────────
@@ -110,29 +109,6 @@
   display: flex;
   gap: .875rem;
   margin-top: 2.25rem;
-}
-
-.quantity {
-  display: flex;
-  align-items: center;
-  border: 1px solid @line;
-  border-radius: @radius-lg;
-}
-
-.quantity__button {
-  width: 2.5rem;
-  height: 3rem;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  color: @ink;
-}
-
-.quantity__value {
-  width: 2.25rem;
-  text-align: center;
-  font-size: .875rem;
-  line-height: 1.25rem;
-  font-weight: 600;
 }
 
 // Takes the rest of the row beside the quantity stepper.

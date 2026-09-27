@@ -109,21 +109,14 @@ export class HomeController {
    * @returns {Promise<void>}
    */
   async index(req, res) {
-    let products = [];
-
-    try {
-      products = await this.productModel.listFeatured(FEATURED_LIMIT);
-    } catch (error) {
-      // The catalogue is a third party. Failing the whole page because a demo
-      // feed is down would be worse than rendering one section short, so the
-      // failure is recorded and the template shows a notice in place of the
-      // grid instead of the products it could not fetch.
-      console.error('🪵 Home: featured products unavailable:', {
-        message: error.message,
-      });
-    }
-
-    const { recentlyViewed, pickedForYou } = await this.#personalise(req);
+    // The trending grid and the personal blocks read unrelated parts of the
+    // feed, so they are fetched side by side: the page waits for the slower of
+    // the two rather than for both in turn. Neither can reject — each turns
+    // its own failure into an empty section.
+    const [products, { recentlyViewed, pickedForYou }] = await Promise.all([
+      this.#featured(),
+      this.#personalise(req),
+    ]);
 
     res.render('layouts/base', {
       title: 'Lpaecomms — Home',
@@ -133,6 +126,47 @@ export class HomeController {
       recentlyViewed,
       pickedForYou,
     });
+  }
+
+  /**
+   * Fill the product model's cache with the trending grid before anyone asks.
+   *
+   * Called once at startup, so the first visitor to the home page is served
+   * from the cache instead of waiting on the feed's cold latency. Uses the
+   * same limit as the page, because the cache is keyed by URL and a warmed
+   * entry of any other size would never be read.
+   *
+   * @param {import('../models/product.model.js').ProductModel} productModel - The model to warm.
+   * @returns {Promise<void>} Settles once the attempt is over; never rejects.
+   */
+  static async warmCache(productModel) {
+    try {
+      await productModel.listFeatured(FEATURED_LIMIT);
+    } catch (error) {
+      // A cold feed at boot only means the first visitor waits, as before.
+      console.error('🪵 Home: cache warm-up failed:', { message: error.message });
+    }
+  }
+
+  /**
+   * Fetch the trending grid.
+   *
+   * The catalogue is a third party. Failing the whole page because a demo feed
+   * is down would be worse than rendering one section short, so the failure is
+   * recorded and the template shows a notice in place of the grid instead of
+   * the products it could not fetch.
+   *
+   * @returns {Promise<Array<Object>>} The products; empty when the feed failed.
+   */
+  async #featured() {
+    try {
+      return await this.productModel.listFeatured(FEATURED_LIMIT);
+    } catch (error) {
+      console.error('🪵 Home: featured products unavailable:', {
+        message: error.message,
+      });
+      return [];
+    }
   }
 
   /**

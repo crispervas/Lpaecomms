@@ -132,6 +132,9 @@
   color: @ink;
 
   svg { width: 18px; height: 18px; }
+
+  &:hover,
+  &.is-active { border-color: @ink; }
 }
 
 .cart__count {
@@ -141,8 +144,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1rem;
+  // A minimum rather than a width, so "99+" widens the pill instead of
+  // spilling out of a circle.
+  min-width: 1rem;
   height: 1rem;
+  padding: 0 .25rem;
   background-color: @accent;
   border-radius: @radius-full;
   font-size: .5625rem;

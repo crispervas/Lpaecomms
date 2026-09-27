@@ -44,7 +44,7 @@
     <% if (product.description) { %>
       <p class="product-detail__description"><%= product.description %></p>
     <% } %>
-    <%- include('../components/product/productPurchase', { priceAud: product.priceAud, priceFormatter }) %>
+    <%- include('../components/product/productPurchase', { productId: product.id, priceAud: product.priceAud, priceFormatter }) %>
   </div>
 </section>
 

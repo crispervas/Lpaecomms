@@ -1,0 +1,52 @@
+<%# Cart page: the checkout mockup's first step — lines beside the order summary.
+
+    Everything that changes the cart is a small form posting to /cart/items,
+    answered with a redirect back here, so the page works with no JavaScript.
+    The next step, Shipping, does not exist yet; its button is disabled and
+    says so. See the cart controller. %>
+<%
+  // Built once per render rather than per use: constructing an Intl formatter
+  // is the expensive part, formatting with it is not.
+  const priceFormatter = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
+%>
+<div class="checkout">
+  <h1 class="checkout__title">Checkout</h1>
+  <%- include('../components/cart/checkoutSteps', { current: 1 }) %>
+
+  <% if (notice) { %>
+    <div role="status" class="notice checkout__notice"><%= notice %></div>
+  <% } %>
+  <% if (unavailableCount > 0) { %>
+    <div role="status" class="notice checkout__notice">
+      <%= unavailableCount === 1 ? 'One item' : `${unavailableCount} items` %> in your cart could not be
+      loaded right now and <%= unavailableCount === 1 ? 'is' : 'are' %> not counted below. Try again in a moment.
+    </div>
+  <% } %>
+
+  <% if (items.length === 0 && unavailableCount === 0) { %>
+    <div class="checkout__empty">
+      <p class="checkout__empty-text">Your cart is empty.</p>
+      <a href="/catalog" class="button button--solid">Browse the catalog</a>
+    </div>
+  <% } else { %>
+    <div class="checkout__layout">
+      <div>
+        <ul class="cart-lines">
+          <% items.forEach((item) => { %>
+            <%- include('../components/cart/cartLine', { item, priceFormatter }) %>
+          <% }) %>
+        </ul>
+
+        <div class="checkout__actions">
+          <button type="button" disabled aria-describedby="checkout-note"
+            class="button button--solid checkout__next">
+            Continue to shipping
+          </button>
+          <p id="checkout-note" class="checkout__note">Checkout is coming soon.</p>
+        </div>
+      </div>
+
+      <%- include('../components/cart/cartSummary', { subtotalAud, priceFormatter }) %>
+    </div>
+  <% } %>
+</div>

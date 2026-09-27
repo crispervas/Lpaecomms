@@ -1,0 +1,45 @@
+<%# One cart line: image, name, quantity stepper, line total, remove.
+
+    The stepper is a form whose − and + are submit buttons carrying the new
+    quantity, so it needs no script: the server clamps whatever arrives, and a
+    button that would leave the range is disabled rather than sent.
+
+    Expected locals:
+      item           — a priced line: id, name, category, imageUrl, quantity, lineTotalAud
+      priceFormatter — an Intl.NumberFormat, shared with the rest of the page %>
+<%
+  const MAX_QUANTITY = 99;
+%>
+<li class="cart-line">
+  <% if (item.imageUrl) { %>
+    <%# Decorative: the product name beside it is the link and says it all. %>
+    <img src="<%= item.imageUrl %>" alt="" class="cart-line__image" loading="lazy" />
+  <% } else { %>
+    <span class="cart-line__image cart-line__image--empty" aria-hidden="true"></span>
+  <% } %>
+
+  <div class="cart-line__body">
+    <a href="/product/<%= item.id %>" class="cart-line__name"><%= item.name %></a>
+    <% if (item.category) { %><p class="cart-line__category"><%= item.category %></p><% } %>
+  </div>
+
+  <form method="post" action="/cart/items/<%= item.id %>" class="quantity cart-line__quantity">
+    <button type="submit" name="quantity" value="<%= item.quantity - 1 %>"
+      <% if (item.quantity <= 1) { %>disabled<% } %>
+      aria-label="Decrease quantity of <%= item.name %>" class="quantity__button">−</button>
+    <span class="quantity__value" aria-label="Quantity"><%= item.quantity %></span>
+    <button type="submit" name="quantity" value="<%= item.quantity + 1 %>"
+      <% if (item.quantity >= MAX_QUANTITY) { %>disabled<% } %>
+      aria-label="Increase quantity of <%= item.name %>" class="quantity__button">+</button>
+  </form>
+
+  <p class="cart-line__total"><%= priceFormatter.format(item.lineTotalAud) %></p>
+
+  <form method="post" action="/cart/items/<%= item.id %>/remove">
+    <button type="submit" aria-label="Remove <%= item.name %>" class="cart-line__remove">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18"></path>
+      </svg>
+    </button>
+  </form>
+</li>

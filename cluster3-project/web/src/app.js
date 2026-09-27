@@ -16,6 +16,7 @@ import { notFoundHandlerApi, notFoundHandlerWeb } from './config/notFoundHandler
 import { errorHandler, logErrors, wrapErrors } from './config/errorHandler.js';
 import { apiCorsHeaders } from './config/apiCors.js';
 import { preferencesLocals } from './config/preferences.js';
+import { cartLocals } from './config/cart.js';
 
 /** Absolute path to the `src` directory, resolved from this module. */
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -47,7 +48,7 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Cookies carry the visitor's appearance choice and browsing history. Express
+  // Cookies carry the visitor's appearance choice, browsing history and cart. Express
   // 5 does not parse them, and the two middlewares below both read req.cookies.
   app.use(cookieParser());
 
@@ -55,6 +56,9 @@ export function createApp() {
   // of the routes and of both fallback handlers, so the error and 404 pages are
   // rendered in the visitor's theme like any other page.
   app.use(preferencesLocals);
+
+  // The header's cart badge, on every page including the error and 404 pages.
+  app.use(cartLocals);
 
   // Expose the current path to every view so the navigation can mark the
   // active link without each controller having to pass it.

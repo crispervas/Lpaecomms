@@ -6,11 +6,10 @@
   app.js). The menu collapses into a toggle button below the `sm` breakpoint;
   the toggle is driven by /js/nav.js.
 
-  The search field and the cart come from the mockup but are deliberately
-  inert — the search field has no backend to query, and Cart does not exist
-  yet. `disabled` and a <span> in place of a link keep both out of the tab
-  order, so nothing focusable is unresponsive to a keyboard or a screen
-  reader.
+  The search field comes from the mockup but is deliberately inert — it has
+  no backend to query — and `disabled` keeps it out of the tab order. The cart
+  links to /cart with a badge counted from the cart cookie (`cartCount`, set
+  on res.locals by config/cart.js).
 %>
 <%
   const navLinks = [
@@ -26,6 +25,12 @@
   // `sm:flex`, so the collapsed menu needs its own copy or Login disappears on
   // a phone.
   const loginHref = '/login';
+  // Guarded because a render that skipped the middleware must still draw the
+  // header; an empty cart is the honest default.
+  const cartUnits = typeof cartCount === 'number' ? cartCount : 0;
+  // Three digits would not fit the badge, so a big cart reads "99+".
+  const cartBadge = cartUnits > 99 ? '99+' : String(cartUnits);
+  const cartLabel = `Cart, ${cartUnits} ${cartUnits === 1 ? 'item' : 'items'}`;
   // Home matches only "/"; other links match their path and anything below it.
   const isActive = (href) =>
     href === '/' ? currentPath === '/' : currentPath.startsWith(href);
@@ -57,18 +62,18 @@
           title="Coming soon" class="search__input" />
       </div>
 
-      <%# aria-disabled is only honoured on elements with a widget role; a plain
-          <span> has none, so it would be announced with its bare "0" and no
-          context. aria-hidden removes the whole cart from assistive technology
-          instead, since it conveys nothing actionable yet. %>
-      <span aria-hidden="true" title="Coming soon" class="cart">
+      <%# The badge is counted from the cart cookie by config/cart.js. It is
+          aria-hidden because the link's own label already says the number,
+          and a bare "3" read after it would only repeat it without context. %>
+      <a href="/cart" aria-label="<%= cartLabel %>"
+        class="cart<%= isActive('/cart') ? ' is-active' : '' %>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M6 6h15l-1.5 9h-12z"></path>
           <circle cx="9" cy="20" r="1"></circle>
           <circle cx="18" cy="20" r="1"></circle>
         </svg>
-        <span class="cart__count">0</span>
-      </span>
+        <span class="cart__count" aria-hidden="true"><%= cartBadge %></span>
+      </a>
 
       <%# Opens the appearance panel. A real button, so it is reachable by
           keyboard; aria-expanded is kept in sync by /js/appearance.js. %>
@@ -108,7 +113,12 @@
         </a>
       <% }) %>
 
-      <%# Login again, because the cluster it joined on desktop is hidden here. %>
+      <%# Cart and Login again, because the cluster they joined on desktop is
+          hidden here. %>
+      <a href="/cart"
+        class="mobile-nav__link mobile-nav__link--login<%= isActive('/cart') ? ' is-active' : '' %>">
+        Cart (<%= cartUnits %>)
+      </a>
       <a href="<%= loginHref %>"
         class="mobile-nav__link mobile-nav__link--login<%= isActive(loginHref) ? ' is-active' : '' %>">
         Login
