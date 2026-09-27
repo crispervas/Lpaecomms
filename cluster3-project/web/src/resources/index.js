@@ -13,6 +13,7 @@ import role from './role.resource.js';
 import gender from './gender.resource.js';
 import documentType from './documentType.resource.js';
 import template from './template.resource.js';
+import user from './user.resource.js';
 
 /**
  * @typedef {Object} ResourceFilter
@@ -38,4 +39,4 @@ import template from './template.resource.js';
  */
 
 /** @type {Array<Resource>} */
-export const resources = [category, product, role, gender, documentType, template];
+export const resources = [category, product, role, gender, documentType, template, user];

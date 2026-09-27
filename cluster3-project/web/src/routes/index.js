@@ -24,6 +24,7 @@ import passwordRoutes from './api/password.routes.js';
 import contactApiRoutes from './api/contact.routes.js';
 import { requestTime } from '../middlewares/requestTime.js';
 import { buildCrudRouter } from './api/crud.routes.js';
+import { buildAuthRouter } from './api/auth.routes.js';
 import { resources } from '../resources/index.js';
 
 /**
@@ -52,6 +53,7 @@ export function registerRoutes(app, { prisma }) {
 
   // API routes (JSON).
   apiRouter.use('/', buildHealthRouter(prisma));
+  apiRouter.use('/', buildAuthRouter(prisma));
   // One router per CRUD resource; see src/resources/.
   for (const resource of resources) apiRouter.use('/', buildCrudRouter(resource, prisma));
   apiRouter.use('/', contactApiRoutes);
