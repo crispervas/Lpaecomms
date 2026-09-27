@@ -18,21 +18,24 @@ import accountRoutes from './views/account.routes.js';
 import cartRoutes from './views/cart.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
 import preferencesRoutes from './views/preferences.routes.js';
-import healthRoutes from './api/health.routes.js';
+import { buildHealthRouter } from './api/health.routes.js';
 import productRoutes from './api/product.routes.js';
 import currencyRoutes from './api/currency.routes.js';
 import passwordRoutes from './api/password.routes.js';
 import categoryRoutes from './api/category.routes.js';
 import catalogApiRoutes from './api/catalog.routes.js';
 import contactApiRoutes from './api/contact.routes.js';
+import { requestTime } from '../middlewares/requestTime.js';
 
 /**
  * Mount the view and API routers on the application.
  *
  * @param {import('express').Express} app - The Express application to mount on.
+ * @param {Object} deps - Injected dependencies.
+ * @param {import('@prisma/client').PrismaClient} deps.prisma - Client for the API routers.
  * @returns {void}
  */
-export function registerRoutes(app) {
+export function registerRoutes(app, { prisma }) {
   const viewRouter = express.Router();
   const apiRouter = express.Router();
 
@@ -49,7 +52,7 @@ export function registerRoutes(app) {
   viewRouter.use('/', mashupRoutes);
 
   // API routes (JSON).
-  apiRouter.use('/', healthRoutes);
+  apiRouter.use('/', buildHealthRouter(prisma));
   apiRouter.use('/', productRoutes);
   apiRouter.use('/', categoryRoutes);
   apiRouter.use('/', catalogApiRoutes);
@@ -58,5 +61,8 @@ export function registerRoutes(app) {
   apiRouter.use('/', passwordRoutes);
 
   app.use('/', viewRouter);
+  // Fixes the request's arrival time for the audit stamps. Mounted after the
+  // body parsers (app.js) so it can read the client's optional `time` field.
+  app.use('/api', requestTime);
   app.use('/api/v1', apiRouter);
 }

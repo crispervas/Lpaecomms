@@ -17,6 +17,7 @@ import { errorHandler, logErrors, wrapErrors } from './config/errorHandler.js';
 import { apiCorsHeaders } from './config/apiCors.js';
 import { preferencesLocals } from './config/preferences.js';
 import { cartLocals } from './config/cart.js';
+import { prisma as defaultPrisma } from './lib/prisma.js';
 
 /** Absolute path to the `src` directory, resolved from this module. */
 const srcDir = path.dirname(fileURLToPath(import.meta.url));
@@ -24,9 +25,12 @@ const srcDir = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Create a fully configured Express application.
  *
+ * @param {Object} [options] - Dependencies to inject.
+ * @param {import('@prisma/client').PrismaClient} [options.prisma] - Client for
+ *   the API routes; tests pass a fake so they run without a database.
  * @returns {import('express').Express} The configured app, not yet listening.
  */
-export function createApp() {
+export function createApp({ prisma = defaultPrisma } = {}) {
   const app = express();
 
   // Server-rendered views live under src/views and are rendered with EJS.
@@ -68,7 +72,7 @@ export function createApp() {
   });
 
   // Mount view routes (HTML) and API routes (JSON).
-  registerRoutes(app);
+  registerRoutes(app, { prisma });
 
   // Catch-all for unmatched requests, split by client:
   //   /api/*  -> JSON 404 for the REST clients (mobile, desktop).
