@@ -9,33 +9,26 @@
  */
 
 import boom from "@hapi/boom";
+import { errorBody } from "../lib/apiResponse.js";
 
 /**
- * Answer an unmatched API request with a JSON 404.
+ * Answer an unmatched API request with a 404 in the shared response envelope.
  *
  * Meant for the REST clients (mobile, desktop), which expect a machine-readable
- * body rather than an HTML page.
+ * body rather than an HTML page. CORS headers are already set by
+ * `apiCorsHeaders`, which runs for every /api request.
  *
- * @param {import('express').Request} req - Incoming request; only `originalUrl` is read.
+ * @param {import('express').Request} req - Incoming request; unused.
  * @param {import('express').Response} res - Response used to send the JSON body.
  * @returns {void}
  */
 export const notFoundHandlerApi = (req, res) => {
-    // Let cross-origin REST clients (mobile, desktop) read the 404 response.
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
-    res.header("Access-Control-Allow-Headers", "Content-Type");
-
     // Reuse Boom's canonical 404 shape instead of hand-writing status and message.
     const {
         output: { statusCode, payload },
     } = boom.notFound();
 
-    res.status(statusCode).json({
-        ...payload,
-        developer: "Cristhian Pereira",
-        url: req.originalUrl, // Echo the path that failed to match, to aid debugging.
-    });
+    res.status(statusCode).json(errorBody({ message: payload.message }));
 };
 
 /**

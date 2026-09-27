@@ -23,6 +23,7 @@ import { errorHandler, logErrors, wrapErrors } from '../src/config/errorHandler.
 import { apiCorsHeaders } from '../src/config/apiCors.js';
 import { preferencesLocals } from '../src/config/preferences.js';
 import { DEFAULT_PREFERENCES } from '../src/lib/preferences.js';
+import { createApp } from '../src/app.js';
 
 /** Absolute path to `src`, so the test app resolves views the way `app.js` does. */
 const srcDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
@@ -105,9 +106,30 @@ test('a failed API request answers with JSON, never HTML', async () => {
 
   assert.equal(response.status, 500);
   assert.match(response.headers['content-type'], /application\/json/);
-  assert.equal(response.body.error, 'Internal Server Error');
-  assert.equal(response.body.url, '/api/v1/boom');
-  assert.equal(response.body.method, 'GET');
+  assert.equal(response.body.message, 'An internal server error occurred');
+  assert.equal(response.body.data, null);
+  assert.equal(response.body.pagination, null);
+  assert.deepEqual(response.body.errors, []);
+});
+
+test('an unmatched API route answers 404 in the envelope', async () => {
+  const response = await request(createApp()).get('/api/v1/nope');
+  assert.equal(response.status, 404);
+  assert.deepEqual(
+    { message: response.body.message, data: response.body.data, pagination: response.body.pagination },
+    { message: 'Not Found', data: null, pagination: null },
+  );
+});
+
+test('a Prisma unique violation reaching the handler answers 409', async () => {
+  const app = express();
+  app.get('/api/v1/dup', () => {
+    throw Object.assign(new Error('dup'), { code: 'P2002', meta: { target: ['name'] } });
+  });
+  app.use(logErrors, wrapErrors, errorHandler);
+  const response = await request(app).get('/api/v1/dup');
+  assert.equal(response.status, 409);
+  assert.equal(response.body.errors[0].field, 'name');
 });
 
 test('outside production the error detail reaches both clients', async () => {

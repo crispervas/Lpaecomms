@@ -17,6 +17,8 @@
 
 import boom from "@hapi/boom";
 import { DEFAULT_PREFERENCES } from "../lib/preferences.js";
+import { toBoom } from "../lib/prismaErrors.js";
+import { errorBody } from "../lib/apiResponse.js";
 
 /**
  * Whether the process is running in production.
@@ -41,16 +43,17 @@ const isProduction = () => process.env.NODE_ENV === "production";
 const isApiRequest = (req) => req.originalUrl.startsWith("/api");
 
 /**
- * Flatten validation details into a list of messages.
+ * Flatten validation details into the envelope's `errors` entries.
  *
- * Accepts either Joi's `errors` array or custom validators that attach details
- * under `err.data.details`.
+ * Accepts either Joi-style `errors` arrays or validators that attach details
+ * under `err.data.details` (the zod middleware, contact validation, Prisma
+ * mapping).
  *
  * @param {import('@hapi/boom').Boom} err - The Boom error being rendered.
- * @returns {Array<{message: string}>} Normalized messages, empty when none apply.
+ * @returns {Array<{field?: string, message: string}>} Normalized entries, empty when none apply.
  */
 const collectValidation = (err) => {
-    if (err.errors) return err.errors.map((e) => ({ message: `${e.path} ${e.message}` }));
+    if (err.errors) return err.errors.map((e) => ({ field: String(e.path), message: e.message }));
     // Structured details (e.g. { field, message }) are passed through so a
     // client can put each message under its own field.
     if (err.data?.details) {
@@ -112,16 +115,20 @@ export const wrapErrors = (err, req, res, next) => {
     if (err.type === "entity.parse.failed") {
         return next(boom.badRequest("The request body is not valid JSON."));
     }
+    // Prisma constraint failures are the client's fault; map them before the
+    // catch-all below turns them into a 500.
+    const mapped = toBoom(err);
+    if (mapped) return next(mapped);
     // Anything that isn't already Boom becomes a 500 so downstream code stays uniform.
     if (!err.isBoom) return next(boom.badImplementation(err));
     next(err);
 };
 
 /**
- * Answer a failed API request with JSON.
+ * Answer a failed API request in the shared response envelope.
  *
  * @param {import('@hapi/boom').Boom} err - The Boom error to render.
- * @param {import('express').Request} req - Read for `originalUrl` and `method`.
+ * @param {import('express').Request} req - Unused; kept for symmetry with the web branch.
  * @param {import('express').Response} res - Used to send the JSON body.
  * @returns {void}
  */
@@ -130,17 +137,14 @@ const errorHandlerApi = (err, req, res) => {
         output: { statusCode, payload },
     } = err;
 
-    const body = {
-        ...payload,
-        validation: collectValidation(err),
-        url: req.originalUrl,
-        method: req.method,
-    };
-
-    // Stack traces stay server-side in production; they leak internals otherwise.
-    if (!isProduction()) body.stack = err.stack;
-
-    res.status(statusCode).json(body);
+    res.status(statusCode).json(
+        errorBody({
+            message: payload.message,
+            errors: collectValidation(err),
+            // Stack traces stay server-side in production; they leak internals otherwise.
+            stack: isProduction() ? undefined : err.stack,
+        }),
+    );
 };
 
 /**

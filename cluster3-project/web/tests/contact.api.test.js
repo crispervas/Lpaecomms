@@ -31,7 +31,7 @@ test('POST /api/v1/contact names every missing required field', async () => {
 
   assert.equal(response.status, 422);
   assert.equal(response.body.message, 'Some fields need attention.');
-  assert.deepEqual(response.body.validation, [
+  assert.deepEqual(response.body.errors, [
     { field: 'name', message: 'Please enter your name.' },
     { field: 'email', message: 'Please enter your email.' },
     { field: 'message', message: 'Please enter a message.' },
@@ -44,7 +44,7 @@ test('POST /api/v1/contact rejects a malformed email and order number', async ()
     .send({ name: 'Ana', email: 'nope', orderNumber: '123', message: 'Hi' });
 
   assert.equal(response.status, 422);
-  assert.deepEqual(response.body.validation, [
+  assert.deepEqual(response.body.errors, [
     { field: 'email', message: 'Please enter a valid email address.' },
     { field: 'orderNumber', message: 'Order numbers look like LPA-00248.' },
   ]);
