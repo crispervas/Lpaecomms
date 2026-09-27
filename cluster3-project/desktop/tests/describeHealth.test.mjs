@@ -22,7 +22,7 @@ test('an unreachable API reports the envelope error as the detail', () => {
   });
 
   assert.equal(result.title, 'API unreachable');
-  assert.equal(result.tone, 'border-red-300 bg-red-50 text-red-900');
+  assert.equal(result.state, 'down');
   assert.equal(result.detail, 'The desktop bridge is unavailable.');
 });
 
@@ -35,7 +35,7 @@ test('a 200 with a connected database reports healthy', () => {
   });
 
   assert.equal(result.title, 'API healthy');
-  assert.equal(result.tone, 'border-emerald-300 bg-emerald-50 text-emerald-900');
+  assert.equal(result.state, 'operational');
 });
 
 test('a 503 reports the database as unreachable, not the API', () => {
@@ -47,7 +47,7 @@ test('a 503 reports the database as unreachable, not the API', () => {
   });
 
   assert.equal(result.title, 'Database unreachable');
-  assert.equal(result.tone, 'border-amber-300 bg-amber-50 text-amber-900');
+  assert.equal(result.state, 'degraded');
 });
 
 test('a 200 with an unreachable database falls through to the fallback, not healthy', () => {
@@ -59,7 +59,7 @@ test('a 200 with an unreachable database falls through to the fallback, not heal
   });
 
   assert.equal(result.title, 'Unexpected response (200)');
-  assert.equal(result.tone, 'border-slate-300 bg-slate-100 text-slate-900');
+  assert.equal(result.state, 'unknown');
 });
 
 test('an unrecognised status falls through to the fallback and names the status', () => {
@@ -71,5 +71,5 @@ test('an unrecognised status falls through to the fallback and names the status'
   });
 
   assert.equal(result.title, 'Unexpected response (418)');
-  assert.equal(result.tone, 'border-slate-300 bg-slate-100 text-slate-900');
+  assert.equal(result.state, 'unknown');
 });

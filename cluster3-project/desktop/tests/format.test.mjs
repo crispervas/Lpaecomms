@@ -24,3 +24,7 @@ test('formats whole dollars with a thousands separator', () => {
 test('shows both cent digits for an amount with cents', () => {
   assert.equal(formatMoney(139.5), '$139.50');
 });
+
+test('shows cents on a whole amount when asked', () => {
+  assert.equal(formatMoney(6, { alwaysCents: true }), '$6.00');
+});

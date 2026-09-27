@@ -30,12 +30,17 @@ export function formatDate(isoDate) {
 /**
  * Format an amount the way the mockups show it.
  *
- * Whole amounts drop the cents, as every mockup price does; any other amount
- * shows both digits, so "$139.50" never reads as "$139.5" or rounds to "$140".
+ * Whole amounts drop the cents, as the mockups' product and order prices do;
+ * any other amount shows both digits, so "$139.50" never reads as "$139.5" or
+ * rounds to "$140". Shipping rates are the exception the mockups draw with
+ * cents even when whole, hence `alwaysCents`.
  *
  * @param {number} amount - Dollars.
- * @returns {string} The amount as "$1,149" or "$139.50".
+ * @param {{alwaysCents?: boolean}} [options] - `alwaysCents` shows "$6.00"
+ *   rather than "$6".
+ * @returns {string} The amount as "$1,149", "$139.50" or "$6.00".
  */
-export function formatMoney(amount) {
-  return (Number.isInteger(amount) ? WHOLE_MONEY_FORMAT : CENTS_MONEY_FORMAT).format(amount);
+export function formatMoney(amount, { alwaysCents = false } = {}) {
+  const format = alwaysCents || !Number.isInteger(amount) ? CENTS_MONEY_FORMAT : WHOLE_MONEY_FORMAT;
+  return format.format(amount);
 }

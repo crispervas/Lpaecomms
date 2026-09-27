@@ -21,7 +21,7 @@ export const SECTIONS = Object.freeze([
   { key: 'orders', label: 'Orders', ready: true },
   // Not in the mockups: categories and products, added ahead of the database.
   { key: 'catalog', label: 'Catalog', ready: true },
-  { key: 'settings', label: 'Settings', ready: false },
+  { key: 'settings', label: 'Settings', ready: true },
 ]);
 
 /**

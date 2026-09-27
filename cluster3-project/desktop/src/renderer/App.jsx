@@ -18,6 +18,7 @@ import { AdminLogin } from './components/AdminLogin.jsx';
 import { Catalog } from './components/Catalog.jsx';
 import { Dashboard } from './components/Dashboard.jsx';
 import { Orders } from './components/Orders.jsx';
+import { Settings } from './components/Settings.jsx';
 import { Users } from './components/Users.jsx';
 import { SAMPLE_CATALOG_CATEGORIES, SAMPLE_CATALOG_PRODUCTS } from './data/catalog.mjs';
 import { SAMPLE_ORDERS } from './data/orders.mjs';
@@ -48,6 +49,19 @@ async function createCategory(record) {
  * @returns {Promise<{saved: boolean}>} Whether the product was stored.
  */
 async function createProduct(record) {
+  void record;
+  return { saved: false };
+}
+
+/**
+ * Persist the store's public details. The same seam as createCategory, for
+ * Settings → Store info.
+ *
+ * @param {{name: string, email: string, phone: string}} record - Details that
+ *   passed lib/storeRules.mjs.
+ * @returns {Promise<{saved: boolean}>} Whether the details were stored.
+ */
+async function saveStoreInfo(record) {
   void record;
   return { saved: false };
 }
@@ -138,6 +152,7 @@ export function App() {
           onCreateProduct={createProduct}
         />
       )}
+      {section === 'settings' && <Settings onSaveStoreInfo={saveStoreInfo} />}
     </AdminLayout>
   );
 }

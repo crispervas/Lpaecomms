@@ -61,10 +61,9 @@ from the "Admin Login" desktop mockup. It is a preview until the API gains
 authentication: a form that passes `lib/loginRules.mjs` opens the app with no
 request, and the session lives in memory only, so a restart signs you out.
 Signing in opens the admin frame (`components/AdminLayout.jsx`): a sidebar
-with the Dashboard, Users, Orders, Catalog and Settings sections. Settings stays
-disabled until its screen exists. The built screens are previews labelled as
-such, because the API has no users, orders or statistics endpoints yet; they
-read the sample data in `data/`:
+with the Dashboard, Users, Orders, Catalog and Settings sections. They are
+previews labelled as such, because the API has no users, orders or statistics
+endpoints yet; they read the sample data in `data/`:
 
 - **Dashboard** shows sample figures and the five newest orders; "View all →"
   opens Orders.
@@ -78,10 +77,14 @@ read the sample data in `data/`:
   forms for a new category and a new product. The forms validate but save
   nothing yet: `createCategory` and `createProduct` in `App.jsx` are where the
   database calls go, and `data/catalog.mjs` documents the record shapes.
+- **Settings** has the mockup's six tabs. Store info validates but saves
+  nothing yet (`saveStoreInfo` in `App.jsx` is the seam). System status is
+  the one live part: its REST API row asks the main process for `/health` and
+  tells a database outage (Degraded) apart from an unreachable API (Down); the
+  other services are samples. Uploading a logo, adding shipping methods,
+  inviting admins and editing templates stay disabled until mockups exist.
 
-Every change resets on sign-out. The API health panel
-(`components/ApiStatus.jsx`) is unmounted until the Settings screen gives it
-its "System status" home.
+Every change resets on sign-out.
 
 Colours come from the `lpa` palette in `tailwind.config.js`; fonts are bundled
 with `@fontsource` because the CSP allows only `'self'`.
