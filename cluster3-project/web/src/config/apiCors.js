@@ -14,9 +14,8 @@
 /**
  * Set the CORS headers every `/api` response carries.
  *
- * Wildcard origin, no credentials: this API is public and unauthenticated
- * today, so an allow-list or a credentials policy would be a decision nobody
- * has made yet, not a gap to close here.
+ * Wildcard origin, no credentials: tokens travel in the `Authorization`
+ * header, not cookies, so no credentials policy is needed.
  *
  * @param {import('express').Request} req - Incoming request; an OPTIONS
  *   preflight is answered here. The headers themselves do not depend on it.
@@ -28,7 +27,7 @@
 export const apiCorsHeaders = (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // A cross-origin POST with a JSON body is preceded by an OPTIONS preflight.
   // No route answers OPTIONS, so without this it would fall through to the

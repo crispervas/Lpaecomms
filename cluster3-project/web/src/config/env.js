@@ -54,6 +54,36 @@ function parsePort(raw) {
   return port;
 }
 
+/**
+ * Validate an IANA time zone name.
+ *
+ * @param {string} name - Candidate zone, e.g. "Australia/Brisbane".
+ * @returns {string} The same name when the runtime recognises it.
+ * @throws {Error} When `Intl` rejects the zone.
+ */
+function parseTimeZone(name) {
+  try {
+    new Intl.DateTimeFormat('en-AU', { timeZone: name });
+    return name;
+  } catch {
+    throw new Error(`Invalid APP_TIMEZONE "${name}". Expected an IANA zone such as Australia/Brisbane.`);
+  }
+}
+
+/**
+ * Read the JWT signing secret and refuse one too short to resist brute force.
+ *
+ * @returns {string} The secret.
+ * @throws {Error} When missing or shorter than 32 characters.
+ */
+function jwtSecret() {
+  const secret = required('JWT_SECRET');
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters long.');
+  }
+  return secret;
+}
+
 const nodeEnv = process.env.NODE_ENV ?? 'development';
 if (!VALID_ENVIRONMENTS.includes(nodeEnv)) {
   throw new Error(
@@ -69,6 +99,9 @@ if (!VALID_ENVIRONMENTS.includes(nodeEnv)) {
  * @property {number} port - HTTP port the server listens on.
  * @property {string} databaseUrl - PostgreSQL connection string for Prisma.
  * @property {string|null} ninjaApiKey - API Ninjas key, or null when unset.
+ * @property {string} jwtSecret - Secret that signs API access tokens.
+ * @property {string} jwtExpiresIn - Access token lifetime, in jsonwebtoken's format.
+ * @property {string} appTimezone - IANA zone for the audit blocks' local date and time.
  * @property {boolean} isDevelopment - True when running in development.
  * @property {boolean} isStaging - True when running in staging.
  * @property {boolean} isProduction - True when running in production.
@@ -88,6 +121,9 @@ export const config = Object.freeze({
   // would stop the server from booting and stop the test suite from running for
   // anyone without one. Absent, only the conversion endpoint degrades.
   ninjaApiKey: process.env.NINJA_API_KEY ?? null,
+  jwtSecret: jwtSecret(),
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '1h',
+  appTimezone: parseTimeZone(process.env.APP_TIMEZONE ?? 'Australia/Brisbane'),
   isDevelopment: nodeEnv === 'development',
   isStaging: nodeEnv === 'staging',
   isProduction: nodeEnv === 'production',
