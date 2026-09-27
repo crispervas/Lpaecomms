@@ -13,7 +13,10 @@
     "start": "pnpm build:css && node src/server.js",
     "dev": "pnpm build:css && node --watch src/server.js",
     "build:css": "lessc styles/less/main.less src/public/css/main.css --clean-css",
-    "dev:css": "less-watch-compiler styles/less src/public/css main.less"
+    "dev:css": "less-watch-compiler styles/less src/public/css main.less",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset"
   },
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.0",

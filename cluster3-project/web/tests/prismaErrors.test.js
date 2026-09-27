@@ -37,3 +37,19 @@ test('anything else is not mapped', () => {
   assert.equal(toBoom(new Error('boom')), null);
   assert.equal(toBoom(prismaError('P1001')), null);
 });
+
+test('P2002 from the pg driver adapter names the field from the constraint', () => {
+  const boom = toBoom(prismaError('P2002', {
+    modelName: 'category',
+    driverAdapterError: { cause: { kind: 'UniqueConstraintViolation', constraint: { fields: ['name'] } } },
+  }));
+  assert.equal(boom.data.details[0].field, 'name');
+});
+
+test('P2003 from the pg driver adapter names the foreign key field', () => {
+  const boom = toBoom(prismaError('P2003', {
+    modelName: 'product',
+    driverAdapterError: { cause: { kind: 'ForeignKeyConstraintViolation', constraint: { index: 'product_categoryId_fkey' } } },
+  }));
+  assert.deepEqual(boom.data.details, [{ field: 'categoryId', message: 'categoryId does not reference an existing record.' }]);
+});
