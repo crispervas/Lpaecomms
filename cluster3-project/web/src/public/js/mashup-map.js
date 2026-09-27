@@ -27,9 +27,9 @@
   /**
    * Escape text for safe interpolation into popup HTML.
    *
-   * Product names come from a third-party feed, so they are untrusted input.
-   * Leaflet's bindPopup takes raw HTML, which would execute anything the feed
-   * contained.
+   * Product names are admin-entered through the API, so they are untrusted
+   * input. Leaflet's bindPopup takes raw HTML, which would execute anything a
+   * name contained.
    *
    * @param {string} value - Untrusted text.
    * @returns {string} The same text with HTML metacharacters escaped.
@@ -83,15 +83,29 @@
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  fetch('/api/v1/products')
+  // Store coordinates come from the page (see mashup.controller.js): the
+  // catalogue has none, so each product is shown at the store of the same index.
+  let stores = [];
+  try {
+    stores = JSON.parse(container.dataset.stores || '[]');
+  } catch {
+    stores = [];
+  }
+
+  fetch(`/api/v1/products?limit=${stores.length || 1}`)
     .then((response) => {
       if (!response.ok) throw new Error(`Products endpoint responded ${response.status}`);
       return response.json();
     })
-    // The endpoint answers { products: [...] }, not a bare array, so a
-    // pagination field or similar metadata can be added later without
-    // changing the response's root type.
-    .then(({ products }) => {
+    // The API wraps every list as { message, data, pagination }.
+    .then(({ data }) => {
+      const products = data.slice(0, stores.length).map((product, index) => ({
+        name: product.name,
+        priceAud: product.price,
+        imageUrl: product.img?.[0] ?? '',
+        ...stores[index],
+      }));
+
       if (!products.length) {
         showNotice('No products are available to show on the map right now.');
         return;

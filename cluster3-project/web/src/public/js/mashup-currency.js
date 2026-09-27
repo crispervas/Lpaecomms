@@ -152,11 +152,10 @@
       if (!response.ok) throw new Error(`Products endpoint responded ${response.status}`);
       return response.json();
     })
-    // The endpoint answers { products: [...] }, not a bare array, so a
-    // pagination field or similar metadata can be added later without
-    // changing the response's root type.
-    .then(({ products: loaded }) => {
-      products = loaded;
+    // The API wraps every list as { message, data, pagination }; the price
+    // field is `price`, renamed here to the name this script uses throughout.
+    .then(({ data }) => {
+      products = data.map(({ id, name, price }) => ({ id, name, priceAud: price }));
       productSelect.replaceChildren();
 
       const placeholder = new Option('Choose a product', '');

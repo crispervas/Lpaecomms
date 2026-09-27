@@ -1,524 +1,161 @@
 /**
- * @file Product model.
+ * @file Product model (storefront).
  *
- * Data access for the product catalogue. Lpaecomms has no product table yet, so
- * the catalogue comes from a public demo feed and this model serves it in four
- * shapes to four different callers: the map mashup's `listWithLocations`, which
- * pairs each product with a store location the feed does not carry; the
- * storefront home page's `listFeatured`, which needs a plain trending grid at
- * a different size; the catalog page's `listByCategory`, which scopes the same
- * records to one category; and the product detail page's `getById`, which reads
- * one product instead of a list. Caches the raw feed response for a short TTL,
- * the same way `CurrencyModel` caches rates, and past that TTL keeps serving the
- * expired copy while it refreshes in the background, so a visitor only waits
- * on the feed when nothing has been fetched yet. It protects the demo feed's
- * quota and, because both mashup scripts call this model's endpoint on every
- * `/mashup` page load, keeps them looking at one consistent catalogue instead
- * of two responses that could disagree. Knows nothing about HTTP responses: it
- * returns products or throws, and the controller decides what a failure means
- * to a client.
+ * Reads the catalogue from PostgreSQL for the EJS views, in the shapes those
+ * views already use: cards for grids, a detail object for the product page.
+ * The REST API does not use this model — it goes through CrudModel — so the
+ * page shapes (priceAud, imageUrl) stay a view concern and never leak into the
+ * API contract. Only active products are shown.
  */
 
-/**
- * External catalogue feeding the storefront. Base URL only: the number of
- * products is a per-caller decision (see `#catalogueUrl`), not a property of
- * the feed.
- */
-const CATALOGUE_BASE_URL = 'https://api.escuelajs.co/api/v1/products';
+import { prisma as defaultPrisma } from '../lib/prisma.js';
 
-/** The mockup's "Trending now" grid holds eight cards. */
+/** The home page's "Trending now" grid holds eight cards. */
 const DEFAULT_FEATURED_LIMIT = 8;
-
-/**
- * Category resource on the same feed. Kept as its own base rather than derived
- * from the products URL: they are sibling resources, not one nested in the
- * other, and deriving one from the other would break the moment either moves.
- */
-const CATEGORIES_BASE_URL = 'https://api.escuelajs.co/api/v1/categories';
 
 /** The catalog's grid is three rows of four. */
 const DEFAULT_CATALOG_LIMIT = 12;
 
-/** Give up on a slow feed rather than holding a request open indefinitely. */
-const REQUEST_TIMEOUT_MS = 5000;
+/** Where fragment for products the storefront may show. */
+const ACTIVE = { status: { not: 0 } };
+
+/** Columns a card needs; the detail page adds `description`. */
+const CARD_SELECT = {
+  id: true,
+  name: true,
+  price: true,
+  img: true,
+  category: { select: { id: true, name: true, code: true } },
+};
 
 /**
- * Five minutes: long enough to collapse a single `/mashup` page load's two
- * independent `GET /api/v1/products` calls (the map and the currency
- * converter each fetch it) into one upstream call, and to keep both mashups
- * looking at the same catalogue instead of two responses that could disagree
- * if the feed changed in between — short enough that the demo still looks
- * live, matching the policy `CurrencyModel` already applies to its own
- * third-party quota.
- */
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
-/**
- * How long an expired entry may still be served while a fresh copy is fetched
- * in the background (stale-while-revalidate). Only one response per URL is ever
- * served stale — the refresh it starts replaces the entry for the next caller —
- * so this bounds how old that one answer can be, not how long the site shows
- * old data. A day covers a quiet night without a visitor paying for the feed's
- * cold latency (~2 s measured) the next morning.
- */
-const STALE_TTL_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Raw feed responses, shared by every `ProductModel` instance and keyed by the
- * full catalogue URL (base URL plus the requested size, and which base it was
- * composed from — the products path or a category's path) rather than held
- * per instance. Caching the feed's own JSON, instead of any caller's
- * transformation of it, is what lets `listWithLocations` and `listFeatured`
- * read the same base URL at different sizes without one overwriting the
- * other's shape: each size is its own URL and therefore its own cache entry.
- * Keying by URL is also what lets a test construct a model with an overridden
- * `catalogueBaseUrl` (see the constructor) without ever reading or evicting
- * the production URL's entry, even though the cache itself lives at module
- * scope. Holds whatever a feed URL returns — an array for the list endpoints,
- * a single object for one product — not products specifically.
+ * Map a row to the card shape, including its category id.
  *
- * `expiresAt` ends the entry's fresh window; `staleUntil` ends the window in
- * which it may still be served while a refresh runs.
- * @type {Map<string, {payload: Object|Array<Object>, expiresAt: number, staleUntil: number}>}
+ * @param {Object} row - Product with its category.
+ * @returns {{id: number, name: string, category: string, categoryId: number|null, priceAud: number, imageUrl: string}}
+ *   The card.
  */
-const catalogueCache = new Map();
-
-/**
- * Feed requests currently in flight, keyed by URL. Concurrent callers of one
- * URL share a single request — ten visitors arriving on a cold home page cost
- * the feed one call, not ten — and a background refresh is never started
- * twice for the same entry.
- * @type {Map<string, Promise<Object|Array<Object>>>}
- */
-const inflightRequests = new Map();
-
-/**
- * Most feed responses the cache holds at once. The paged catalogue API lets
- * any client choose the offset and page size, so the set of URLs is no longer
- * fixed; without a cap, walking offsets would grow memory without end. Two
- * hundred comfortably covers every page real browsing touches in one TTL.
- */
-const MAX_CACHE_ENTRIES = 200;
-
-/**
- * Lpaecomms store locations on the Gold Coast, assigned to products by index.
- * The external feed carries no coordinates, and the map mashup needs one point
- * per product, so the pairing lives here rather than being invented downstream.
- */
-const STORE_LOCATIONS = [
-  { store: 'Surfers Paradise', latitude: -28.0023, longitude: 153.4145 },
-  { store: 'Broadbeach', latitude: -28.0296, longitude: 153.429 },
-  { store: 'Southport', latitude: -27.9676, longitude: 153.4009 },
-  { store: 'Burleigh Heads', latitude: -28.0916, longitude: 153.4494 },
-  { store: 'Coolangatta', latitude: -28.169, longitude: 153.535 },
-];
-
-/**
- * Extract every usable image URL from the feed's `images` field.
- *
- * The feed is inconsistent: the field is usually an array of URLs, but some
- * records store that array JSON-encoded as a single string, and the encoded
- * form turns up both on its own and as an element of a real array. Parsing it
- * properly, rather than stripping leading/trailing brackets and quotes, is
- * what keeps a second URL in a multi-element JSON string from bleeding into
- * the first — character-stripping only worked by accident for a one-element
- * array.
- *
- * @param {unknown} images - Raw `images` value from the feed.
- * @returns {Array<string>} URLs in feed order; empty when none can be read.
- */
-function imageUrls(images) {
-  const entries = Array.isArray(images) ? images : [images];
-
-  return entries.flatMap((entry) => {
-    if (typeof entry !== 'string') return [];
-
-    // Only a JSON-encoded array looks like this; any other string (a bare URL,
-    // malformed JSON) falls through to the entry itself below.
-    if (entry.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(entry);
-        if (Array.isArray(parsed)) return parsed.filter((url) => typeof url === 'string');
-      } catch {
-        // Not actually JSON — treat it as a plain string instead.
-      }
-    }
-
-    return [entry];
-  });
+function toCard(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category?.name ?? '',
+    categoryId: row.category?.id ?? null,
+    priceAud: row.price,
+    imageUrl: row.img?.[0] ?? '',
+  };
 }
 
 /**
- * Extract the first usable image URL from the feed's `images` field.
+ * Map a row to the grid card shape, which never carried the category id.
  *
- * The grids show one image per product; the detail page shows them all. Both
- * read the same parser so the feed's quirks are untangled in one place. One
- * shape reads differently than the parser this replaced: for a malformed
- * JSON-encoded array such as `'[42, "https://a/real.jpg"]'`, the previous
- * parser fell through to the raw encoded string — an `<img src>` that could
- * never render — while filtering for strings here surfaces the real URL
- * inside it instead, which is strictly more useful than a value nothing can
- * display.
- *
- * @param {unknown} images - Raw `images` value from the feed.
- * @returns {string} A URL, or an empty string when none can be read.
+ * @param {Object} row - Product with its category.
+ * @returns {{id: number, name: string, category: string, priceAud: number, imageUrl: string}} The card.
  */
-function firstImageUrl(images) {
-  return imageUrls(images)[0] ?? '';
+function toGridCard(row) {
+  const { categoryId, ...card } = toCard(row);
+  return card;
 }
 
 /**
- * Reads the product catalogue: the mashup's five products paired with store
- * locations, the storefront's featured grid at whatever size it asks for, and
- * the catalog page's list scoped to one category.
+ * Storefront reads of the catalogue.
  */
 export class ProductModel {
   /**
-   * @param {string} [catalogueBaseUrl] - Products feed base URL, without a
-   *   query string; overridable so tests and other environments are not tied to
-   *   one hardcoded host.
-   * @param {string} [categoriesBaseUrl] - Category resource base URL, onto
-   *   which `listByCategory` composes `/{id}/products`.
+   * @param {import('@prisma/client').PrismaClient} [prisma] - Client; tests inject a fake.
    */
-  constructor(catalogueBaseUrl = CATALOGUE_BASE_URL, categoriesBaseUrl = CATEGORIES_BASE_URL) {
-    /** @type {string} */
-    this.catalogueBaseUrl = catalogueBaseUrl;
-    /** @type {string} */
-    this.categoriesBaseUrl = categoriesBaseUrl;
+  constructor(prisma = defaultPrisma) {
+    /** @type {import('@prisma/client').PrismaClient} */
+    this.prisma = prisma;
   }
 
   /**
-   * Discard every cached catalogue response.
+   * Products for a grid, optionally in one category, newest first.
    *
-   * Production never needs this: a still-valid entry is never evicted early.
-   * It exists as a seam for tests — a suite that stubs `fetch` differently
-   * from one test to the next would otherwise observe an earlier test's
-   * cached response for the same URL, since the cache outlives any single
-   * `ProductModel` instance.
-   *
-   * @returns {void}
-   */
-  static clearCache() {
-    catalogueCache.clear();
-    inflightRequests.clear();
-  }
-
-  /**
-   * Build the feed URL for a given number of products, optionally scoped to one
-   * category.
-   *
-   * Both the size and the category belong in the URL rather than in a filter
-   * after the fact: together they are what make each caller's response a
-   * distinct cache entry, which is why the home page's eight products, the
-   * mashup's five, and each category's twelve can never overwrite one another.
-   *
-   * Offset joins them for the same reason: each page of a paged listing is its
-   * own cache entry, so page two can never be served page one's products.
-   *
-   * @param {number} limit - How many products to request.
-   * @param {number|null} [categoryId] - Category to scope to, or null for all.
-   * @param {number} [offset] - How many products to skip; 0 for the first page.
-   * @returns {string} The absolute feed URL.
-   */
-  #catalogueUrl(limit, categoryId = null, offset = 0) {
-    const url = new URL(
-      categoryId === null
-        ? this.catalogueBaseUrl
-        : `${this.categoriesBaseUrl}/${categoryId}/products`,
-    );
-
-    url.searchParams.set('offset', String(offset));
-    url.searchParams.set('limit', String(limit));
-
-    return url.toString();
-  }
-
-  /**
-   * Build the feed URL for one product.
-   *
-   * The id is coerced rather than interpolated as given: this feed accepts
-   * writes from anyone, and a value that is not a number has no business
-   * shaping a URL path.
-   *
-   * @param {number|string} id - Feed id of the product.
-   * @returns {string} The absolute feed URL.
-   */
-  #productUrl(id) {
-    return new URL(`${this.catalogueBaseUrl}/${Number(id)}`).toString();
-  }
-
-  /**
-   * Fetch a feed URL through the cache.
-   *
-   * A fresh entry is served as is. An expired one still inside its stale
-   * window is served immediately while a refresh runs in the background, so a
-   * visitor never waits on the feed for data the site already has. Only a
-   * missing entry, or one past its stale window, makes the caller wait.
-   *
-   * Caches the feed's own JSON rather than any caller's transformation of it:
-   * the list methods shape the same records differently, and caching a shaped
-   * result would hand one caller another's output. The payload is whatever the
-   * URL returns — an array for the list endpoints, a single object for one
-   * product — which is why the cached field is named for its role rather than
-   * for one of its shapes.
-   *
-   * @param {string} url - Absolute feed URL.
-   * @returns {Promise<Object|Array<Object>>} The feed's parsed JSON.
-   * @throws {Error} When nothing servable is cached and the feed is
-   *   unreachable, times out, or answers a non-2xx status. A non-2xx error
-   *   carries the response's `status` as a property so a caller can tell "this
-   *   does not exist" from "this could not be read" without parsing the
-   *   message.
-   */
-  async #fetchFromFeed(url) {
-    const cached = catalogueCache.get(url);
-    const now = Date.now();
-
-    if (cached && cached.expiresAt > now) {
-      return cached.payload;
-    }
-
-    if (cached && cached.staleUntil > now) {
-      // The caller is already answered, so a failed refresh has nobody to
-      // reject to: it is logged, and the stale entry stays for the next try.
-      this.#requestFromFeed(url).catch((error) => {
-        console.error('🪵 Catalogue: background refresh failed:', { url, message: error.message });
-      });
-      return cached.payload;
-    }
-
-    return this.#requestFromFeed(url);
-  }
-
-  /**
-   * Request a feed URL, sharing one request among concurrent callers, and
-   * store a successful answer in the cache.
-   *
-   * @param {string} url - Absolute feed URL.
-   * @returns {Promise<Object|Array<Object>>} The feed's parsed JSON.
-   * @throws {Error} See `#fetchFromFeed`.
-   */
-  #requestFromFeed(url) {
-    const pending = inflightRequests.get(url);
-    if (pending) return pending;
-
-    const request = (async () => {
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-
-      // fetch only rejects on a network failure: a 4xx/5xx arrives as a resolved
-      // response, so without this check an error body would be parsed as products.
-      if (!response.ok) {
-        const error = new Error(`Catalogue source responded ${response.status}`);
-        error.status = response.status;
-        throw error;
-      }
-
-      const payload = await response.json();
-
-      // Written only once the fetch succeeded, so a failure can never overwrite —
-      // and therefore can never evict — an entry that can still be served.
-      // A Map iterates in insertion order, so re-inserting makes this entry the
-      // newest and the first key is always the oldest — the one to evict.
-      catalogueCache.delete(url);
-      if (catalogueCache.size >= MAX_CACHE_ENTRIES) {
-        catalogueCache.delete(catalogueCache.keys().next().value);
-      }
-      const storedAt = Date.now();
-      catalogueCache.set(url, {
-        payload,
-        expiresAt: storedAt + CACHE_TTL_MS,
-        staleUntil: storedAt + STALE_TTL_MS,
-      });
-
-      return payload;
-    })();
-
-    // Removed however it ends, so a failure is retried by the next caller
-    // rather than handed to every caller from now on.
-    inflightRequests.set(url, request);
-    request.finally(() => inflightRequests.delete(url)).catch(() => {});
-
-    return request;
-  }
-
-  /**
-   * Fetch the catalogue and merge each product with its store location.
-   *
-   * @returns {Promise<Array<{id: number, name: string, priceAud: number, imageUrl: string, store: string, latitude: number, longitude: number}>>}
-   *   Products in display order, at most one per known store location.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status.
-   */
-  async listWithLocations() {
-    const products = await this.#fetchFromFeed(this.#catalogueUrl(STORE_LOCATIONS.length));
-
-    // Never return more products than there are locations: a product without a
-    // place on the map is not something the mashup can display.
-    return products.slice(0, STORE_LOCATIONS.length).map((product, index) => ({
-      id: product.id,
-      name: product.title,
-      priceAud: product.price,
-      imageUrl: firstImageUrl(product.images),
-      ...STORE_LOCATIONS[index],
-    }));
-  }
-
-  /**
-   * Fetch products for the storefront, optionally scoped to one category.
-   *
-   * This is the seam the in-house product service will replace: the pages know
-   * this shape and nothing about where it came from, so swapping the demo feed
-   * means rewriting this method alone.
-   *
-   * @param {number|null} categoryId - Category to scope to, or null for every
-   *   category.
-   * @param {number} [limit] - How many products to return.
-   * @param {number} [offset] - How many products to skip, for paging.
+   * @param {number|null} categoryId - Category, or null for all.
+   * @param {number} [limit] - Page size.
+   * @param {number} [offset] - Rows to skip.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
-   *   Products in feed order.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status.
+   *   Cards.
    */
   async listByCategory(categoryId, limit = DEFAULT_CATALOG_LIMIT, offset = 0) {
-    const products = await this.#fetchFromFeed(this.#catalogueUrl(limit, categoryId, offset));
-
-    return products.slice(0, limit).map((product) => ({
-      id: product.id,
-      name: product.title,
-      // Empty string rather than undefined: the card omits the line instead of
-      // printing "undefined" when the feed carries no category.
-      category: product.category?.name ?? '',
-      priceAud: product.price,
-      imageUrl: firstImageUrl(product.images),
-    }));
+    const where = categoryId === null ? { ...ACTIVE } : { ...ACTIVE, categoryId };
+    const rows = await this.prisma.product.findMany({
+      where, select: CARD_SELECT, orderBy: { id: 'desc' }, skip: offset, take: limit,
+    });
+    return rows.map(toGridCard);
   }
 
   /**
-   * Fetch one product by its feed id.
+   * Products for the home page's trending grid.
    *
-   * Returns null rather than throwing when the feed says the product does not
-   * exist, so the controller can answer 404 for a missing product while an
-   * unreadable feed still reaches the error page. Those are different answers
-   * and the page shows a different thing for each.
-   *
-   * A product that does not exist is never cached, for the same reason a
-   * failure is not: the answer changes the moment someone creates it.
-   *
-   * @param {number|string} id - Feed id of the product.
-   * @returns {Promise<{id: number, name: string, category: {id: number|null, name: string, slug: string}, priceAud: number, description: string, imageUrls: Array<string>}|null>}
-   *   The product, or null when it does not exist.
-   * @throws {Error} When the feed is unreachable, times out, or answers any
-   *   other non-2xx status.
-   */
-  async getById(id) {
-    let product;
-
-    try {
-      product = await this.#fetchFromFeed(this.#productUrl(id));
-    } catch (error) {
-      // The feed answers 400 for an unknown id; 404 is accepted alongside it so
-      // a future service using the conventional status needs no change here.
-      if (error.status === 400 || error.status === 404) return null;
-      throw error;
-    }
-
-    return {
-      id: product.id,
-      name: product.title,
-      category: {
-        id: product.category?.id ?? null,
-        // Empty strings rather than undefined: the badge and the breadcrumb
-        // omit their line instead of printing "undefined".
-        name: product.category?.name ?? '',
-        slug: product.category?.slug ?? '',
-      },
-      priceAud: product.price,
-      description: product.description ?? '',
-      imageUrls: imageUrls(product.images),
-    };
-  }
-
-  /**
-   * Fetch products for the home page's trending grid.
-   *
-   * Delegates rather than repeating the unfiltered query, and keeps its own
-   * default: the home's trending row is eight cards where the catalog's grid is
-   * twelve, so neither page inherits the other's density.
-   *
-   * @param {number} [limit] - How many products to return.
+   * @param {number} [limit] - How many.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
-   *   Products in feed order.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status.
+   *   Cards.
    */
   async listFeatured(limit = DEFAULT_FEATURED_LIMIT) {
     return this.listByCategory(null, limit);
   }
 
   /**
-   * Fetch several products by id, in the order asked for.
+   * One active product for the detail page.
    *
-   * Fans out over `getById`, so a product viewed twice in five minutes is
-   * served from the same cache the rest of the site reads rather than fetched
-   * again. Ids the feed no longer has are dropped: this list comes from a
-   * visitor's browsing history, and the feed is a volatile demo source where an
-   * id recorded yesterday may be gone today. That is an ordinary outcome, not a
-   * failure worth propagating.
-   *
-   * Returns the card shape rather than `getById`'s, with `categoryId` alongside
-   * the category name so a caller can infer a dominant category without reading
-   * every product a second time.
-   *
-   * @param {Array<number>} ids - Product ids, in the order to return them.
-   * @returns {Promise<Array<{id: number, name: string, category: string, categoryId: number|null, priceAud: number, imageUrl: string}>>}
-   *   The products that still exist, in the requested order; empty when none do.
+   * @param {number|string} id - Product id from the URL.
+   * @returns {Promise<{id: number, name: string, category: {id: number|null, name: string, slug: string}, priceAud: number, description: string, imageUrls: Array<string>}|null>}
+   *   The product, or null when it does not exist or is inactive.
    */
-  async findByIds(ids) {
-    if (ids.length === 0) return [];
+  async getById(id) {
+    // A route param like "1abc" must not become 1: that would serve a product
+    // under a URL that does not name it.
+    if (!/^\d+$/.test(String(id))) return null;
 
-    const found = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          return await this.getById(id);
-        } catch {
-          // One unreadable product costs its own card, not the whole strip.
-          return null;
-        }
-      }),
-    );
+    const row = await this.prisma.product.findFirst({
+      where: { ...ACTIVE, id: Number(id) },
+      select: { ...CARD_SELECT, description: true },
+    });
+    if (!row) return null;
 
-    return found.filter(Boolean).map((product) => ({
-      id: product.id,
-      name: product.name,
-      category: product.category.name,
-      categoryId: product.category.id,
-      priceAud: product.priceAud,
-      imageUrl: product.imageUrls[0] ?? '',
-    }));
+    return {
+      id: row.id,
+      name: row.name,
+      category: { id: row.category?.id ?? null, name: row.category?.name ?? '', slug: row.category?.code ?? '' },
+      priceAud: row.price,
+      description: row.description ?? '',
+      imageUrls: row.img ?? [],
+    };
   }
 
   /**
-   * Fetch products from one category, skipping the ones already excluded.
+   * Several products by id, in the order asked for; ids no longer active are
+   * dropped, since this list comes from a visitor's browsing history.
    *
-   * Asks the feed for the limit plus the exclusions rather than the limit
-   * alone: filtering afterwards would otherwise return short whenever the
-   * excluded products happened to sort first, which for a "more like this"
-   * block is exactly when they do.
+   * @param {Array<number>} ids - Ids in display order.
+   * @returns {Promise<Array<{id: number, name: string, category: string, categoryId: number|null, priceAud: number, imageUrl: string}>>}
+   *   The products that still exist, in the requested order.
+   */
+  async findByIds(ids) {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.product.findMany({ where: { ...ACTIVE, id: { in: ids } }, select: CARD_SELECT });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return ids.filter((id) => byId.has(id)).map((id) => toCard(byId.get(id)));
+  }
+
+  /**
+   * Products in one category, leaving out some ids.
    *
-   * @param {number} categoryId - Category to read.
-   * @param {Array<number>} excludeIds - Products to leave out.
-   * @param {number} limit - How many products to return.
+   * @param {number} categoryId - Category.
+   * @param {Array<number>} excludeIds - Ids to leave out.
+   * @param {number} limit - How many.
    * @returns {Promise<Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>>}
-   *   Products in feed order, at most `limit` of them.
-   * @throws {Error} When the feed is unreachable, times out, or answers a
-   *   non-2xx status.
+   *   Cards, at most `limit`.
    */
   async findByCategoryExcluding(categoryId, excludeIds, limit) {
-    const candidates = await this.listByCategory(categoryId, limit + excludeIds.length);
-    const excluded = new Set(excludeIds);
-
-    return candidates.filter((product) => !excluded.has(product.id)).slice(0, limit);
+    const rows = await this.prisma.product.findMany({
+      where: { ...ACTIVE, categoryId, id: { notIn: excludeIds } },
+      select: CARD_SELECT,
+      orderBy: { id: 'desc' },
+      take: limit,
+    });
+    return rows.map(toGridCard);
   }
 }

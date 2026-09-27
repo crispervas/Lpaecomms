@@ -129,34 +129,14 @@ export class HomeController {
   }
 
   /**
-   * Fill the product model's cache with the trending grid before anyone asks.
-   *
-   * Called once at startup, so the first visitor to the home page is served
-   * from the cache instead of waiting on the feed's cold latency. Uses the
-   * same limit as the page, because the cache is keyed by URL and a warmed
-   * entry of any other size would never be read.
-   *
-   * @param {import('../models/product.model.js').ProductModel} productModel - The model to warm.
-   * @returns {Promise<void>} Settles once the attempt is over; never rejects.
-   */
-  static async warmCache(productModel) {
-    try {
-      await productModel.listFeatured(FEATURED_LIMIT);
-    } catch (error) {
-      // A cold feed at boot only means the first visitor waits, as before.
-      console.error('🪵 Home: cache warm-up failed:', { message: error.message });
-    }
-  }
-
-  /**
    * Fetch the trending grid.
    *
-   * The catalogue is a third party. Failing the whole page because a demo feed
-   * is down would be worse than rendering one section short, so the failure is
-   * recorded and the template shows a notice in place of the grid instead of
-   * the products it could not fetch.
+   * Failing the whole page because the catalogue could not be read would be
+   * worse than rendering one section short, so the failure is recorded and the
+   * template shows a notice in place of the grid instead of the products it
+   * could not fetch.
    *
-   * @returns {Promise<Array<Object>>} The products; empty when the feed failed.
+   * @returns {Promise<Array<Object>>} The products; empty when the read failed.
    */
   async #featured() {
     try {

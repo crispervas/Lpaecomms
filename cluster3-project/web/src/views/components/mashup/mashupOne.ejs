@@ -27,8 +27,8 @@
         <h2 id="mashup-1" class="mashup-card__title">Products + Location</h2>
         <p class="mashup-card__text">
           Shows customers where products are physically available, on a map they
-          can pan and zoom. Store coordinates are merged into the catalogue
-          server-side, because the feed carries none of its own.
+          can pan and zoom. Store coordinates are paired with the catalogue in
+          the page, because products carry none of their own.
         </p>
       </div>
     </div>
@@ -46,7 +46,7 @@
       changed together. %>
   <div class="mashup-card__widget">
     <div id="mashup-map" role="region" aria-label="Map of stores holding these products"
-      class="mashup-map"></div>
+      class="mashup-map" data-stores="<%= JSON.stringify(storeLocations) %>"></div>
     <p class="mashup-map__attribution">Map data © OpenStreetMap contributors</p>
   </div>
 </article>

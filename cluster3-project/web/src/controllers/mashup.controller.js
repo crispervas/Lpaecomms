@@ -7,6 +7,8 @@
  * clients do, so there is one data path per mashup instead of two.
  */
 
+import { STORE_LOCATIONS } from '../lib/storeLocations.js';
+
 /** Page title for the Mashups page. */
 const PAGE_TITLE = 'Lpaecomms — Mashups';
 
@@ -41,6 +43,8 @@ export class MashupController {
       page: 'mashup',
       styles: MASHUP_STYLES,
       scripts: MASHUP_SCRIPTS,
+      // Rendered into the map element; the map script pairs them with products.
+      storeLocations: STORE_LOCATIONS,
     });
   }
 }
