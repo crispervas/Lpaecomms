@@ -62,8 +62,18 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
     }
 
     try {
-      const data = await response.json();
-      return { ok: true, status: response.status, data, error: null };
+      const body = await response.json();
+      // The API wraps every payload as { message, data, pagination }; the IPC
+      // envelope carries only `data`, so the renderer never sees the wrapper.
+      if (body === null || typeof body !== 'object' || !('data' in body)) {
+        return {
+          ok: true,
+          status: response.status,
+          data: null,
+          error: 'The API responded in an unexpected format.',
+        };
+      }
+      return { ok: true, status: response.status, data: body.data, error: null };
     } catch {
       // The server answered, so ok stays true — the payload is what is wrong.
       return {

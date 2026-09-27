@@ -55,7 +55,7 @@ function clientWith(fetchImpl) {
 }
 
 test('maps a healthy 200 response', async () => {
-  const client = clientWith(respondWith(200, { status: 'ok', db: 'connected' }));
+  const client = clientWith(respondWith(200, { message: 'Service healthy', data: { status: 'ok', db: 'connected' }, pagination: null }));
 
   const envelope = await client.getHealth();
 
@@ -68,7 +68,7 @@ test('maps a healthy 200 response', async () => {
 });
 
 test('maps a degraded 503 response as a reply, not a failure', async () => {
-  const client = clientWith(respondWith(503, { status: 'degraded', db: 'unreachable' }));
+  const client = clientWith(respondWith(503, { message: 'Database unreachable', data: { status: 'degraded', db: 'unreachable' }, pagination: null }));
 
   const envelope = await client.getHealth();
 
@@ -76,6 +76,19 @@ test('maps a degraded 503 response as a reply, not a failure', async () => {
   assert.equal(envelope.status, 503);
   assert.deepEqual(envelope.data, { status: 'degraded', db: 'unreachable' });
   assert.equal(envelope.error, null);
+});
+
+test('reports a JSON body that is not the API envelope', async () => {
+  const client = clientWith(respondWith(200, { status: 'ok', db: 'connected' }));
+
+  const envelope = await client.getHealth();
+
+  assert.deepEqual(envelope, {
+    ok: true,
+    status: 200,
+    data: null,
+    error: 'The API responded in an unexpected format.',
+  });
 });
 
 test('maps a refused connection to an unreachable envelope', async () => {
