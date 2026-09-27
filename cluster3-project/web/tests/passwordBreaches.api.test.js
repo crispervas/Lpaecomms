@@ -43,13 +43,13 @@ test('GET /api/v1/password/breaches returns the suffix map without padding entri
   const response = await request(createApp()).get('/api/v1/password/breaches?prefix=5BAA6');
 
   assert.equal(response.status, 200);
-  assert.equal(response.body.prefix, '5BAA6');
-  assert.equal(response.body.count, 2);
-  assert.equal(response.body.suffixes['003D68EB55068C33ACE09247EE4C639306B'], 3);
-  assert.equal(response.body.suffixes['0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0'], undefined);
+  assert.equal(response.body.data.prefix, '5BAA6');
+  assert.equal(response.body.data.count, 2);
+  assert.equal(response.body.data.suffixes['003D68EB55068C33ACE09247EE4C639306B'], 3);
+  assert.equal(response.body.data.suffixes['0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0'], undefined);
   // A negative count is not a real breach entry either; it must not survive
   // alongside the zero-count decoy above.
-  assert.equal(response.body.suffixes['A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A'], undefined);
+  assert.equal(response.body.data.suffixes['A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A'], undefined);
 });
 
 test('GET /api/v1/password/breaches rejects a malformed prefix', async () => {

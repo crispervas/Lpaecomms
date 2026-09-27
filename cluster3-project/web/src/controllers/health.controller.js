@@ -2,9 +2,11 @@
  * @file Health controller.
  *
  * API endpoint that reports service health. Part of the API layer: it
- * orchestrates the health model and returns JSON. It never builds queries
- * itself; that is the model's responsibility.
+ * orchestrates the health model and answers in the shared response envelope.
+ * It never builds queries itself; that is the model's responsibility.
  */
+
+import { sendOk } from '../lib/apiResponse.js';
 
 /**
  * Controller for the health check endpoint.
@@ -30,9 +32,11 @@ export class HealthController {
    */
   async check(req, res) {
     const dbReachable = await this.healthModel.isDatabaseReachable();
-    res.status(dbReachable ? 200 : 503).json({
-      status: dbReachable ? 'ok' : 'degraded',
-      db: dbReachable ? 'connected' : 'unreachable',
-    });
+    sendOk(
+      res,
+      { status: dbReachable ? 'ok' : 'degraded', db: dbReachable ? 'connected' : 'unreachable' },
+      dbReachable ? 'Service healthy' : 'Database unreachable',
+      dbReachable ? 200 : 503,
+    );
   }
 }

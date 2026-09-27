@@ -23,7 +23,7 @@ test('POST /api/v1/contact accepts a valid message', async () => {
     .send({ name: 'Ana', email: 'ana@example.com', message: 'Hello there' });
 
   assert.equal(response.status, 202);
-  assert.deepEqual(response.body, { received: true });
+  assert.deepEqual(response.body, { message: 'Message received', data: { received: true }, pagination: null });
 });
 
 test('POST /api/v1/contact names every missing required field', async () => {

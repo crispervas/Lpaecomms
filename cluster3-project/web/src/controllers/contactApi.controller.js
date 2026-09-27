@@ -11,6 +11,7 @@
 import boom from '@hapi/boom';
 
 import { normaliseContact, validateContact } from '../lib/contactValidation.js';
+import { sendOk } from '../lib/apiResponse.js';
 
 /**
  * Controller for the contact endpoint.
@@ -40,7 +41,7 @@ export class ContactApiController {
         throw boom.badData('Some fields need attention.', { details });
       }
 
-      res.status(202).json({ received: true });
+      sendOk(res, { received: true }, 'Message received', 202);
     } catch (error) {
       next(error);
     }

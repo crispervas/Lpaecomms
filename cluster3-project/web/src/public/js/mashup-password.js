@@ -123,7 +123,8 @@
 
       if (!response.ok) throw new Error(`Breach lookup responded ${response.status}`);
 
-      const result = await response.json();
+      // The API wraps every payload as { message, data, pagination }.
+      const { data: result } = await response.json();
 
       // A slower earlier request must not overwrite a newer answer.
       if (requestId !== latestRequestId) return;

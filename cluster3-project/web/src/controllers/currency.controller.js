@@ -3,12 +3,13 @@
  *
  * API endpoint that converts a price between the store's supported currencies.
  * Part of the API layer: it validates the query, orchestrates the currency
- * model, and returns JSON. Validation lives here rather than in the model
+ * model, and answers in the shared response envelope. Validation lives here rather than in the model
  * because "what is a valid request" is an HTTP concern.
  */
 
 import boom from '@hapi/boom';
 import { CurrencyModel } from '../models/currency.model.js';
+import { sendOk } from '../lib/apiResponse.js';
 
 /**
  * Controller for the currency conversion endpoint.
@@ -56,7 +57,7 @@ export class CurrencyController {
 
       const result = await this.currencyModel.convert(have, want, amount);
 
-      res.json({ have, want, amount, ...result });
+      sendOk(res, { have, want, amount, ...result }, 'Converted');
     } catch (error) {
       // A Boom error already carries the status this controller chose. Anything
       // else came out of the model, which means the provider failed: 502.

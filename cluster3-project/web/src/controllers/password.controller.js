@@ -9,6 +9,7 @@
 
 import boom from '@hapi/boom';
 import { BreachModel } from '../models/breach.model.js';
+import { sendOk } from '../lib/apiResponse.js';
 
 /**
  * Controller for the breached password lookup endpoint.
@@ -42,7 +43,7 @@ export class PasswordController {
 
       const suffixes = await this.breachModel.findSuffixes(prefix);
 
-      res.json({ prefix, count: Object.keys(suffixes).length, suffixes });
+      sendOk(res, { prefix, count: Object.keys(suffixes).length, suffixes }, 'Breach suffixes');
     } catch (error) {
       // The cause travels as data, never as the second argument's Error form:
       // Boom boomifies an Error there and merges its message into the payload,

@@ -112,7 +112,8 @@
 
       if (!response.ok) throw new Error(`Conversion responded ${response.status}`);
 
-      const result = await response.json();
+      // The API wraps every payload as { message, data, pagination }.
+      const { data: result } = await response.json();
 
       // Parsing the body is itself asynchronous, so the selection could have
       // moved on again during that wait — checked once more right before the

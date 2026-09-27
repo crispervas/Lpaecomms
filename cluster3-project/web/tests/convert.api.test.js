@@ -167,3 +167,26 @@ test('CurrencyModel converts a currency into itself without calling upstream', a
 
   assert.deepEqual(result, { rate: 1, converted: 42, cached: true });
 });
+
+test('CurrencyController answers a conversion in the envelope', async () => {
+  const model = {
+    isConfigured: true,
+    convert: async () => ({ converted: 6.5, rate: 0.65, cached: false }),
+  };
+  const controller = new CurrencyController(model);
+
+  let statusCode;
+  let payload;
+  await controller.convert(
+    { query: { have: 'AUD', want: 'USD', amount: '10' } },
+    { status(code) { statusCode = code; return this; }, json(body) { payload = body; } },
+    (error) => { throw error; },
+  );
+
+  assert.equal(statusCode, 200);
+  assert.deepEqual(payload, {
+    message: 'Converted',
+    data: { have: 'AUD', want: 'USD', amount: 10, converted: 6.5, rate: 0.65, cached: false },
+    pagination: null,
+  });
+});

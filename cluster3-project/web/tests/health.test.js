@@ -30,7 +30,9 @@ test('GET /api/v1/health returns 200 and reports the database as connected', asy
   const response = await request(app).get('/api/v1/health');
 
   assert.equal(response.status, 200);
-  assert.deepEqual(response.body, { status: 'ok', db: 'connected' });
+  assert.deepEqual(response.body, {
+    message: 'Service healthy', data: { status: 'ok', db: 'connected' }, pagination: null,
+  });
 });
 
 test('HealthController.check reports 503 when the database is unreachable', async () => {
@@ -52,5 +54,7 @@ test('HealthController.check reports 503 when the database is unreachable', asyn
   await controller.check({}, res);
 
   assert.equal(statusCode, 503);
-  assert.deepEqual(payload, { status: 'degraded', db: 'unreachable' });
+  assert.deepEqual(payload, {
+    message: 'Database unreachable', data: { status: 'degraded', db: 'unreachable' }, pagination: null,
+  });
 });
