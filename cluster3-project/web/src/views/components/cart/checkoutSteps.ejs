@@ -1,0 +1,21 @@
+<%# The checkout's step indicator: Cart, Shipping, Payment.
+
+    An ordered list, so a screen reader announces "1 of 3"; the current step
+    carries aria-current="step". Steps before the current one are drawn as
+    done, those after as upcoming.
+
+    Expected locals:
+      current — the step shown, 1 to 3 %>
+<%
+  const steps = ['Cart', 'Shipping', 'Payment'];
+%>
+<ol class="checkout-steps">
+  <% steps.forEach((label, index) => {
+       const number = index + 1;
+       const state = number < current ? ' is-done' : number === current ? ' is-active' : ''; %>
+    <li class="checkout-steps__step<%= state %>" <% if (number === current) { %>aria-current="step"<% } %>>
+      <span class="checkout-steps__number" aria-hidden="true"><%= number %></span>
+      <span class="checkout-steps__label"><%= label %></span>
+    </li>
+  <% }) %>
+</ol>

@@ -95,6 +95,7 @@ web/
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
 │   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
 │   ├── account.test.js            # Account page: profile rules, tab whitelist, controller locals (preview never saves)
+│   ├── cart.test.js               # Cart cookie rules (parse, limits, merge) and the controller's pricing, pruning and redirects
 │   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
 │   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
 │   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
@@ -240,6 +241,7 @@ src/
 │   ├── notFoundHandler.js# 404 handlers: JSON for API, HTML page for the browser
 │   ├── apiCors.js        # CORS headers for every /api response, success and failure alike
 │   ├── cookies.js        # Shared attributes for a persistent first-party cookie (httpOnly, sameSite, secure, 1-year maxAge)
+│   ├── cart.js           # Middleware: res.locals.cartCount for the header badge, counted from the cart cookie
 │   └── preferences.js    # Middleware: resolves res.locals.preferences from the cookie for every template
 ├── routes/               # URL → controller mapping (the routing layer)
 │   ├── index.js          # registerRoutes(): mounts view routes at / and API at /api/v1
@@ -249,6 +251,7 @@ src/
 │   │   ├── contact.routes.js
 │   │   ├── auth.routes.js
 │   │   ├── account.routes.js # GET/POST /account (Profile and Orders tabs; preview, nothing saved)
+│   │   ├── cart.routes.js    # GET /cart; POST /cart/items (add), /cart/items/:id (quantity), /cart/items/:id/remove
 │   │   ├── mashup.routes.js
 │   │   ├── catalog.routes.js
 │   │   ├── productDetail.routes.js
@@ -267,6 +270,7 @@ src/
 │   ├── contact.controller.js
 │   ├── auth.controller.js # Login page; a well-formed log in redirects to the Account preview
 │   ├── account.controller.js # Account page: show() by ?tab=, saveProfile() validates and answers with a preview notice
+│   ├── cart.controller.js # Cart page priced from the catalogue; add/update/remove write lpa_cart and redirect 303
 │   ├── mashup.controller.js
 │   ├── health.controller.js
 │   ├── product.controller.js
@@ -291,6 +295,7 @@ src/
 │   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
 │   ├── authValidation.js # Login and sign-up rules, keyed by mode
 │   ├── accountValidation.js # Profile form rules, the ?tab= whitelist, avatar initials
+│   ├── cart.js           # lpa_cart cookie: parse/serialise ids and quantities, limits (99 units, 20 lines), totals in cents
 │   ├── preferences.js    # THEMES/TEXT_SIZES whitelists, cookie parse/serialise, safe-return-path guard — no Express import
 │   └── recentlyViewed.js # Browsing-history cookie: parse, push (dedupe + move-to-front), serialise, RECENT_LIMIT (8)
 ├── views/                # VIEW: server-rendered EJS templates
@@ -311,7 +316,7 @@ src/
 │   │   │   └── catalogResults.ejs # Catalog grid, count label and empty states
 │   │   ├── product/
 │   │   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
-│   │   │   ├── productPurchase.ejs # Quantity and add-to-cart, disabled until a cart exists
+│   │   │   ├── productPurchase.ejs # Quantity and add-to-cart form, posting to /cart/items
 │   │   │   └── productRelated.ejs  # "You might also like": same category, current excluded
 │   │   ├── about/
 │   │   │   ├── aboutMission.ejs  # About mission block: eyebrow and headline (static markup)
@@ -334,6 +339,10 @@ src/
 │   │   │   ├── accountSidebar.ejs # Avatar card, Profile/Orders links, Log out
 │   │   │   ├── accountProfile.ejs # Personal details form and the (disabled) password change
 │   │   │   └── accountOrders.ejs  # One card per order: status pill and AUD total
+│   │   ├── cart/
+│   │   │   ├── checkoutSteps.ejs # Cart / Shipping / Payment indicator (ordered list, aria-current=step)
+│   │   │   ├── cartLine.ejs      # One line: image, name, −/+ submit-button stepper, total, remove
+│   │   │   └── cartSummary.ejs   # Subtotal, shipping "calculated at checkout", estimated total
 │   │   ├── preferences/
 │   │   │   └── appearanceForm.ejs # The theme and text-size radio groups; included by both preferences.ejs and appearancePanel.ejs via idPrefix
 │   │   └── shared/           # Fragments no single page owns
@@ -345,6 +354,7 @@ src/
 │       ├── contact.ejs
 │       ├── login.ejs
 │       ├── account.ejs  # Sidebar beside the Profile or Orders tab
+│       ├── cart.ejs     # Checkout step 1: lines beside the order summary; Shipping disabled until checkout exists
 │       ├── mashup.ejs
 │       ├── catalog.ejs
 │       ├── productDetail.ejs
@@ -361,6 +371,7 @@ src/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
         ├── form-validation.js # Inline validation for any form[data-validate] (the server still decides)
+        ├── quantity-stepper.js # Reveals and drives the − / + buttons of any form[data-quantity-stepper]
         ├── mashup-map.js   # Leaflet map on the Mashups page (mashup 1: products + location)
         ├── mashup-currency.js # Currency converter on the Mashups page (mashup 2)
         ├── mashup-password.js # Password strength + breach check on the Mashups page (mashup 3)

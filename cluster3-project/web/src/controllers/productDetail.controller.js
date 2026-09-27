@@ -30,6 +30,9 @@ const RELATED_FETCH_LIMIT = 5;
 /** The mockup's "You might also like" row holds four cards. */
 const RELATED_COUNT = 4;
 
+/** Reveals and drives the purchase block's − / + buttons. */
+const PRODUCT_SCRIPTS = ['/js/quantity-stepper.js'];
+
 /**
  * Controller for the storefront's product detail page.
  */
@@ -97,6 +100,7 @@ export class ProductDetailController {
     res.render('layouts/base', {
       title: `${product.name} — Lpaecomms`,
       page: 'productDetail',
+      scripts: PRODUCT_SCRIPTS,
       product,
       related,
     });

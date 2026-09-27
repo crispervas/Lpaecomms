@@ -1,0 +1,57 @@
+/*
+ * The − / value / + quantity stepper: the product page's purchase block and
+ * each cart line.
+ *
+ * On the product page the value is an <input type="number"> and the buttons
+ * are revealed by public/js/quantity-stepper.js; on the cart page the value is
+ * text and the buttons are submit buttons. Both share this shape.
+ */
+
+.quantity {
+  display: flex;
+  align-items: center;
+  border: 1px solid @line;
+  border-radius: @radius-lg;
+}
+
+.quantity__button {
+  width: 2.5rem;
+  height: 3rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: @ink;
+
+  // At the end of the range: still visible so the stepper keeps its shape.
+  &:disabled { color: @muted; }
+}
+
+.quantity__value {
+  width: 2.25rem;
+  text-align: center;
+  font-size: .875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+}
+
+// The product page's typable value. The native spinner is removed because the
+// stepper's own buttons replace it; without the script, typing still works.
+input.quantity__value {
+  width: 2.75rem;
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+  color: @ink;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid @accent;
+    outline-offset: -2px;
+  }
+}

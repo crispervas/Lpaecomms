@@ -1,27 +1,31 @@
 <%#
   Purchase controls: the quantity stepper and the priced add-to-cart button.
 
+  A form posting to /cart/items, answered with a redirect to the cart, so
+  adding works with no JavaScript: the quantity is a number field anyone can
+  type into. The − and + buttons only make sense with a script behind them, so
+  they render hidden and public/js/quantity-stepper.js reveals them — a
+  visitor without it never meets a button that does nothing.
+
   Expected locals:
+    productId      — the product being added.
     priceAud       — the product's price, for the button's label.
     priceFormatter — an Intl.NumberFormat, passed in so one price never renders
                      two ways on the same page.
-
-  Every control is disabled: there is no cart yet, and `disabled` already keeps
-  them out of the tab order, so nothing else is needed to stop the block
-  offering something the site cannot do. It becomes real with the cart
-  iteration.
 %>
-<div class="purchase">
+<form method="post" action="/cart/items" class="purchase" data-quantity-stepper>
+  <input type="hidden" name="productId" value="<%= productId %>" />
+
   <div class="quantity">
-    <button type="button" disabled title="Coming soon" aria-label="Decrease quantity"
-      class="quantity__button">−</button>
-    <span class="quantity__value">1</span>
-    <button type="button" disabled title="Coming soon" aria-label="Increase quantity"
-      class="quantity__button">+</button>
+    <button type="button" data-step="-1" aria-label="Decrease quantity"
+      class="quantity__button u-hidden">−</button>
+    <input type="number" name="quantity" value="1" min="1" max="99" step="1" inputmode="numeric"
+      aria-label="Quantity" class="quantity__value" />
+    <button type="button" data-step="1" aria-label="Increase quantity"
+      class="quantity__button u-hidden">+</button>
   </div>
 
-  <button type="button" disabled title="Coming soon"
-    class="button button--solid purchase__submit">
+  <button type="submit" class="button button--solid purchase__submit">
     Add to cart — <%= priceFormatter.format(priceAud) %>
   </button>
-</div>
+</form>

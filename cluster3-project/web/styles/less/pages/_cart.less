@@ -1,0 +1,242 @@
+/*
+ * Cart page: the checkout mockup's first step — title, step indicator, then
+ * the cart lines beside the order summary.
+ *
+ * The summary sits beside the lines from `lg` and stays in view while a long
+ * cart scrolls; below that it follows the lines. The quantity stepper is the
+ * shared components/_quantity.less.
+ */
+
+.checkout {
+  padding: 3rem 0;
+}
+
+.checkout__title {
+  margin-bottom: 2.5rem;
+  font-family: @font-display;
+  font-size: 2rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.checkout__notice {
+  margin-bottom: 1.5rem;
+}
+
+.checkout__layout {
+  display: grid;
+  gap: 2rem;
+
+  .lg({ grid-template-columns: minmax(0, 1fr) 20rem; gap: 3rem; });
+}
+
+.checkout__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 4rem 0;
+}
+
+.checkout__empty-text {
+  font-size: .9375rem;
+  color: @muted;
+}
+
+.checkout__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .5rem;
+  margin-top: 2rem;
+}
+
+// The disabled state is spelled out: the solid button otherwise looks as
+// clickable as ever, and the note beside it would be all that said otherwise.
+.checkout__next:disabled {
+  opacity: .5;
+}
+
+.checkout__note {
+  font-size: .8125rem;
+  color: @muted;
+}
+
+// ── Step indicator ─────────────────────────────────────────────────────────
+.checkout-steps {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+// Every step but the last is followed by a line that takes the free width.
+.checkout-steps__step {
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  gap: .625rem;
+
+  &::after {
+    content: "";
+    flex: 1 1 0%;
+    height: 2px;
+    margin-left: .375rem;
+    background-color: @line;
+  }
+
+  &:last-child {
+    flex: none;
+
+    &::after { display: none; }
+  }
+
+  &.is-done::after { background-color: @ink; }
+}
+
+.checkout-steps__number {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: @radius-full;
+  background-color: @subtle;
+  font-size: .8125rem;
+  font-weight: 700;
+  color: @muted;
+
+  .is-active &,
+  .is-done & {
+    background-color: @ink;
+    color: @on-ink;
+  }
+}
+
+.checkout-steps__label {
+  font-size: .875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: @muted;
+
+  .is-active &,
+  .is-done & { color: @ink; }
+}
+
+// ── Cart lines ─────────────────────────────────────────────────────────────
+.cart-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// Wraps below `sm`: the stepper and total drop under the name rather than
+// squeezing it to a word per line.
+.cart-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1.25rem;
+  .card();
+
+  .sm({ flex-wrap: nowrap; });
+}
+
+.cart-line__image {
+  width: 5.5rem;
+  height: 5.5rem;
+  flex-shrink: 0;
+  border-radius: @radius-xl;
+  background-color: @subtle;
+  object-fit: cover;
+}
+
+.cart-line__body {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.cart-line__name {
+  font-size: .9375rem;
+  font-weight: 600;
+  color: @ink;
+
+  &:hover { color: @accent; }
+}
+
+.cart-line__category {
+  margin-top: .25rem;
+  font-size: .8125rem;
+  color: @muted;
+}
+
+.cart-line__quantity .quantity__button { height: 2.25rem; width: 2rem; }
+
+.cart-line__total {
+  min-width: 5rem;
+  margin-left: auto;
+  text-align: right;
+  font-size: .9375rem;
+  font-weight: 700;
+}
+
+.cart-line__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: @radius-full;
+  color: @muted;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover { color: @ink; background-color: @subtle; }
+}
+
+// ── Order summary ──────────────────────────────────────────────────────────
+.cart-summary {
+  align-self: start;
+  padding: 1.75rem;
+  .card();
+
+  .lg({ position: sticky; top: calc(@header-height + 1.25rem); });
+}
+
+.cart-summary__title {
+  margin-bottom: 1.25rem;
+  font-family: @font-display;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.cart-summary__rows {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid @line;
+}
+
+.cart-summary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: .875rem;
+  color: @muted;
+}
+
+.cart-summary__value {
+  text-align: right;
+  font-weight: 500;
+  color: @ink;
+}
+
+.cart-summary__row--total {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: @ink;
+}
