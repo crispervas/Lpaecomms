@@ -333,7 +333,13 @@ desktop/
 ├── tests/
 │   ├── env.test.js               # Environment validation
 │   ├── apiClient.test.js         # Result envelope for every failure mode
-│   └── loginRules.test.mjs       # Admin sign-in validation
+│   ├── loginRules.test.mjs       # Admin sign-in validation
+│   ├── barWidths.test.mjs        # Dashboard bar scaling
+│   ├── table.test.mjs            # Sorting, paging and search shared by tables
+│   ├── userTable.test.mjs        # Users filtering and initials
+│   ├── orderTable.test.mjs       # Orders filtering and the recent-orders list
+│   ├── catalogRules.test.mjs     # Category and product validation, slugs, counts
+│   └── format.test.mjs           # Date and money formats
 └── src/
     ├── main/             # The only process with configuration and network access
     │   ├── index.js              # Lifecycle, CSP, BrowserWindow, dev/prod loading
@@ -343,10 +349,29 @@ desktop/
     │   └── ipc/health.ipc.js     # Registers the api:health channel
     └── renderer/         # React; no Node, no network
         ├── main.jsx              # React root; bundles the @fontsource fonts
-        ├── App.jsx               # Page frame; sign-in gate, in-memory session
-        ├── components/AdminLogin.jsx # Admin sign-in screen (preview, no auth yet)
-        ├── components/ApiStatus.jsx  # Health screen (five cases)
+        ├── App.jsx               # Sign-in gate, section, in-memory sample accounts
+        ├── components/AdminLogin.jsx  # Admin sign-in screen (preview, no auth yet)
+        ├── components/AdminLayout.jsx # Sidebar frame shared by every admin screen
+        ├── components/Icon.jsx        # The mockups' stroke icons, by name
+        ├── components/Dashboard.jsx   # Dashboard screen (preview, sample data)
+        ├── components/Users.jsx       # Users screen (preview, sample accounts)
+        ├── components/Orders.jsx      # Orders screen (preview, sample orders)
+        ├── components/OrderStatusBadge.jsx # Order status pill (Dashboard, Orders)
+        ├── components/Catalog.jsx     # Categories and their products (display only)
+        ├── components/CatalogForms.jsx # New-category and new-product forms
+        ├── components/tableParts.jsx  # Search, chips, headers, pager for list screens
+        ├── components/ApiStatus.jsx   # Health panel; unmounted until Settings exists
+        ├── data/dashboard.mjs    # Sample figures until the admin API exists
+        ├── data/users.mjs        # Sample accounts and the signed-in admin
+        ├── data/orders.mjs       # Sample orders (Orders and the Dashboard)
+        ├── data/catalog.mjs      # Sample catalog; its typedefs are the DB contract
         ├── lib/loginRules.mjs    # Sign-in rules shared in wording with web/mobile
+        ├── lib/barWidths.mjs     # Scales category counts into bar widths
+        ├── lib/table.mjs         # Sorting, paging and search for every table
+        ├── lib/userTable.mjs     # Users filtering and avatar initials
+        ├── lib/orderTable.mjs    # Orders filtering and the newest orders
+        ├── lib/catalogRules.mjs  # Catalog validation, slugify, per-category counts
+        ├── lib/format.mjs        # Date and money formats from the mockups
         └── styles/tailwind.css   # Tailwind source
 ```
 
@@ -360,4 +385,18 @@ The admin screens follow the desktop mockups in `documentation/Mockup/`. Their
 colours come only from the `lpa` palette in `tailwind.config.js`, and the fonts
 are bundled with `@fontsource` because the renderer's CSP allows only `'self'`.
 The sign-in screen is a preview: a form that passes validation opens the app
-with no request, until the API gains an authentication endpoint.
+with no request, until the API gains an authentication endpoint. The Dashboard,
+Users and Orders screens are previews too: they render the sample data in
+`data/` because the API has no users, orders or statistics endpoints yet.
+Blocking or deleting a user and changing an order's status change `App`'s
+in-memory lists only; the Dashboard's recent orders read the same list.
+`AdminLayout`'s `SECTIONS` lists every sidebar section; one whose screen is not
+built yet stays visible but disabled.
+
+The Catalog screen (categories and the products in each) has no mockup and is
+display-only until the database exists. Its forms validate with
+`lib/catalogRules.mjs` and pass the record to `createCategory` /
+`createProduct` in `App.jsx`, which today report `{ saved: false }`. Those two
+functions are the integration seam: they become calls to named `window.api`
+functions, and `data/catalog.mjs`'s `Category` and `Product` typedefs describe
+the rows the tables must hold (`products.categoryId` → `categories.id`).

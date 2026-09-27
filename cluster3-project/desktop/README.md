@@ -60,5 +60,28 @@ The app opens on the admin sign-in screen (`components/AdminLogin.jsx`), built
 from the "Admin Login" desktop mockup. It is a preview until the API gains
 authentication: a form that passes `lib/loginRules.mjs` opens the app with no
 request, and the session lives in memory only, so a restart signs you out.
+Signing in opens the admin frame (`components/AdminLayout.jsx`): a sidebar
+with the Dashboard, Users, Orders, Catalog and Settings sections. Settings stays
+disabled until its screen exists. The built screens are previews labelled as
+such, because the API has no users, orders or statistics endpoints yet; they
+read the sample data in `data/`:
+
+- **Dashboard** shows sample figures and the five newest orders; "View all →"
+  opens Orders.
+- **Users** has working search, role filter, sorting and paging. Blocking and
+  deleting change an in-memory copy; your own account cannot be blocked or
+  deleted. Adding and editing stay disabled until a mockup defines their forms.
+- **Orders** has the same table tools plus a panel, opened by View or Update
+  status, with the order's summary and a status picker. A new status shows on
+  the Dashboard too.
+- **Catalog** (no mockup) lists categories and the products in each, with
+  forms for a new category and a new product. The forms validate but save
+  nothing yet: `createCategory` and `createProduct` in `App.jsx` are where the
+  database calls go, and `data/catalog.mjs` documents the record shapes.
+
+Every change resets on sign-out. The API health panel
+(`components/ApiStatus.jsx`) is unmounted until the Settings screen gives it
+its "System status" home.
+
 Colours come from the `lpa` palette in `tailwind.config.js`; fonts are bundled
 with `@fontsource` because the CSP allows only `'self'`.

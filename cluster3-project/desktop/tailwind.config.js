@@ -29,9 +29,19 @@ module.exports = {
           control: '#8E8A7F',
           subtle: '#6B6F76',
           placeholder: '#B3B1A9',
+          // Bar tracks and the rules between table rows.
+          track: '#F1F0EC',
           accent: '#2F5EFB',
           'accent-strong': '#1F45D6',
+          tint: '#EEF1FF',
           danger: '#B91C1C',
+          // Order status badges and KPI trends, from the Dashboard mockup.
+          success: '#227A3C',
+          'success-soft': '#E9F6EC',
+          warning: '#A25B00',
+          'warning-soft': '#FFF4E5',
+          negative: '#C23B3B',
+          'negative-soft': '#FBEAEA',
         },
       },
       fontFamily: {
