@@ -328,11 +328,12 @@ desktop/
 ├── .env.example          # Documents every environment variable (no secrets)
 ├── index.html            # Vite entry point for the renderer
 ├── vite.config.mjs       # Renderer build; pinned dev port, relative asset base
-├── tailwind.config.js    # Content globs (index.html + src/renderer)
+├── tailwind.config.js    # Content globs, plus the lpa palette and fonts
 ├── postcss.config.js     # Tailwind + autoprefixer
 ├── tests/
 │   ├── env.test.js               # Environment validation
-│   └── apiClient.test.js         # Result envelope for every failure mode
+│   ├── apiClient.test.js         # Result envelope for every failure mode
+│   └── loginRules.test.mjs       # Admin sign-in validation
 └── src/
     ├── main/             # The only process with configuration and network access
     │   ├── index.js              # Lifecycle, CSP, BrowserWindow, dev/prod loading
@@ -341,9 +342,11 @@ desktop/
     │   ├── services/apiClient.js # HTTP client returning result envelopes
     │   └── ipc/health.ipc.js     # Registers the api:health channel
     └── renderer/         # React; no Node, no network
-        ├── main.jsx              # React root
-        ├── App.jsx               # Page frame
+        ├── main.jsx              # React root; bundles the @fontsource fonts
+        ├── App.jsx               # Page frame; sign-in gate, in-memory session
+        ├── components/AdminLogin.jsx # Admin sign-in screen (preview, no auth yet)
         ├── components/ApiStatus.jsx  # Health screen (five cases)
+        ├── lib/loginRules.mjs    # Sign-in rules shared in wording with web/mobile
         └── styles/tailwind.css   # Tailwind source
 ```
 
@@ -352,3 +355,9 @@ bridge, which means an admin token added later stays in the main process.
 
 Vite compiles the renderer only: `src/main/` is CommonJS importing nothing
 beyond `electron` and Node builtins, so it needs no build step.
+
+The admin screens follow the desktop mockups in `documentation/Mockup/`. Their
+colours come only from the `lpa` palette in `tailwind.config.js`, and the fonts
+are bundled with `@fontsource` because the renderer's CSP allows only `'self'`.
+The sign-in screen is a preview: a form that passes validation opens the app
+with no request, until the API gains an authentication endpoint.

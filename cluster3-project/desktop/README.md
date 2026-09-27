@@ -53,3 +53,12 @@ Three processes with one boundary:
 The window runs with `contextIsolation: true`, `nodeIntegration: false`,
 `sandbox: true`, and a Content Security Policy that forbids outbound
 connections whenever the compiled renderer is served.
+
+## Screens
+
+The app opens on the admin sign-in screen (`components/AdminLogin.jsx`), built
+from the "Admin Login" desktop mockup. It is a preview until the API gains
+authentication: a form that passes `lib/loginRules.mjs` opens the app with no
+request, and the session lives in memory only, so a restart signs you out.
+Colours come from the `lpa` palette in `tailwind.config.js`; fonts are bundled
+with `@fontsource` because the CSP allows only `'self'`.
