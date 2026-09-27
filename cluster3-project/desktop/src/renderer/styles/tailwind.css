@@ -1,0 +1,8 @@
+/**
+ * Tailwind source stylesheet for the desktop renderer.
+ * Vite processes this through PostCSS; there is no separate build script.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
