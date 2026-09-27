@@ -15,7 +15,9 @@
     "dev:main": "wait-on tcp:5173 && electron .",
     "build": "vite build",
     "start": "USE_BUILT_RENDERER=true electron .",
-    "test": "node --test"
+    "test": "node --test",
+    "dist:mac": "vite build && node scripts/dist.mjs --mac",
+    "dist:win": "vite build && node scripts/dist.mjs --win"
   },
   "dependencies": {
     "dotenv": "^17.4.2"
@@ -27,6 +29,7 @@
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.2.1",
     "electron": "^40.0.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

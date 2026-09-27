@@ -611,14 +611,19 @@ the first such edit is the point to start committing the native projects.
 ```
 desktop/
 ├── .env.example          # Documents every environment variable (no secrets)
+├── electron-builder.config.cjs # Installer settings shared by .dmg and .exe
+├── scripts/dist.mjs      # `pnpm dist:*`: bakes the config, runs electron-builder
+├── app-config.json       # Baked by scripts/dist.mjs (build output, gitignored)
+├── release/              # Installers (build output, gitignored)
 ├── index.html            # Vite entry point for the renderer
 ├── vite.config.mjs       # Renderer build; pinned dev port, relative asset base
 ├── tailwind.config.js    # Content globs, plus the lpa palette and fonts
 ├── postcss.config.js     # Tailwind + autoprefixer
 ├── resources/            # App icons (icon.png|icns|ico), exported from brand/;
-│                         #   not wired into Electron's window or packaging yet
+│                         #   electron-builder puts them on both installers
 ├── tests/
 │   ├── env.test.js               # Environment validation
+│   ├── packagedConfig.test.js    # Configuration baked into installers
 │   ├── describeHealth.test.mjs   # Health envelope → service state
 │   ├── apiClient.test.js         # Result envelope for every failure mode
 │   ├── loginRules.test.mjs       # Admin sign-in validation
@@ -634,6 +639,8 @@ desktop/
     │   ├── index.js              # Lifecycle, CSP, BrowserWindow, dev/prod loading
     │   ├── preload.js            # contextBridge surface — named functions only
     │   ├── config/env.js         # Validated, frozen configuration
+    │   ├── config/packaged.js    # Bakes and reads a packaged build's config
+    │   ├── config/index.js       # Picks the source: baked file or .env
     │   ├── services/apiClient.js # HTTP client returning result envelopes
     │   └── ipc/health.ipc.js     # Registers the api:health channel
     └── renderer/         # React; no Node, no network
@@ -673,6 +680,12 @@ bridge, which means an admin token added later stays in the main process.
 
 Vite compiles the renderer only: `src/main/` is CommonJS importing nothing
 beyond `electron` and Node builtins, so it needs no build step.
+
+Installers come from `pnpm dist:mac` / `pnpm dist:win`. An installed app has
+no shell environment and no `.env`, so `scripts/dist.mjs` validates the build
+machine's configuration and bakes it into the package as `app-config.json`;
+`config/index.js` reads that file when `app.isPackaged` and the `.env`
+otherwise. The installer's file name carries the environment it was baked for.
 
 The admin screens follow the desktop mockups in `documentation/Mockup/`. Their
 colours come only from the `lpa` palette in `tailwind.config.js`, and the fonts

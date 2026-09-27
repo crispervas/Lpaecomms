@@ -27,6 +27,8 @@ cp .env.example .env
 | `pnpm start` | Run Electron against the compiled renderer in `dist/` (run `pnpm build` first) |
 | `pnpm test` | Run the whole test suite |
 | `node --test tests/env.test.js` | Run a single test file |
+| `pnpm dist:mac` | Build a universal macOS installer (`.dmg`) into `release/` |
+| `pnpm dist:win` | Build a Windows installer (`.exe`, NSIS) into `release/` |
 
 `pnpm start` sets `USE_BUILT_RENDERER=true` inline, which is POSIX shell syntax.
 On Windows, set the variable separately before running `electron .`.
@@ -40,6 +42,53 @@ See `.env.example` for the full list. Two of them are easy to confuse:
   served** — Vite's dev server or the compiled `index.html`.
 
 They are independent, so a development build can point at staging.
+
+## Packaging
+
+`pnpm dist:mac` and `pnpm dist:win` compile the renderer, then run
+`scripts/dist.mjs`, which drives [electron-builder](https://www.electron.build)
+with the shared settings in `electron-builder.config.cjs`. Installers land in
+`release/`, named with the version, environment and architecture, e.g.
+`LPA-Ecomms-Admin-0.1.0-production-universal.dmg`.
+
+### Choosing the environment
+
+An installed app has no shell environment and no `.env`, so the build bakes
+its configuration in. `scripts/dist.mjs` validates the build machine's
+`NODE_ENV`, `API_BASE_URL` and `API_TIMEOUT_MS` and writes them to
+`app-config.json` inside the package; the installed app reads that file and
+ignores its own environment. The values come from:
+
+1. variables already set in the shell (CI secrets, for instance), then
+2. `.env.<NODE_ENV>` when `NODE_ENV` is set and that file exists, otherwise
+3. `.env`.
+
+```bash
+pnpm dist:mac                          # values from .env (development)
+NODE_ENV=production pnpm dist:mac      # values from .env.production
+```
+
+`.env.staging` and `.env.production` follow `.env.example` and, like every
+real `.env` file, are never committed. A missing or invalid variable stops the
+build, not the installed app.
+
+### Where each installer builds
+
+| Installer | Build on |
+| --- | --- |
+| `.dmg` | macOS only |
+| `.exe` | Windows (a Windows machine or a Windows CI runner) |
+
+### Signing
+
+Neither installer is signed with a paid certificate:
+
+- **macOS** — the app is signed ad hoc, which lets it run on Apple Silicon
+  but not pass Gatekeeper silently. The first launch needs right-click → Open,
+  then Open. A Developer ID plus notarization would remove the prompt.
+- **Windows** — SmartScreen shows "Windows protected your PC" on the first
+  run; choose More info → Run anyway. A code-signing certificate would remove
+  it.
 
 ## Architecture
 

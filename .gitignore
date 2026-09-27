@@ -54,6 +54,9 @@ cluster3-project/mobile/ios/
 # ---------------------------------------------------------------------------
 # Packaged installers and unpacked app output.
 release/
+# Configuration baked into a packaged build by scripts/dist.mjs; regenerated
+# on every build and specific to the machine that built it.
+cluster3-project/desktop/app-config.json
 app/dist/
 
 # ---------------------------------------------------------------------------
