@@ -70,3 +70,20 @@ test('the update schema cannot change money or lines', () => {
   const parsed = purchaseResource.updateSchema.parse({ paymentStatus: 'SUCCESS', finalAmount: 1, products: [] });
   assert.deepEqual(parsed, { paymentStatus: 'SUCCESS' });
 });
+
+test('updating data keeps the recorded lines', async () => {
+  const lines = [{ productId: 1, quantity: 2, unitPrice: '14.95' }];
+  const prisma = createFakePrisma({
+    purchase: { findFirst: { id: 1, data: { lines, note: 'old' } }, update: (a) => a.data },
+  });
+  await new PurchaseModel(prisma, purchaseResource).update(1, { data: { note: 'gift', lines: [] } });
+  const data = prisma.calls.find((c) => c.method === 'update').args.data.data;
+  assert.deepEqual(data, { note: 'gift', lines });
+});
+
+test('updating data to null keeps the recorded lines', async () => {
+  const lines = [{ productId: 1, quantity: 2, unitPrice: '14.95' }];
+  const prisma = createFakePrisma({ purchase: { findFirst: { id: 1, data: { lines } }, update: (a) => a.data } });
+  await new PurchaseModel(prisma, purchaseResource).update(1, { data: null });
+  assert.deepEqual(prisma.calls.find((c) => c.method === 'update').args.data.data, { lines });
+});

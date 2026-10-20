@@ -9,6 +9,7 @@
  */
 
 import { prisma as defaultPrisma } from '../lib/prisma.js';
+import { INT4_MAX } from '../lib/dbInt.js';
 
 /** The home page's "Trending now" grid holds eight cards. */
 const DEFAULT_FEATURED_LIMIT = 8;
@@ -108,6 +109,8 @@ export class ProductModel {
     // A route param like "1abc" must not become 1: that would serve a product
     // under a URL that does not name it.
     if (!/^\d+$/.test(String(id))) return null;
+    // Past int4 no product can exist, and PostgreSQL would reject the query.
+    if (Number(id) > INT4_MAX) return null;
 
     const row = await this.prisma.product.findFirst({
       where: { ...ACTIVE, id: Number(id) },

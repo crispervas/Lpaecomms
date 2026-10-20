@@ -73,3 +73,9 @@ test('findByCategoryExcluding excludes in the query', async () => {
   assert.deepEqual(prisma.calls[0].args.where, { status: { not: 0 }, categoryId: 2, id: { notIn: [1, 3] } });
   assert.equal(prisma.calls[0].args.take, 4);
 });
+
+test('getById answers null for an id beyond int4 without querying', async () => {
+  const prisma = createFakePrisma({ product: { findFirst: row(1) } });
+  assert.equal(await new ProductModel(prisma).getById('99999999999'), null);
+  assert.equal(prisma.calls.length, 0);
+});

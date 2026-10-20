@@ -71,3 +71,31 @@ test('the feed catalogue endpoint is gone', async () => {
   const res = await request(createApp({ prisma: createFakePrisma(listable) })).get('/api/v1/catalog');
   assert.equal(res.status, 404);
 });
+
+test('ids and page numbers beyond PostgreSQL int4 are a 400, not a 500', async () => {
+  const app = createApp({ prisma: createFakePrisma(listable) });
+  assert.equal((await request(app).get('/api/v1/categories/3000000000')).status, 400);
+  assert.equal((await request(app).get('/api/v1/products?page=1e300')).status, 400);
+  assert.equal((await request(app).get('/api/v1/products?categoryId=3000000000')).status, 400);
+  const res = await request(app)
+    .post('/api/v1/products')
+    .set('Authorization', admin)
+    .send({ categoryId: 3000000000, name: 'X', code: 'x', price: 1, stock: 3000000000 });
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body.errors.map((e) => e.field).sort(), ['categoryId', 'stock']);
+});
+
+test('an empty optional user document is stored as null, not as a duplicate ""', async () => {
+  const prisma = createFakePrisma({ user: { create: (a) => ({ id: 9, ...a.data }) } });
+  await request(createApp({ prisma }))
+    .post('/api/v1/users')
+    .set('Authorization', admin)
+    .send({
+      roleId: 2, genderId: 1, documentTypeId: 1, name: 'A', lastName: 'B',
+      email: 'a@b.co', password: 'Secret123', document: '  ', phone: '', address: '',
+    });
+  const data = prisma.calls.find((c) => c.method === 'create').args.data;
+  assert.equal(data.document, null);
+  assert.equal(data.phone, null);
+  assert.equal(data.address, null);
+});

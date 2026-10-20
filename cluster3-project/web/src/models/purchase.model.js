@@ -19,6 +19,33 @@ import { pickFields } from '../lib/modelFields.js';
  */
 export class PurchaseModel extends CrudModel {
   /**
+   * Update a purchase's status and paperwork.
+   *
+   * `data` is merged so a client can annotate an order, but the recorded
+   * `lines` always survive: they are the only place quantities and unit prices
+   * live, and replacing the JSON column wholesale would erase what was bought.
+   *
+   * @param {number} id - Purchase id.
+   * @param {Object} input - Validated partial body plus the `updated` audit block.
+   * @returns {Promise<Object|null>} The purchase, or null when not active.
+   * @throws {Error} Prisma errors for the error middleware.
+   */
+  async update(id, input) {
+    if (!('data' in input)) return super.update(id, input);
+
+    const current = await this.getById(id);
+    if (!current) return null;
+
+    const lines = current.data?.lines;
+    const data = { ...(input.data ?? {}), ...(lines ? { lines } : {}) };
+    return this.delegate.update({
+      where: { id },
+      data: pickFields(this.resource.model, { ...input, data }),
+      ...this.readArgs(),
+    });
+  }
+
+  /**
    * Create a purchase with its lines.
    *
    * @param {Object} input - Validated body plus the `created` audit block.

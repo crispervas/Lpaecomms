@@ -333,6 +333,7 @@ src/
 │   ├── prisma.js         # Single shared PrismaClient instance (a singleton)
 │   ├── apiResponse.js    # The { message, data, pagination } envelope builders
 │   ├── pagination.js     # List query schema and the pagination block
+│   ├── dbInt.js          # INT4_MAX and int4-bounded id schemas, so oversized ids are a 400, not a 500
 │   ├── prismaErrors.js   # Prisma P2002/P2025/P2003 → Boom 409/404/400
 │   ├── modelFields.js    # Scalar fields per model (Prisma DMMF), to drop keys a model lacks
 │   ├── jwt.js            # signToken / verifyToken (HS256)

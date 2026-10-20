@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { bodyId, urlId } from '../lib/dbInt.js';
 import { PurchaseModel } from '../models/purchase.model.js';
 
 /** Payment states the schema comment documents. */
@@ -15,7 +16,7 @@ export const PAYMENT_STATUSES = ['PENDING', 'SUCCESS', 'FAILED', 'REJECTED'];
 const money = z.number().min(0).max(1_000_000);
 
 const createSchema = z.object({
-  userId: z.number().int().positive(),
+  userId: bodyId(),
   reference: z.string().trim().max(100).nullable().optional(),
   taxes: money.default(0),
   discountAmount: money.default(0),
@@ -24,7 +25,7 @@ const createSchema = z.object({
   paymentDate: z.coerce.date().nullable().optional(),
   data: z.record(z.string(), z.unknown()).nullable().optional(),
   products: z
-    .array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(999) }))
+    .array(z.object({ productId: bodyId(), quantity: z.number().int().min(1).max(999) }))
     .min(1, 'Add at least one product.')
     .max(100),
 });
@@ -49,7 +50,7 @@ export default {
   searchable: ['reference', 'invoice'],
   sortable: ['createdAt', 'finalAmount', 'paymentDate'],
   filters: {
-    userId: { schema: z.coerce.number().int().positive(), where: (value) => ({ userId: value }) },
+    userId: { schema: urlId(), where: (value) => ({ userId: value }) },
     paymentStatus: { schema: z.enum(PAYMENT_STATUSES), where: (value) => ({ paymentStatus: value }) },
   },
   include: {

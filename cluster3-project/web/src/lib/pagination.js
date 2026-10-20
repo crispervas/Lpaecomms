@@ -7,9 +7,16 @@
  */
 
 import { z } from 'zod';
+import { INT4_MAX } from './dbInt.js';
 
 /** Largest page a client may ask for; protects the database from `limit=1e6`. */
 export const MAX_LIMIT = 100;
+
+/**
+ * Highest page a client may ask for: the row offset (`(page - 1) * limit`)
+ * must stay within int4, or Prisma rejects it with a server error.
+ */
+export const MAX_PAGE = Math.floor(INT4_MAX / MAX_LIMIT);
 
 /**
  * @typedef {Object} Pagination
@@ -32,7 +39,7 @@ export const MAX_LIMIT = 100;
  */
 export function paginationQuerySchema(sortable) {
   return z.object({
-    page: z.coerce.number().int().min(1).default(1),
+    page: z.coerce.number().int().min(1).max(MAX_PAGE).default(1),
     // Clamped rather than rejected: asking for too much is not an error worth
     // failing the request over, and the pagination block reports what applied.
     limit: z.coerce.number().int().min(1).default(10).transform((n) => Math.min(n, MAX_LIMIT)),

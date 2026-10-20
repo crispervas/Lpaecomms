@@ -16,10 +16,11 @@ import { authorize } from '../../middlewares/authorize.js';
 import { validate } from '../../middlewares/validate.js';
 import { createTime, updateTime } from '../../middlewares/audit.js';
 import { paginationQuerySchema } from '../../lib/pagination.js';
+import { urlId } from '../../lib/dbInt.js';
 import { CrudController } from '../../controllers/crud.controller.js';
 
 /** Route params of a single-record URL. */
-const idParams = z.object({ id: z.coerce.number().int().positive() });
+const idParams = z.object({ id: urlId() });
 
 /**
  * Middlewares that gate an access level.
