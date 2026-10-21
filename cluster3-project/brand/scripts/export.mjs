@@ -6,7 +6,8 @@
  *
  * - mobile:  assets/ (the sources `pnpm assets` turns into native icons and
  *            splash screens) and public/favicon.png (the browser build).
- * - web:     src/public/ favicon.svg, favicon.ico and apple-touch-icon.png.
+ * - web:     src/public/ favicon.svg, favicon.ico and apple-touch-icon.png,
+ *            plus img/logo-mark.svg|.png for use inside pages (the header).
  * - desktop: resources/ icon.png, icon.icns (macOS) and icon.ico (Windows).
  *
  * Run `pnpm export` after changing a master; `pnpm build` redraws them first.
@@ -115,6 +116,10 @@ await emit(
   ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png('favicon.svg', size) })))),
 );
 await emit('web/src/public/apple-touch-icon.png', await png('app-icon.svg', 180, { opaque: true }));
+// In-page logo: the favicon's rounded mark, as SVG for the header and as a
+// PNG for places that cannot take SVG (e.g. an email or a social preview).
+await emit('web/src/public/img/logo-mark.svg', await readFile(master('favicon.svg')));
+await emit('web/src/public/img/logo-mark.png', await png('favicon.svg', 512));
 
 // Desktop — electron-builder and BrowserWindow accept these three formats.
 await emit('desktop/resources/icon.png', await png('desktop-icon.svg', 1024));

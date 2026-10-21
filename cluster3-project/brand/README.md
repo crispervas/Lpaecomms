@@ -29,7 +29,7 @@ anything. All text is converted to paths, so they render without the fonts.
 | --- | --- | --- |
 | `app-icon.svg` | Full-bleed square | iOS, legacy Android, web touch icon |
 | `app-icon-foreground.svg` / `app-icon-background.svg` | Mark / plain ink | Android adaptive icon |
-| `favicon.svg` | Rounded square, larger mark | Browser tabs (web, mobile browser build) |
+| `favicon.svg` | Rounded square, larger mark | Browser tabs (web, mobile browser build), web header mark |
 | `desktop-icon.svg` | Rounded body on Apple's 824/1024 grid | Desktop app icon |
 | `splash.svg` | Mark plus author credit | Mobile splash screen |
 
@@ -42,7 +42,7 @@ text are constants at its top — rather than the SVGs, which the next
 | Platform | Files | Next step |
 | --- | --- | --- |
 | mobile | `assets/*.png`, `public/favicon.png` | `pnpm assets` in `mobile/` regenerates the native icons and splash |
-| web | `src/public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png` | Linked from `layouts/base.ejs`; nothing to run |
+| web | `src/public/favicon.svg`, `favicon.ico`, `apple-touch-icon.png`, `img/logo-mark.svg`, `img/logo-mark.png` | Favicons linked from `layouts/base.ejs`, the mark shown in `partials/header.ejs`; nothing to run |
 | desktop | `resources/icon.png`, `icon.icns`, `icon.ico` | Not wired yet — see below |
 
 ### Desktop

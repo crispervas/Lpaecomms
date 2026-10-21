@@ -31,13 +31,32 @@
 // ── Brand ──────────────────────────────────────────────────────────────────
 .brand {
   display: flex;
+  align-items: center;
+  gap: .625rem;
+}
+
+// The logo mark, exported from cluster3-project/brand. It is dark in every
+// theme, so a hairline in the theme's line colour keeps its edge visible on
+// the midnight header instead of letting it melt into the background.
+.brand__mark {
+  display: block;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  // 22% of the side, matching the mark's own rounded corners.
+  border-radius: .44rem;
+  box-shadow: 0 0 0 1px @line;
+}
+
+.brand__text {
+  display: flex;
   flex-direction: column;
   line-height: 1;
 }
 
 .brand__name {
   font-family: @font-display;
-  // The paired line-height matters: .brand sets line-height 1 for the two-line
+  // The paired line-height matters: .brand__text sets line-height 1 for the two-line
   // lockup, and without this the name would inherit it and lose 8px of height.
   font-size: 1.25rem;
   line-height: 1.75rem;

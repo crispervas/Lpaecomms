@@ -429,7 +429,8 @@ src/
     ├── apple-touch-icon.png # iOS home-screen bookmark icon, same export
     ├── css/
     │   └── main.css      # Compiled stylesheet (build output, gitignored)
-    ├── img/              # Image assets (hero-product.webp|jpg|png, supplied by hand)
+    ├── img/              # Image assets (hero-product.webp|jpg|png, supplied by hand;
+    │                     #   logo-mark.svg|png, the header's logo, exported from brand/)
     └── js/
         ├── nav.js         # Small client-side script for the nav
         ├── contact-map.js # Leaflet map on the Contact page (mashup: company location map)
