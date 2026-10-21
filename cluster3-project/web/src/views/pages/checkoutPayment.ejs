@@ -1,0 +1,79 @@
+<%# Checkout step 3: the simulated card payment beside the order summary.
+
+    The page says plainly that no card is charged. The card fields always
+    render empty except the cardholder: the controller never passes the number,
+    expiry or CVC back. Wrapped by layouts/base.ejs. %>
+<%
+  const priceFormatter = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
+  const layout = [
+    { field: 'cardholder', label: 'Name on card', type: 'text', placeholder: 'Jordan Kim', autocomplete: 'cc-name' },
+    { field: 'cardNumber', label: 'Card number', type: 'text', placeholder: '4242 4242 4242 4242', autocomplete: 'cc-number' },
+    { field: 'expiry', label: 'Expiry (MM/YY)', type: 'text', placeholder: '12/30', autocomplete: 'cc-exp' },
+    { field: 'cvc', label: 'Security code', type: 'text', placeholder: '123', autocomplete: 'cc-csc' },
+  ];
+%>
+<div class="checkout">
+  <h1 class="checkout__title">Checkout</h1>
+  <%- include('../components/cart/checkoutSteps', { current: 3 }) %>
+
+  <div class="checkout__layout">
+    <div>
+      <div role="note" class="notice checkout__notice">
+        This is a simulated payment: your card is checked for typos but never charged.
+      </div>
+
+      <section class="checkout-address" aria-labelledby="ship-to-title">
+        <h2 id="ship-to-title" class="checkout-form__title">Shipping to</h2>
+        <p class="checkout-address__text">
+          <%= shipping.fullName %><br />
+          <%= shipping.address %><br />
+          <%= shipping.city %> <%= shipping.state %> <%= shipping.postcode %><br />
+          <%= shipping.phone %>
+        </p>
+        <a href="/checkout/shipping" class="checkout-address__change">Change</a>
+      </section>
+
+      <form method="post" action="/checkout/payment" novalidate data-validate class="checkout-form">
+        <h2 class="checkout-form__title">Card details</h2>
+        <div class="checkout-form__grid">
+          <% layout.forEach((item) => { %>
+            <%- include('../components/shared/formField', {
+              field: item.field,
+              label: item.label,
+              rules: fields[item.field],
+              value: values[item.field] || '',
+              error: errors[item.field],
+              type: item.type,
+              placeholder: item.placeholder,
+              autocomplete: item.autocomplete,
+              rows: null,
+            }) %>
+          <% }) %>
+        </div>
+        <div class="checkout__actions">
+          <button type="submit" class="button button--solid checkout__next">
+            Pay <%= priceFormatter.format(subtotalAud) %>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="cart-summary" aria-labelledby="payment-summary-title">
+      <h2 id="payment-summary-title" class="cart-summary__title">Order summary</h2>
+      <ul class="checkout-items">
+        <% items.forEach((item) => { %>
+          <li class="checkout-items__item">
+            <span><%= item.quantity %> × <%= item.name %></span>
+            <span class="cart-summary__value"><%= priceFormatter.format(item.lineTotalAud) %></span>
+          </li>
+        <% }) %>
+      </ul>
+      <dl>
+        <div class="cart-summary__row cart-summary__row--total">
+          <dt>Total</dt>
+          <dd><%= priceFormatter.format(subtotalAud) %></dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</div>

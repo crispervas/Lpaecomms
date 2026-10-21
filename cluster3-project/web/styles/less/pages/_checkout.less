@@ -1,0 +1,68 @@
+/*
+ * Checkout steps after the cart: Shipping, Payment and Confirmation.
+ *
+ * They reuse the cart page's shell (`.checkout`, the step indicator and the
+ * order summary card from pages/_cart.less); this file adds the forms, the
+ * address block and the compact line list in the summary.
+ */
+
+.checkout-form {
+  margin-top: 2rem;
+
+  &:first-child { margin-top: 0; }
+}
+
+.checkout-form__title {
+  margin-bottom: 1rem;
+  font-family: @font-display;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+
+// One column on a phone, two from `sm`.
+.checkout-form__grid {
+  display: grid;
+  gap: 1rem 1.5rem;
+
+  .sm({ grid-template-columns: repeat(2, minmax(0, 1fr)); });
+}
+
+.checkout-address {
+  margin-top: 1rem;
+}
+
+.checkout-address__text {
+  font-size: .9375rem;
+  line-height: 1.5rem;
+  color: @ink;
+}
+
+.checkout-address__change {
+  display: inline-block;
+  margin-top: .5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  color: @accent;
+}
+
+// "2 × Product … $40.00" rows in the summary and on the confirmation.
+.checkout-items {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+
+.checkout-items__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: .875rem;
+  line-height: 1.25rem;
+}
+
+// Done steps link back; the link keeps the label's look until hovered.
+a.checkout-steps__label:hover {
+  color: @accent;
+}

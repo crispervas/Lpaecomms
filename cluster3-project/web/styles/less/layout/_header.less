@@ -179,9 +179,16 @@
   }
 }
 
-// Log out is a button inside a form, so the form must not break the row.
+.site-tools__login {
+  white-space: nowrap;
+}
+
+// Log out is a button inside a form. Between `sm` and `lg` the row has no
+// room for it beside the customer's name, so it waits for `lg`; until then
+// it is one tap away on the Account page.
 .site-tools__logout {
-  display: contents;
+  display: none;
+  .lg({ display: contents; });
 }
 
 // ── Collapsed menu ─────────────────────────────────────────────────────────
