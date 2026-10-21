@@ -17,6 +17,8 @@ import { errorHandler, logErrors, wrapErrors } from './config/errorHandler.js';
 import { apiCorsHeaders } from './config/apiCors.js';
 import { preferencesLocals } from './config/preferences.js';
 import { cartLocals } from './config/cart.js';
+import { customerSession } from './middlewares/customerSession.js';
+import { CustomerModel } from './models/customer.model.js';
 import { prisma as defaultPrisma } from './lib/prisma.js';
 
 /** Absolute path to the `src` directory, resolved from this module. */
@@ -60,6 +62,11 @@ export function createApp({ prisma = defaultPrisma } = {}) {
   // of the routes and of both fallback handlers, so the error and 404 pages are
   // rendered in the visitor's theme like any other page.
   app.use(preferencesLocals);
+
+  // The signed-in customer, if any, for the header and the guarded pages.
+  // Mounted ahead of the routes and both fallback handlers so even the error
+  // page shows the right header.
+  app.use(customerSession(new CustomerModel(prisma)));
 
   // The header's cart badge, on every page including the error and 404 pages.
   app.use(cartLocals);

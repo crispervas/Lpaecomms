@@ -26,6 +26,8 @@
   // `sm:flex`, so the collapsed menu needs its own copy or Login disappears on
   // a phone.
   const loginHref = '/login';
+  // Set by middlewares/customerSession.js; guarded like the cart below.
+  const signedIn = typeof customer === 'object' && customer !== null;
   // Guarded because a render that skipped the middleware must still draw the
   // header; an empty cart is the honest default.
   const cartUnits = typeof cartCount === 'number' ? cartCount : 0;
@@ -89,13 +91,23 @@
         </svg>
       </button>
 
-      <%# Unlike the two controls beside it, this one goes somewhere: /login is
-          a real page, so it carries no "Coming soon" and stays in the tab
-          order. %>
-      <a href="<%= loginHref %>"
-        class="site-tools__login<%= isActive(loginHref) ? ' is-active' : '' %>">
-        Login
-      </a>
+      <%# A visitor gets Login; a customer gets their account and a log-out
+          button. Log out is a POST form, because a GET link would let any
+          page sign a customer out with an image tag. %>
+      <% if (signedIn) { %>
+        <a href="/account"
+          class="site-tools__login<%= isActive('/account') ? ' is-active' : '' %>">
+          <%= customer.name %>
+        </a>
+        <form method="post" action="/logout" class="site-tools__logout">
+          <button type="submit" class="site-tools__login">Log out</button>
+        </form>
+      <% } else { %>
+        <a href="<%= loginHref %>"
+          class="site-tools__login<%= isActive(loginHref) ? ' is-active' : '' %>">
+          Login
+        </a>
+      <% } %>
     </div>
 
     <button type="button" id="nav-toggle" aria-controls="mobile-nav" aria-expanded="false"
@@ -132,10 +144,20 @@
         class="mobile-nav__link mobile-nav__link--login<%= isActive('/cart') ? ' is-active' : '' %>">
         Cart (<%= cartUnits %>)
       </a>
-      <a href="<%= loginHref %>"
-        class="mobile-nav__link mobile-nav__link--login<%= isActive(loginHref) ? ' is-active' : '' %>">
-        Login
-      </a>
+      <% if (signedIn) { %>
+        <a href="/account"
+          class="mobile-nav__link mobile-nav__link--login<%= isActive('/account') ? ' is-active' : '' %>">
+          Account (<%= customer.name %>)
+        </a>
+        <form method="post" action="/logout">
+          <button type="submit" class="mobile-nav__link mobile-nav__link--login">Log out</button>
+        </form>
+      <% } else { %>
+        <a href="<%= loginHref %>"
+          class="mobile-nav__link mobile-nav__link--login<%= isActive(loginHref) ? ' is-active' : '' %>">
+          Login
+        </a>
+      <% } %>
     </div>
   </nav>
 </header>

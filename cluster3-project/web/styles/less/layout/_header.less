@@ -179,6 +179,11 @@
   }
 }
 
+// Log out is a button inside a form, so the form must not break the row.
+.site-tools__logout {
+  display: contents;
+}
+
 // ── Collapsed menu ─────────────────────────────────────────────────────────
 .nav-toggle {
   display: inline-flex;
@@ -216,6 +221,9 @@
 
 .mobile-nav__link {
   display: block;
+  // Log out is a <button>; these make it line up with the links around it.
+  width: 100%;
+  text-align: left;
   padding: .5rem .75rem;
   border-radius: @radius-md;
   font-size: .875rem;
