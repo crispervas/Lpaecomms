@@ -57,8 +57,11 @@ bruno/lpaecomms-web/
 ├── genders/                       # Same five requests
 ├── document-types/                # Same five requests
 ├── templates/                     # Same five requests
-├── users/                         # Same five requests (password write-only)
-├── purchases/                     # Same five requests (server-computed totals)
+├── users/                         # Same five requests (password write-only), plus
+│                                  #   block-user.bru / unblock-user.bru (POST, ADMIN)
+├── purchases/                     # Same five requests (server-computed totals, fulfillmentStatus)
+├── stats/
+│   └── get-stats.bru              # GET /stats (ADMIN): dashboard counts and revenue
 ├── contact/
 │   └── post-contact.bru           # Contact message request + docs (202/422/400, no delivery)
 ├── currency/
@@ -106,7 +109,12 @@ web/
 │   ├── prismaErrors.test.js       # P2002/P2025/P2003 → 409/404/400, engine and pg-adapter shapes
 │   ├── audit.test.js              # created/updated stamps: pinned clock, per-request time, actor
 │   ├── validate.test.js           # zod middleware: coercion, stripped keys, per-field 400
-│   ├── auth.middleware.test.js    # authenticate/authorize: valid, missing, forged, expired, "none" tokens
+│   ├── auth.middleware.test.js    # authenticate/authorize/optionalAuthenticate: valid, missing, forged, expired, "none" tokens
+│   ├── productDrafts.api.test.js  # Draft products: hidden unless an ADMIN token reads; published filter
+│   ├── userStatus.api.test.js     # Block/unblock, status filter, no self-block or self-delete
+│   ├── purchaseFulfillment.api.test.js # fulfillmentStatus: values, update, filter, PENDING default
+│   ├── categoryCrudModel.test.js  # A category holding products cannot be deleted (409)
+│   ├── stats.api.test.js          # GET /stats: payload shape, revenue rule, deleted rows excluded
 │   ├── modelFields.test.js        # Scalar fields per model from the Prisma DMMF
 │   ├── crudModel.test.js          # CrudModel queries: active filter, search, paging, soft delete
 │   ├── crud.routes.test.js        # CRUD router: envelope, paging, 401/403, 400, 404, forged audit fields
@@ -282,6 +290,8 @@ src/
 │   └── api/              # API routes (return the JSON envelope)
 │       ├── crud.routes.js    # buildCrudRouter(resource, prisma): list/get/create/update/delete
 │       ├── auth.routes.js    # buildAuthRouter(prisma): POST /auth/login
+│       ├── userStatus.routes.js # POST /users/:id/block|unblock; guards DELETE /users/:id against self
+│       ├── stats.routes.js   # buildStatsRouter(prisma): GET /stats (ADMIN)
 │       ├── health.routes.js  # buildHealthRouter(prisma): GET /health
 │       ├── contact.routes.js
 │       ├── currency.routes.js
@@ -297,6 +307,8 @@ src/
 │   ├── health.controller.js
 │   ├── crud.controller.js # API: generic list/show/create/update/destroy for every resource
 │   ├── authApi.controller.js # API: POST /api/v1/auth/login (JWT, identical 401s)
+│   ├── userStatus.controller.js # API: block/unblock a user (409 on your own account)
+│   ├── stats.controller.js # API: GET /api/v1/stats
 │   ├── contactApi.controller.js # API: POST /api/v1/contact (web form rules, 202/422)
 │   ├── currency.controller.js
 │   ├── password.controller.js
@@ -305,7 +317,10 @@ src/
 │   └── preferences.controller.js # /preferences: show(), save() (whitelist check, cookie write, redirect or 204)
 ├── models/               # MODEL: data access (database and external sources)
 │   ├── health.model.js
-│   ├── crud.model.js     # CrudModel: paged list, get, create, update, soft delete over one Prisma model
+│   ├── crud.model.js     # CrudModel: paged list, get, create, update, soft delete over one Prisma model;
+│   │                     #   applies a resource's `visibility` per viewer
+│   ├── categoryCrud.model.js # CategoryCrudModel: refuses to delete a category holding products
+│   ├── stats.model.js    # Dashboard counts and revenue, counted in the database
 │   ├── user.model.js     # UserModel: bcrypt hashing, password never read back, login lookup
 │   ├── purchase.model.js # PurchaseModel: purchase + lines in one transaction, server-side totals
 │   ├── product.model.js  # Storefront reads of the catalogue (Prisma): cards, detail, history
@@ -318,6 +333,7 @@ src/
 │   ├── audit.js          # createTime / updateTime: created/updated audit stamps (APP_TIMEZONE)
 │   ├── validate.js       # zod params/query/body parsing → req.valid, 400 with per-field errors
 │   ├── authenticate.js   # Bearer JWT → req.user, 401 otherwise
+│   ├── optionalAuthenticate.js # Public reads: req.user from a valid token, anonymous otherwise
 │   └── authorize.js      # authorize('ADMIN') → 403 for other roles
 ├── resources/            # One declarative file per CRUD resource (schemas, search, filters, access)
 │   ├── index.js          # The registry routes/index.js mounts; Resource typedef
@@ -673,15 +689,18 @@ desktop/
 │   ├── env.test.js               # Environment validation
 │   ├── packagedConfig.test.js    # Configuration baked into installers
 │   ├── describeHealth.test.mjs   # Health envelope → service state
-│   ├── apiClient.test.js         # Result envelope for every failure mode
-│   ├── loginRules.test.mjs       # Admin sign-in validation
+│   ├── apiClient.test.js         # Result envelope for every failure mode; token, query, pagination
+│   ├── adminApi.test.js          # Admin operations: token, every page, 401 ends session, bad args refused
+│   ├── apiMapping.test.mjs       # API rows ↔ screen shapes; save results; Decimal strings → numbers
+│   ├── userRules.test.mjs        # User form validation (mirrors the API's user schema)
 │   ├── session.test.js           # Admin-only session; token kept in main
 │   ├── signInResult.test.mjs     # Sign-in envelope → account or form message
+│   ├── loginRules.test.mjs       # Admin sign-in validation
 │   ├── barWidths.test.mjs        # Dashboard bar scaling
 │   ├── table.test.mjs            # Sorting, paging and search shared by tables
 │   ├── userTable.test.mjs        # Users filtering and initials
 │   ├── orderTable.test.mjs       # Orders filtering and the recent-orders list
-│   ├── catalogRules.test.mjs     # Category and product validation, slugs, counts
+│   ├── catalogRules.test.mjs     # Category and product validation (API limits), codes, counts
 │   ├── storeRules.test.mjs       # Settings → Store info validation
 │   └── format.test.mjs           # Date and money formats
 └── src/
@@ -693,43 +712,46 @@ desktop/
     │   ├── config/index.js       # Picks the source: baked file or .env
     │   ├── services/apiClient.js # HTTP client returning result envelopes
     │   ├── services/session.js   # Admin session: role check, token held in main
+    │   ├── services/adminApi.js  # Named admin operations (ADMIN_OPERATIONS) over the REST API
     │   ├── ipc/health.ipc.js     # Registers the api:health channel
-    │   └── ipc/auth.ipc.js       # Registers auth:sign-in and auth:sign-out
+    │   ├── ipc/auth.ipc.js       # Registers auth:sign-in and auth:sign-out
+    │   └── ipc/admin.ipc.js      # Registers admin:<name> for every admin operation
     └── renderer/         # React; no Node, no network
         ├── main.jsx              # React root; bundles the @fontsource fonts
-        ├── App.jsx               # Sign-in gate, section, session data, save seams
+        ├── App.jsx               # Sign-in gate, section, expired-session return, Store info seam
         ├── components/AdminLogin.jsx  # Admin sign-in screen (live, admins only)
         ├── components/AdminLayout.jsx # Sidebar frame shared by every admin screen
         ├── components/Icon.jsx        # The mockups' stroke icons, by name
-        ├── components/Dashboard.jsx   # Dashboard screen (preview, sample data)
-        ├── components/Users.jsx       # Users screen (preview, sample accounts)
-        ├── components/Orders.jsx      # Orders screen (preview, sample orders)
+        ├── components/Dashboard.jsx   # Dashboard: live figures from /stats, newest orders
+        ├── components/Users.jsx       # Users: list, create, edit, block/unblock, delete
+        ├── components/UserForm.jsx    # New-user and edit-user form
+        ├── components/Orders.jsx      # Orders: list, edit statuses and paperwork, delete
         ├── components/OrderStatusBadge.jsx # Order status pill (Dashboard, Orders)
-        ├── components/Catalog.jsx     # Categories and their products (display only)
-        ├── components/CatalogForms.jsx # New-category and new-product forms
+        ├── components/Catalog.jsx     # Categories and products: create, edit, delete, drafts
+        ├── components/CatalogForms.jsx # Category and product forms (create and edit)
         ├── components/Settings.jsx    # Settings tabs; System status checks the API live
         ├── components/formParts.jsx   # Field, control classes shared by the forms
         ├── components/tableParts.jsx  # Search, chips, headers, pager for list screens
-        ├── data/dashboard.mjs    # Sample figures until the admin API exists
-        ├── data/users.mjs        # Sample accounts and the signed-in admin
-        ├── data/orders.mjs       # Sample orders (Orders and the Dashboard)
-        ├── data/catalog.mjs      # Sample catalog; its typedefs are the DB contract
+        ├── components/dataParts.jsx   # Load notice, confirm bar, outcome line for live screens
+        ├── components/useApiList.js   # Hooks: load a list or a value through window.api
         ├── data/settings.mjs     # Sample store info, shipping, admins, templates, log
         ├── lib/describeHealth.mjs # Health envelope → state for System status
         ├── lib/loginRules.mjs    # Sign-in rules shared in wording with web/mobile
-        ├── lib/barWidths.mjs     # Scales category counts into bar widths
         ├── lib/signInResult.mjs  # Sign-in envelope → signed-in account or message
+        ├── lib/apiMapping.mjs    # API rows ↔ screen shapes, save results, session expiry
+        ├── lib/userRules.mjs     # User form validation
+        ├── lib/barWidths.mjs     # Scales category counts into bar widths
         ├── lib/table.mjs         # Sorting, paging and search for every table
         ├── lib/userTable.mjs     # Users filtering and avatar initials
         ├── lib/orderTable.mjs    # Orders filtering and the newest orders
-        ├── lib/catalogRules.mjs  # Catalog validation, slugify, per-category counts
+        ├── lib/catalogRules.mjs  # Catalog validation, toCode, per-category counts
         ├── lib/storeRules.mjs    # Store info validation
         ├── lib/format.mjs        # Date and money formats from the mockups
         └── styles/tailwind.css   # Tailwind source
 ```
 
-The renderer never learns the API's address. Every call crosses the preload
-bridge, which means an admin token added later stays in the main process.
+The renderer never learns the API's address or sees the admin token. Every
+call crosses the preload bridge, and the token stays in the main process.
 
 Vite compiles the renderer only: `src/main/` is CommonJS importing nothing
 beyond `electron` and Node builtins, so it needs no build step.
