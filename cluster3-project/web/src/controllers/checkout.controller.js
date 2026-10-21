@@ -20,9 +20,10 @@ import { INT4_MAX } from '../lib/dbInt.js';
 import {
   CHECKOUT_COOKIE,
   checkoutCookieOptions,
+  newCheckoutToken,
   orderReference,
-  readShipping,
-  serialiseShipping,
+  readCheckout,
+  serialiseCheckout,
 } from '../lib/checkout.js';
 import { SHIPPING_FIELDS, normaliseShipping, validateShipping } from '../lib/shippingValidation.js';
 import { stamp } from '../middlewares/audit.js';
@@ -57,7 +58,7 @@ export class CheckoutController {
   async showShipping(req, res) {
     if (this.#lines(req).length === 0) return res.redirect(303, '/cart');
 
-    let values = readShipping(req.cookies?.[CHECKOUT_COOKIE]);
+    let values = readCheckout(req.cookies?.[CHECKOUT_COOKIE], req.customer.id)?.shipping;
     if (!values) {
       const profile = await this.customerModel.findActive(req.customer.id);
       values = normaliseShipping({
@@ -87,7 +88,14 @@ export class CheckoutController {
       return;
     }
 
-    res.cookie(CHECKOUT_COOKIE, serialiseShipping(values), checkoutCookieOptions());
+    // Coming back to change the address is the same checkout, so its token
+    // survives; a fresh checkout gets a new one.
+    const token = readCheckout(req.cookies?.[CHECKOUT_COOKIE], req.customer.id)?.token ?? newCheckoutToken();
+    res.cookie(
+      CHECKOUT_COOKIE,
+      serialiseCheckout({ customerId: req.customer.id, token, shipping: values }),
+      checkoutCookieOptions(),
+    );
     res.redirect(303, '/checkout/payment');
   }
 
@@ -133,6 +141,8 @@ export class CheckoutController {
       order = await this.purchaseModel.create({
         userId: req.customer.id,
         reference: orderReference(now),
+        // A second submit of this checkout returns the first order.
+        checkoutToken: state.token,
         paymentStatus: 'SUCCESS',
         paymentDate: now,
         fulfillmentStatus: 'PENDING',
@@ -185,7 +195,7 @@ export class CheckoutController {
    *
    * @param {import('express').Request} req - Incoming request.
    * @param {import('express').Response} res - Outgoing response, redirected when incomplete.
-   * @returns {Promise<{lines: Array<{id: number, quantity: number}>, shipping: Object, items: Array, subtotalAud: number}|null>}
+   * @returns {Promise<{lines: Array<{id: number, quantity: number}>, token: string, shipping: Object, items: Array, subtotalAud: number}|null>}
    *   The state, or null after a redirect.
    */
   async #paymentState(req, res) {
@@ -194,11 +204,12 @@ export class CheckoutController {
       res.redirect(303, '/cart');
       return null;
     }
-    const shipping = readShipping(req.cookies?.[CHECKOUT_COOKIE]);
-    if (!shipping) {
+    const checkout = readCheckout(req.cookies?.[CHECKOUT_COOKIE], req.customer.id);
+    if (!checkout) {
       res.redirect(303, '/checkout/shipping');
       return null;
     }
+    const { token, shipping } = checkout;
 
     const products = await Promise.all(lines.map((line) => this.productModel.getById(line.id)));
     // A product gone since the cart was shown: the cart prunes and explains.
@@ -217,7 +228,7 @@ export class CheckoutController {
       },
       quantity: line.quantity,
     })));
-    return { lines, shipping, items, subtotalAud };
+    return { lines, token, shipping, items, subtotalAud };
   }
 
   /**

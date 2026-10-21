@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 
 import { AuthController } from '../src/controllers/auth.controller.js';
 import { SESSION_COOKIE } from '../src/lib/session.js';
+import { CHECKOUT_COOKIE } from '../src/lib/checkout.js';
 import { verifyToken } from '../src/lib/jwt.js';
 
 const INVALID = 'Email or password is incorrect.';
@@ -198,9 +199,16 @@ test('the login page carries the next path from the query', () => {
   assert.equal(res.rendered.locals.next, '/checkout/shipping');
 });
 
-test('log out clears the session and goes home', () => {
+test('log out clears the session and any half-finished checkout, then goes home', () => {
   const res = fakeResponse();
   new AuthController(fakeModel(null)).logout({}, res);
-  assert.equal(res.cleared[0].name, SESSION_COOKIE);
+  assert.deepEqual(res.cleared.map((c) => c.name).sort(), [CHECKOUT_COOKIE, SESSION_COOKIE].sort());
   assert.deepEqual(res.redirected, { status: 303, url: '/' });
+});
+
+test('signing in drops a checkout left behind by whoever used the browser before', async () => {
+  const res = fakeResponse();
+  await new AuthController(fakeModel(CUSTOMER), { compare: fakeCompare(true) })
+    .login({ body: loginBody(), customer: null }, res);
+  assert.deepEqual(res.cleared.map((c) => c.name), [CHECKOUT_COOKIE]);
 });

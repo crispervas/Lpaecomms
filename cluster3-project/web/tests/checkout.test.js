@@ -11,7 +11,7 @@ import boom from '@hapi/boom';
 
 import { CheckoutController } from '../src/controllers/checkout.controller.js';
 import { CART_COOKIE } from '../src/lib/cart.js';
-import { CHECKOUT_COOKIE, serialiseShipping } from '../src/lib/checkout.js';
+import { CHECKOUT_COOKIE, serialiseCheckout } from '../src/lib/checkout.js';
 
 const CUSTOMER = { id: 7, name: 'Jo', lastName: 'Kim', email: 'jo@example.com' };
 const SHIPPING = {
@@ -81,10 +81,12 @@ function fakeModels({ create = async () => ({ id: 9 }), order = null } = {}) {
   };
 }
 
+const TOKEN = 'b'.repeat(32);
+const checkoutCookie = (customerId = 7) => serialiseCheckout({ customerId, token: TOKEN, shipping: SHIPPING });
 const controller = (models) => new CheckoutController(models.productModel, models.customerModel, models.purchaseModel);
 const request = (over = {}) => ({
   customer: CUSTOMER,
-  cookies: { [CART_COOKIE]: '1:2', [CHECKOUT_COOKIE]: serialiseShipping(SHIPPING) },
+  cookies: { [CART_COOKIE]: '1:2', [CHECKOUT_COOKIE]: checkoutCookie() },
   body: {},
   params: {},
   ...over,
@@ -108,12 +110,38 @@ test('shipping is pre-filled from the profile until the customer has typed one',
   assert.equal(values.address, '1 Home St');
 });
 
-test('a valid shipping form is kept in the checkout cookie and moves on to payment', async () => {
+test('a valid shipping form is kept, for this customer, with a new checkout token', async () => {
   const res = fakeResponse();
-  await controller(fakeModels()).saveShipping(request({ body: SHIPPING }), res);
+  await controller(fakeModels()).saveShipping(request({ body: SHIPPING, cookies: { [CART_COOKIE]: '1:2' } }), res);
   assert.equal(res.cookies[0].name, CHECKOUT_COOKIE);
-  assert.deepEqual(JSON.parse(res.cookies[0].value), SHIPPING);
+  const stored = JSON.parse(res.cookies[0].value);
+  assert.equal(stored.customerId, 7);
+  assert.deepEqual(stored.shipping, SHIPPING);
+  assert.match(stored.token, /^[0-9a-f]{32}$/);
   assert.deepEqual(res.redirected, { status: 303, url: '/checkout/payment' });
+});
+
+test('changing the address keeps the checkout token', async () => {
+  const res = fakeResponse();
+  await controller(fakeModels()).saveShipping(request({ body: { ...SHIPPING, city: 'Gold Coast' } }), res);
+  assert.equal(JSON.parse(res.cookies[0].value).token, TOKEN);
+});
+
+test('a checkout left by another customer is not shown or used', async () => {
+  const shippingRes = fakeResponse();
+  const otherCookies = { [CART_COOKIE]: '1:2', [CHECKOUT_COOKIE]: checkoutCookie(99) };
+  await controller(fakeModels()).showShipping(request({ cookies: otherCookies }), shippingRes);
+  assert.equal(shippingRes.rendered.locals.values.address, '1 Home St');
+
+  const paymentRes = fakeResponse();
+  await controller(fakeModels()).showPayment(request({ cookies: otherCookies }), paymentRes);
+  assert.deepEqual(paymentRes.redirected, { status: 303, url: '/checkout/shipping' });
+});
+
+test('the checkout token reaches the purchase, so a double submit places one order', async () => {
+  const models = fakeModels();
+  await controller(models).pay(request({ body: CARD }), fakeResponse());
+  assert.equal(models.purchaseModel.calls[0].checkoutToken, TOKEN);
 });
 
 test('an invalid shipping form is a 422 with its errors', async () => {

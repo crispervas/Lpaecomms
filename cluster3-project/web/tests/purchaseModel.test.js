@@ -129,6 +129,41 @@ test('asking for more than the stock is a 409 and no purchase is written', async
   assert.equal(prisma.calls.some((c) => c.method === 'updateMany'), false);
 });
 
+test('a checkout token already used returns that order and takes no stock again', async () => {
+  const existing = { id: 9, data: { checkoutToken: 'tok' } };
+  const prisma = createFakePrisma({
+    product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 5 }], updateMany: { count: 1 } },
+    purchase: { findFirst: existing, create: {} },
+  });
+  const locks = [];
+  prisma.$queryRaw = async (strings, ...values) => { locks.push({ sql: strings.join('?'), values }); return []; };
+
+  const result = await new PurchaseModel(prisma, purchaseResource).create({
+    userId: 7, paymentStatus: 'SUCCESS', created: {}, checkoutToken: 'tok', products: [{ productId: 1, quantity: 1 }],
+  });
+
+  assert.equal(result, existing);
+  assert.match(locks[0].sql, /FOR UPDATE/);
+  assert.deepEqual(locks[0].values, [7]);
+  const lookup = prisma.calls.find((c) => c.method === 'findFirst').args.where;
+  assert.deepEqual(lookup, { userId: 7, data: { path: ['checkoutToken'], equals: 'tok' } });
+  assert.equal(prisma.calls.some((c) => c.method === 'updateMany' || c.method === 'create'), false);
+});
+
+test('a new checkout token is recorded on the order', async () => {
+  const prisma = createFakePrisma({
+    product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 5 }], updateMany: { count: 1 } },
+    purchase: { findFirst: null, create: (a) => ({ id: 10, ...a.data }) },
+  });
+  prisma.$queryRaw = async () => [];
+  await new PurchaseModel(prisma, purchaseResource).create({
+    userId: 7, paymentStatus: 'SUCCESS', created: {}, checkoutToken: 'tok', products: [{ productId: 1, quantity: 1 }],
+  });
+  const data = prisma.calls.find((c) => c.method === 'create').args.data;
+  assert.equal(data.data.checkoutToken, 'tok');
+  assert.equal('checkoutToken' in data, false);
+});
+
 test('a lost race on the conditional decrement is a 409', async () => {
   const prisma = createFakePrisma({
     product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 5 }], updateMany: { count: 0 } },

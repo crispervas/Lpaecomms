@@ -137,7 +137,8 @@ web/
 │   ├── cardValidation.test.js     # Simulated payment rules: Luhn, expiry, CVC, brand and last four
 │   ├── shippingValidation.test.js # Checkout shipping rules: required fields, 4-digit postcode, phone
 │   ├── checkout.test.js           # Checkout controller: steps, card never echoed or stored, 409 back to cart, owner-only confirmation
-│   ├── checkoutLib.test.js        # lpa_checkout cookie round-trip and the order reference
+│   ├── checkoutLib.test.js        # lpa_checkout cookie: owner check, token, round-trip; the order reference
+│   ├── sameOrigin.test.js         # Cross-origin form posts refused; same-origin and header-less ones pass
 │   ├── account.test.js            # Account page: profile rules, tab whitelist, profile save and the customer's own orders
 │   ├── cart.test.js               # Cart cookie rules (parse, limits, merge, stock cap) and the controller's pricing, pruning and redirects
 │   ├── cart.controller.test.js    # Cart lowered to the stock, sold-out lines dropped, canCheckout
@@ -359,6 +360,7 @@ src/
 │   ├── requestTime.js    # req.time / req.clientTime, fixed once per request
 │   ├── audit.js          # createTime / updateTime: created/updated audit stamps (APP_TIMEZONE); stamp() for view writes
 │   ├── customerSession.js # View side: lpa_session → req.customer / res.locals.customer; requireCustomer guard
+│   ├── sameOrigin.js     # View side: refuses form posts a browser reports as cross-origin (login CSRF)
 │   ├── validate.js       # zod params/query/body parsing → req.valid, 400 with per-field errors
 │   ├── authenticate.js   # Bearer JWT → req.user, 401 otherwise
 │   ├── optionalAuthenticate.js # Public reads: req.user from a valid token, anonymous otherwise
@@ -390,7 +392,7 @@ src/
 │   ├── session.js        # lpa_session cookie options, token lifetime, safeNext() redirect guard
 │   ├── cardValidation.js # Simulated payment rules: Luhn, expiry, CVC; cardSummary() → brand + last4
 │   ├── shippingValidation.js # Checkout shipping form rules
-│   ├── checkout.js       # lpa_checkout cookie (shipping between steps) and orderReference()
+│   ├── checkout.js       # lpa_checkout cookie (owner, checkout token, shipping between steps) and orderReference()
 │   ├── cart.js           # lpa_cart cookie: parse/serialise ids and quantities, limits (99 units, 20 lines), capToStock, totals in cents
 │   ├── preferences.js    # THEMES/TEXT_SIZES whitelists, cookie parse/serialise, safe-return-path guard — no Express import
 │   └── recentlyViewed.js # Browsing-history cookie: parse, push (dedupe + move-to-front), serialise, RECENT_LIMIT (8)

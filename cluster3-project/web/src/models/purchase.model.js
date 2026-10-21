@@ -85,15 +85,30 @@ export class PurchaseModel extends CrudModel {
    * @param {number} [input.taxes] - Taxes added to the total.
    * @param {number} [input.discountAmount] - Discount subtracted from the total.
    * @param {Object} input.created - Audit stamp.
+   * @param {string} [input.checkoutToken] - One per web checkout. A second
+   *   create with the same token for the same user — a double-clicked Pay
+   *   button — returns the first order instead of placing another. Not part
+   *   of the API's schema, so API clients cannot send it.
    * @returns {Promise<Object>} The purchase with lines and user.
    * @throws {import('@hapi/boom').Boom} 400 when a product is missing or inactive;
    *   409 when the stock does not cover a product's total quantity.
    * @throws {Error} Prisma errors (unknown userId → 400 via P2003).
    */
-  async create({ products: lines, taxes = 0, discountAmount = 0, created, ...rest }) {
+  async create({ products: lines, taxes = 0, discountAmount = 0, created, checkoutToken, ...rest }) {
     const ids = [...new Set(lines.map((line) => line.productId))];
 
     return this.prisma.$transaction(async (tx) => {
+      if (checkoutToken) {
+        // Locking the buyer's row makes two submissions of one checkout run
+        // one after the other; the second then sees the first's order.
+        await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${rest.userId} FOR UPDATE`;
+        const placed = await tx.purchase.findFirst({
+          where: { userId: rest.userId, data: { path: ['checkoutToken'], equals: checkoutToken } },
+          ...this.readArgs(),
+        });
+        if (placed) return placed;
+      }
+
       const found = await tx.product.findMany({
         // A draft is not for sale, exactly like a deleted product.
         where: { id: { in: ids }, status: { not: 0 }, published: true },
@@ -142,6 +157,7 @@ export class PurchaseModel extends CrudModel {
           created,
           data: {
             ...(rest.data ?? {}),
+            ...(checkoutToken ? { checkoutToken } : {}),
             lines: priced.map((l) => ({
               productId: l.productId,
               quantity: l.quantity,

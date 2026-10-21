@@ -1,18 +1,27 @@
 /**
- * @file Checkout helpers: the shipping cookie and the order reference.
+ * @file Checkout helpers: the checkout cookie and the order reference.
  *
- * Between the Shipping and Payment steps the address lives in a short-lived,
+ * Between the Shipping and Payment steps the checkout lives in a short-lived,
  * httpOnly cookie rather than on the server: nothing exists to attach it to
- * until the order is created. It is client-editable like every cookie, so it
- * is validated again whenever it is read back.
+ * until the order is created. The cookie carries three things:
+ *
+ * - the shipping address, validated again whenever it is read back, since a
+ *   cookie is client-editable;
+ * - the id of the customer it belongs to, so on a shared browser the next
+ *   person to sign in never sees, or ships to, someone else's address;
+ * - a random checkout token, which PurchaseModel uses to place one order per
+ *   checkout however many times Pay is submitted.
  */
 
 import { randomBytes } from 'node:crypto';
 import { config } from '../config/env.js';
 import { normaliseShipping, validateShipping } from './shippingValidation.js';
 
-/** Name of the cookie carrying the shipping address between steps. */
+/** Name of the cookie carrying the checkout between steps. */
 export const CHECKOUT_COOKIE = 'lpa_checkout';
+
+/** Shape of a checkout token: 16 random bytes as hex. */
+const TOKEN_PATTERN = /^[0-9a-f]{32}$/;
 
 /** Characters an order reference's random part is drawn from. */
 const BASE36 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -32,23 +41,34 @@ export function checkoutCookieOptions(isProduction = config.isProduction) {
 }
 
 /**
- * Write a shipping address as a cookie value.
+ * Generate a checkout token.
  *
- * @param {Record<string, string>} shipping - Validated shipping values.
- * @returns {string} JSON for the cookie.
+ * @returns {string} 32 hex characters.
  */
-export function serialiseShipping(shipping) {
-  return JSON.stringify(shipping);
+export function newCheckoutToken() {
+  return randomBytes(16).toString('hex');
 }
 
 /**
- * Read a shipping address back from its cookie.
+ * Write a checkout as a cookie value.
+ *
+ * @param {{customerId: number, token: string, shipping: Record<string, string>}} checkout - Validated checkout.
+ * @returns {string} JSON for the cookie.
+ */
+export function serialiseCheckout({ customerId, token, shipping }) {
+  return JSON.stringify({ customerId, token, shipping });
+}
+
+/**
+ * Read a checkout back from its cookie, for the customer signed in now.
  *
  * @param {string|undefined} raw - Raw cookie value.
- * @returns {Record<string, string>|null} The address, or null when the cookie
- *   is missing, unreadable or no longer valid.
+ * @param {number} customerId - The signed-in customer.
+ * @returns {{token: string, shipping: Record<string, string>}|null} The
+ *   checkout, or null when the cookie is missing, unreadable, invalid or
+ *   another customer's.
  */
-export function readShipping(raw) {
+export function readCheckout(raw, customerId) {
   if (typeof raw !== 'string') return null;
   let parsed;
   try {
@@ -57,8 +77,12 @@ export function readShipping(raw) {
     return null;
   }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-  const values = normaliseShipping(parsed);
-  return Object.keys(validateShipping(values)).length === 0 ? values : null;
+  if (parsed.customerId !== customerId) return null;
+  if (typeof parsed.token !== 'string' || !TOKEN_PATTERN.test(parsed.token)) return null;
+  if (parsed.shipping === null || typeof parsed.shipping !== 'object') return null;
+
+  const shipping = normaliseShipping(parsed.shipping);
+  return Object.keys(validateShipping(shipping)).length === 0 ? { token: parsed.token, shipping } : null;
 }
 
 /**

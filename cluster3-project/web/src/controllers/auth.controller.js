@@ -22,6 +22,7 @@ import {
   resolveMode,
   validateAuth,
 } from '../lib/authValidation.js';
+import { CHECKOUT_COOKIE, checkoutCookieOptions } from '../lib/checkout.js';
 import { signToken } from '../lib/jwt.js';
 import { SESSION_COOKIE, safeNext, sessionCookieOptions } from '../lib/session.js';
 import { stamp } from '../middlewares/audit.js';
@@ -124,6 +125,9 @@ export class AuthController {
   logout(req, res) {
     const { maxAge, ...options } = sessionCookieOptions();
     res.clearCookie(SESSION_COOKIE, options);
+    // A half-finished checkout holds this customer's address; the next person
+    // on this browser must not inherit it.
+    res.clearCookie(CHECKOUT_COOKIE, checkoutCookieOptions());
     res.redirect(303, '/');
   }
 
@@ -183,6 +187,8 @@ export class AuthController {
    * @returns {void}
    */
   #startSession(res, id, next) {
+    // Whatever checkout was in progress belonged to whoever was here before.
+    res.clearCookie(CHECKOUT_COOKIE, checkoutCookieOptions());
     res.cookie(SESSION_COOKIE, signToken({ id, role: CUSTOMER_ROLE }), sessionCookieOptions());
     // 303 so the browser follows with a GET: a refresh must not offer to
     // resubmit the password.
