@@ -2,20 +2,29 @@
 
     An ordered list, so a screen reader announces "1 of 3"; the current step
     carries aria-current="step". Steps before the current one are drawn as
-    done, those after as upcoming.
+    done and link back, so the customer can change the cart or the address
+    from the payment step. Steps after it are upcoming and not links.
 
     Expected locals:
       current — the step shown, 1 to 3 %>
 <%
-  const steps = ['Cart', 'Shipping', 'Payment'];
+  const steps = [
+    { label: 'Cart', href: '/cart' },
+    { label: 'Shipping', href: '/checkout/shipping' },
+    { label: 'Payment', href: '/checkout/payment' },
+  ];
 %>
 <ol class="checkout-steps">
-  <% steps.forEach((label, index) => {
+  <% steps.forEach((step, index) => {
        const number = index + 1;
        const state = number < current ? ' is-done' : number === current ? ' is-active' : ''; %>
     <li class="checkout-steps__step<%= state %>" <% if (number === current) { %>aria-current="step"<% } %>>
       <span class="checkout-steps__number" aria-hidden="true"><%= number %></span>
-      <span class="checkout-steps__label"><%= label %></span>
+      <% if (number < current) { %>
+        <a href="<%= step.href %>" class="checkout-steps__label"><%= step.label %></a>
+      <% } else { %>
+        <span class="checkout-steps__label"><%= step.label %></span>
+      <% } %>
     </li>
   <% }) %>
 </ol>

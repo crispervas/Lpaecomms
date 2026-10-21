@@ -4,11 +4,12 @@
     links, like the login tabs: the server decides the tab, so both are
     reachable with no JavaScript and each has its own shareable URL.
 
-    "Log out" goes back to the login page, since there is no session to end.
+    "Log out" is a POST form, like the header's: a GET link would let any
+    page sign the customer out with an image tag.
 
     Expected locals:
       tab      — 'profile' or 'orders', the tab currently shown
-      profile  — the stored profile (name and email are shown)
+      profile  — the stored profile (name, lastName and email are shown)
       initials — the avatar letters, e.g. "JK" %>
 <%
   const tabs = [
@@ -31,7 +32,7 @@
     <%# Decorative: the name beside it says who this is. %>
     <span class="account-card__avatar" aria-hidden="true"><%= initials %></span>
     <div>
-      <p class="account-card__name"><%= profile.firstName %> <%= profile.lastName %></p>
+      <p class="account-card__name"><%= profile.name %> <%= profile.lastName %></p>
       <p class="account-card__email"><%= profile.email %></p>
     </div>
   </div>
@@ -48,13 +49,15 @@
 
     <hr class="account-nav__divider" />
 
-    <a href="/login" class="account-nav__link">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
-        <path d="M16 17l5-5-5-5"></path>
-        <path d="M21 12H9"></path>
-      </svg>
-      Log out
-    </a>
+    <form method="post" action="/logout">
+      <button type="submit" class="account-nav__link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+          <path d="M16 17l5-5-5-5"></path>
+          <path d="M21 12H9"></path>
+        </svg>
+        Log out
+      </button>
+    </form>
   </nav>
 </aside>

@@ -15,13 +15,17 @@
       mode   — 'login' or 'signup'
       fields — that mode's table from AUTH_FIELDS
       values — what to put back in each control (never the password)
-      errors — field name to message, empty when there is nothing to report
-      notice — a sentence to show above the form, or null %>
+      errors — field name to message, empty when there is nothing to report;
+               `form` is a message about the whole submission, such as a
+               refused log in, which no single field owns
+      next   — where to go after a successful sign-in, carried in a hidden
+               field so a failed attempt does not lose it %>
 <%
   const isSignup = mode === 'signup';
   const layout = isSignup
     ? [
-        { field: 'name', label: 'Full name', type: 'text', placeholder: 'Jordan Kim', autocomplete: 'name' },
+        { field: 'name', label: 'First name', type: 'text', placeholder: 'Jordan', autocomplete: 'given-name' },
+        { field: 'lastName', label: 'Last name', type: 'text', placeholder: 'Kim', autocomplete: 'family-name' },
         { field: 'email', label: 'Email', type: 'email', placeholder: 'you@email.com', autocomplete: 'email' },
         { field: 'password', label: 'Password', type: 'password', placeholder: '••••••••', autocomplete: 'new-password' },
       ]
@@ -39,16 +43,17 @@
     : 'Log in to manage orders and Mashup builds.' %>
 </p>
 
-<% if (notice) { %>
-  <%# role="status": submitting moves focus nowhere, so without it a screen
-      reader user is given no sign anything happened. %>
-  <div role="status" class="notice auth__notice">
-    <%= notice %>
+<% if (errors.form) { %>
+  <%# role="alert": submitting moves focus nowhere, so without it a screen
+      reader user is given no sign the attempt was refused. %>
+  <div role="alert" class="notice notice--error auth__notice">
+    <%= errors.form %>
   </div>
 <% } %>
 
 <form method="post" action="/login" novalidate data-validate class="auth__form">
   <input type="hidden" name="mode" value="<%= mode %>" />
+  <input type="hidden" name="next" value="<%= next %>" />
 
   <% layout.forEach((item) => { %>
     <%- include('../shared/formField', {
@@ -71,12 +76,15 @@
 
 <%# The mockup closes with the same switch as the tabs above. Kept because it
     is where the eye lands after the button, and it is the same link. %>
+<%
+  const nextParam = next && next !== '/account' ? `next=${encodeURIComponent(next)}` : '';
+%>
 <p class="auth__switch">
   <% if (isSignup) { %>
     Already have an account?
-    <a href="/login" class="auth__switch-link">Log in</a>
+    <a href="<%= nextParam ? `/login?${nextParam}` : '/login' %>" class="auth__switch-link">Log in</a>
   <% } else { %>
     Don't have an account?
-    <a href="/login?tab=signup" class="auth__switch-link">Sign up</a>
+    <a href="/login?tab=signup<%= nextParam ? `&${nextParam}` : '' %>" class="auth__switch-link">Sign up</a>
   <% } %>
 </p>

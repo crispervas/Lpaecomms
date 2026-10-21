@@ -1,0 +1,64 @@
+<%# Order confirmation: shown once the simulated payment created the order,
+    and reachable again later by its owner only.
+
+    Expected locals:
+      order — from CustomerModel.getOrder: reference, placedOn, lines,
+              finalAmount, shipping, payment
+    Wrapped by layouts/base.ejs. %>
+<%
+  const priceFormatter = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
+%>
+<div class="checkout">
+  <h1 class="checkout__title">Thank you for your order</h1>
+
+  <div role="status" class="notice checkout__notice">
+    Order <strong><%= order.reference %></strong> is confirmed. We will let you know when it ships.
+  </div>
+
+  <div class="checkout__layout">
+    <section aria-labelledby="order-lines-title">
+      <h2 id="order-lines-title" class="checkout-form__title">What you ordered</h2>
+      <ul class="checkout-items">
+        <% order.lines.forEach((line) => { %>
+          <li class="checkout-items__item">
+            <span><%= line.quantity %> × <%= line.name %></span>
+            <span class="cart-summary__value"><%= priceFormatter.format(line.amount) %></span>
+          </li>
+        <% }) %>
+      </ul>
+
+      <% if (order.shipping) { %>
+        <h2 class="checkout-form__title">Shipping to</h2>
+        <p class="checkout-address__text">
+          <%= order.shipping.fullName %><br />
+          <%= order.shipping.address %><br />
+          <%= order.shipping.city %> <%= order.shipping.state %> <%= order.shipping.postcode %>
+        </p>
+      <% } %>
+
+      <div class="checkout__actions">
+        <a href="/account?tab=orders" class="button button--solid">See your orders</a>
+      </div>
+    </section>
+
+    <aside class="cart-summary" aria-labelledby="confirmation-summary-title">
+      <h2 id="confirmation-summary-title" class="cart-summary__title">Summary</h2>
+      <dl class="cart-summary__rows">
+        <div class="cart-summary__row">
+          <dt>Placed on</dt>
+          <dd class="cart-summary__value"><%= order.placedOn %></dd>
+        </div>
+        <% if (order.payment) { %>
+          <div class="cart-summary__row">
+            <dt>Paid with</dt>
+            <dd class="cart-summary__value"><%= order.payment.brand %> •••• <%= order.payment.last4 %></dd>
+          </div>
+        <% } %>
+        <div class="cart-summary__row cart-summary__row--total">
+          <dt>Total</dt>
+          <dd><%= priceFormatter.format(order.finalAmount) %></dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</div>

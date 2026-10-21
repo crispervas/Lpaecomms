@@ -7,8 +7,8 @@
  * neither. A mode that quietly borrows the other's rules is the failure this
  * file is looking for.
  *
- * None of it authenticates anybody — there is no user model yet. These rules
- * decide whether a submission is well formed, nothing more.
+ * These rules decide whether a submission is well formed; the auth
+ * controller's own tests cover signing in.
  */
 
 import { test } from 'node:test';
@@ -31,7 +31,8 @@ test('a complete log in raises no errors', () => {
 test('a complete sign up raises no errors', () => {
   assert.deepEqual(
     validateAuth('signup', {
-      name: 'Jordan Kim',
+      name: 'Jordan',
+      lastName: 'Kim',
       email: 'jordan@example.com',
       password: 'correct-horse',
     }),
@@ -100,7 +101,8 @@ test('logging in accepts a short password', () => {
 test('a password of exactly the minimum is accepted', () => {
   const min = AUTH_FIELDS.signup.password.minLength;
   const errors = validateAuth('signup', {
-    name: 'Jordan Kim',
+    name: 'Jordan',
+    lastName: 'Kim',
     email: 'jordan@example.com',
     password: 'x'.repeat(min),
   });
@@ -149,6 +151,19 @@ test('every rule a field declares has a message to show for it', () => {
       if (rules.minLength) assert.ok(rules.messages.tooShort, `${where} explains being short`);
       assert.ok(rules.messages.tooLong, `${where} explains being long`);
     }
+  }
+});
+
+test('signing up asks for a last name', () => {
+  const errors = validateAuth('signup', {
+    name: 'Jordan', lastName: '', email: 'jordan@example.com', password: 'correct-horse',
+  });
+  assert.equal(errors.lastName, 'Please enter your last name.');
+});
+
+test('emails are lower-cased in both modes, because accounts match them exactly', () => {
+  for (const mode of ['login', 'signup']) {
+    assert.equal(normaliseAuth(mode, { email: ' Jordan@Example.COM ' }).email, 'jordan@example.com', mode);
   }
 });
 

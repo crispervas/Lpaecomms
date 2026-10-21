@@ -12,7 +12,7 @@ import { ProductModel } from '../src/models/product.model.js';
 import { createFakePrisma } from './helpers/fakePrisma.js';
 
 const row = (id, over = {}) => ({
-  id, name: `P${id}`, price: 12.5, img: [`https://img/${id}.jpg`, `https://img/${id}b.jpg`],
+  id, name: `P${id}`, price: 12.5, stock: 7, img: [`https://img/${id}.jpg`, `https://img/${id}b.jpg`],
   description: 'd', category: { id: 2, name: 'Home', code: 'home' }, ...over,
 });
 
@@ -42,7 +42,7 @@ test('getById returns the detail shape or null', async () => {
   const prisma = createFakePrisma({ product: { findFirst: row(3) } });
   assert.deepEqual(await new ProductModel(prisma).getById('3'), {
     id: 3, name: 'P3', category: { id: 2, name: 'Home', slug: 'home' }, priceAud: 12.5,
-    description: 'd', imageUrls: ['https://img/3.jpg', 'https://img/3b.jpg'],
+    description: 'd', imageUrls: ['https://img/3.jpg', 'https://img/3b.jpg'], stock: 7,
   });
   const none = createFakePrisma({ product: { findFirst: null } });
   assert.equal(await new ProductModel(none).getById(9), null);
@@ -88,4 +88,32 @@ test('every storefront read hides draft products', async () => {
   await model.findByIds([1]);
   await model.findByCategoryExcluding(2, [1], 4);
   for (const call of prisma.calls) assert.equal(call.args.where.published, true, call.method);
+});
+
+test('search pages, filters by category and matches text case-insensitively', async () => {
+  const prisma = createFakePrisma({ product: { count: 30, findMany: [row(1)] } });
+  const result = await new ProductModel(prisma).search({ categoryId: 2, q: 'dock', page: 2 });
+  assert.deepEqual(result, {
+    items: [{ id: 1, name: 'P1', category: 'Home', priceAud: 12.5, imageUrl: 'https://img/1.jpg' }],
+    total: 30, page: 2, pageCount: 3,
+  });
+  const find = prisma.calls.find((c) => c.method === 'findMany').args;
+  assert.equal(find.skip, 12);
+  assert.equal(find.take, 12);
+  assert.deepEqual(find.where, {
+    status: { not: 0 }, published: true, categoryId: 2,
+    OR: [
+      { name: { contains: 'dock', mode: 'insensitive' } },
+      { code: { contains: 'dock', mode: 'insensitive' } },
+      { description: { contains: 'dock', mode: 'insensitive' } },
+    ],
+  });
+  assert.deepEqual(prisma.calls.find((c) => c.method === 'count').args.where, find.where);
+});
+
+test('search without text or category reads the whole active catalogue', async () => {
+  const prisma = createFakePrisma({ product: { count: 0, findMany: [] } });
+  const result = await new ProductModel(prisma).search({ categoryId: null, q: '', page: 1 });
+  assert.deepEqual(prisma.calls.find((c) => c.method === 'findMany').args.where, { status: { not: 0 }, published: true });
+  assert.equal(result.pageCount, 1);
 });

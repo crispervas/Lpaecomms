@@ -14,6 +14,7 @@ import {
   MAX_LINES,
   MAX_QUANTITY,
   addToCart,
+  capToStock,
   cartCount,
   clampQuantity,
   parseCart,
@@ -66,6 +67,19 @@ const product = (id, priceAud) => ({
   priceAud,
   description: '',
   imageUrls: [`https://example.test/${id}.png`],
+  stock: MAX_QUANTITY,
+});
+
+test('capToStock lowers lines to the stock and drops sold-out ones', () => {
+  assert.deepEqual(
+    capToStock([{ id: 1, quantity: 5 }, { id: 2, quantity: 1 }], new Map([[1, 2], [2, 0]])),
+    { lines: [{ id: 1, quantity: 2 }], changed: true },
+  );
+});
+
+test('capToStock leaves a cart within stock unchanged, and lines it knows nothing about', () => {
+  const lines = [{ id: 1, quantity: 2 }, { id: 3, quantity: 4 }];
+  assert.deepEqual(capToStock(lines, new Map([[1, 9]])), { lines, changed: false });
 });
 
 /**

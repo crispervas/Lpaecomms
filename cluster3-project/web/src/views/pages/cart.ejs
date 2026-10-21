@@ -2,8 +2,8 @@
 
     Everything that changes the cart is a small form posting to /cart/items,
     answered with a redirect back here, so the page works with no JavaScript.
-    The next step, Shipping, does not exist yet; its button is disabled and
-    says so. See the cart controller. %>
+    "Continue to shipping" opens the checkout, unless some line could not be
+    priced (`canCheckout`). See the cart controller. %>
 <%
   // Built once per render rather than per use: constructing an Intl formatter
   // is the expensive part, formatting with it is not.
@@ -38,11 +38,17 @@
         </ul>
 
         <div class="checkout__actions">
-          <button type="button" disabled aria-describedby="checkout-note"
-            class="button button--solid checkout__next">
-            Continue to shipping
-          </button>
-          <p id="checkout-note" class="checkout__note">Checkout is coming soon.</p>
+          <% if (canCheckout) { %>
+            <a href="/checkout/shipping" class="button button--solid checkout__next">
+              Continue to shipping
+            </a>
+          <% } else { %>
+            <button type="button" disabled aria-describedby="checkout-note"
+              class="button button--solid checkout__next">
+              Continue to shipping
+            </button>
+            <p id="checkout-note" class="checkout__note">Some items could not be loaded. Try again in a moment.</p>
+          <% } %>
         </div>
       </div>
 

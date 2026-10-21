@@ -9,10 +9,13 @@
  * The cart is the `lpa_cart` cookie (lib/cart.js). Names and prices come from
  * the catalogue through the model on every render, never from the cookie.
  *
- * Shipping and Payment, the mockup's next steps, need an order on the server
- * and a signed-in user, neither of which exists; the page shows them in the
- * step indicator and disables the button that would lead there, as the mobile
- * Cart tab does.
+ * The cart never holds more than the shop has: every render lowers lines to
+ * the current stock and drops sold-out products, saying so, and adding a
+ * product adds at most what is left. The payment step re-checks, because the
+ * stock can still change after this page.
+ *
+ * "Continue to shipping" opens the checkout (checkout.controller.js), which
+ * asks for a sign-in first.
  */
 
 import boom from '@hapi/boom';
@@ -21,6 +24,7 @@ import {
   CART_COOKIE,
   MAX_LINES,
   addToCart,
+  capToStock,
   cartCount,
   parseCart,
   parseProductId,
@@ -31,8 +35,9 @@ import {
 } from '../lib/cart.js';
 
 /** Notices a redirect may ask the page to show, keyed by `?notice=`. */
-const NOTICES = {
+export const NOTICES = {
   full: `Your cart holds up to ${MAX_LINES} different products. Remove one to add another.`,
+  stock: 'Some quantities were reduced to what we have in stock.',
 };
 
 /**
@@ -74,36 +79,53 @@ export class CartController {
       }),
     );
 
-    const kept = results.filter((result) => result.product !== null).map((result) => result.line);
-    if (kept.length !== lines.length) {
+    const found = results.filter((result) => result.product);
+    const existing = results.filter((result) => result.product !== null).map((result) => result.line);
+    const { lines: kept, changed: capped } = capToStock(
+      existing,
+      new Map(found.map(({ product }) => [product.id, product.stock])),
+    );
+    if (kept.length !== lines.length || capped) {
       this.#write(res, kept);
       // The header badge was counted from the cookie before the prune.
       res.locals.cartCount = cartCount(kept);
     }
 
+    const productById = new Map(found.map(({ product }) => [product.id, product]));
     const { items, subtotalAud } = priceCart(
-      results
-        .filter((result) => result.product)
-        .map(({ line, product }) => ({
-          product: {
-            id: product.id,
-            name: product.name,
-            category: product.category.name,
-            priceAud: product.priceAud,
-            imageUrl: product.imageUrls[0] ?? '',
-          },
-          quantity: line.quantity,
-        })),
+      kept
+        .filter((line) => productById.has(line.id))
+        .map((line) => {
+          const product = productById.get(line.id);
+          return {
+            product: {
+              id: product.id,
+              name: product.name,
+              category: product.category.name,
+              priceAud: product.priceAud,
+              imageUrl: product.imageUrls[0] ?? '',
+              stock: product.stock,
+            },
+            quantity: line.quantity,
+          };
+        }),
     );
+    const unavailableCount = results.filter((result) => result.product === undefined).length;
+
+    // Whitelisted: the query string is public, and only known keys map to copy.
+    let notice = Object.hasOwn(NOTICES, req.query.notice) ? NOTICES[req.query.notice] : null;
+    if (capped) notice = NOTICES.stock;
 
     res.render('layouts/base', {
       title: 'Lpaecomms — Cart',
       page: 'cart',
       items,
       subtotalAud,
-      unavailableCount: results.filter((result) => result.product === undefined).length,
-      // Whitelisted: the query string is public, and only known keys map to copy.
-      notice: Object.hasOwn(NOTICES, req.query.notice) ? NOTICES[req.query.notice] : null,
+      unavailableCount,
+      notice,
+      // Lines that could not be read have no price yet, so an order now would
+      // be charged for something the visitor cannot see.
+      canCheckout: items.length > 0 && unavailableCount === 0,
     });
   }
 
@@ -111,7 +133,8 @@ export class CartController {
    * Add a product from its page.
    *
    * The product is looked up first so the cookie never records an id the
-   * catalogue does not know.
+   * catalogue does not know, and the line never holds more than the stock;
+   * when it had to add less than asked, the cart says so.
    *
    * @param {import('express').Request} req - Body carries `productId` and `quantity`.
    * @param {import('express').Response} res - Outgoing response.
@@ -135,8 +158,10 @@ export class CartController {
       return;
     }
 
-    this.#write(res, updated);
-    res.redirect(303, '/cart');
+    const { lines: capped, changed } = capToStock(updated, new Map([[id, product.stock]]));
+    // A sold-out product leaves the cart exactly as it was.
+    if (capped.length !== lines.length || capped.some((line, i) => line !== lines[i])) this.#write(res, capped);
+    res.redirect(303, changed ? '/cart?notice=stock' : '/cart');
   }
 
   /**

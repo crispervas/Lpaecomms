@@ -5,7 +5,8 @@
     button that would leave the range is disabled rather than sent.
 
     Expected locals:
-      item           — a priced line: id, name, category, imageUrl, quantity, lineTotalAud
+      item           — a priced line: id, name, category, imageUrl, quantity, lineTotalAud,
+                       stock (the + button stops there)
       priceFormatter — an Intl.NumberFormat, shared with the rest of the page %>
 <%
   const MAX_QUANTITY = 99;
@@ -29,7 +30,7 @@
       aria-label="Decrease quantity of <%= item.name %>" class="quantity__button">−</button>
     <span class="quantity__value" aria-label="Quantity"><%= item.quantity %></span>
     <button type="submit" name="quantity" value="<%= item.quantity + 1 %>"
-      <% if (item.quantity >= MAX_QUANTITY) { %>disabled<% } %>
+      <% if (item.quantity >= Math.min(MAX_QUANTITY, item.stock)) { %>disabled<% } %>
       aria-label="Increase quantity of <%= item.name %>" class="quantity__button">+</button>
   </form>
 

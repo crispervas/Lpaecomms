@@ -2,7 +2,11 @@
 <section class="catalog-head">
   <span class="eyebrow">Full catalog</span>
   <h1 class="catalog-head__title">
-    <%= activeCategory ? activeCategory.name : 'All products' %>
+    <% if (q) { %>
+      Results for “<%= q %>”
+    <% } else { %>
+      <%= activeCategory ? activeCategory.name : 'All products' %>
+    <% } %>
   </h1>
 </section>
 <%# Nothing to filter by when the category list could not be read; the grid
@@ -11,6 +15,13 @@
   <%- include('../components/catalog/catalogFilters', {
     categories,
     activeSlug: activeCategory ? activeCategory.slug : null,
+    q,
   }) %>
 <% } %>
-<%- include('../components/catalog/catalogResults', { products, catalogueAvailable, activeCategory }) %>
+<%- include('../components/catalog/catalogResults', { products, catalogueAvailable, activeCategory, q, total }) %>
+<%- include('../components/catalog/catalogPagination', {
+  pageNumber,
+  pageCount,
+  q,
+  categorySlug: activeCategory ? activeCategory.slug : null,
+}) %>

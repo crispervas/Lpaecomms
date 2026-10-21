@@ -1,0 +1,42 @@
+<%# Checkout step 2: the delivery address.
+
+    Posts to itself; a valid address is kept in a cookie and the browser moves
+    on to Payment, an invalid one comes back here with its errors. Validated in
+    the browser by form-validation.js from the same rules the server checks.
+    Wrapped by layouts/base.ejs. %>
+<%
+  const layout = [
+    { field: 'fullName', label: 'Full name', type: 'text', placeholder: 'Jordan Kim', autocomplete: 'shipping name' },
+    { field: 'address', label: 'Street address', type: 'text', placeholder: '12 Queen St', autocomplete: 'shipping street-address' },
+    { field: 'city', label: 'City or suburb', type: 'text', placeholder: 'Brisbane', autocomplete: 'shipping address-level2' },
+    { field: 'state', label: 'State', type: 'text', placeholder: 'QLD', autocomplete: 'shipping address-level1' },
+    { field: 'postcode', label: 'Postcode', type: 'text', placeholder: '4000', autocomplete: 'shipping postal-code' },
+    { field: 'phone', label: 'Phone', type: 'tel', placeholder: '0412 345 678', autocomplete: 'shipping tel' },
+  ];
+%>
+<div class="checkout">
+  <h1 class="checkout__title">Checkout</h1>
+  <%- include('../components/cart/checkoutSteps', { current: 2 }) %>
+
+  <form method="post" action="/checkout/shipping" novalidate data-validate class="checkout-form">
+    <h2 class="checkout-form__title">Where should we send it?</h2>
+    <div class="checkout-form__grid">
+      <% layout.forEach((item) => { %>
+        <%- include('../components/shared/formField', {
+          field: item.field,
+          label: item.label,
+          rules: fields[item.field],
+          value: values[item.field] || '',
+          error: errors[item.field],
+          type: item.type,
+          placeholder: item.placeholder,
+          autocomplete: item.autocomplete,
+          rows: null,
+        }) %>
+      <% }) %>
+    </div>
+    <div class="checkout__actions">
+      <button type="submit" class="button button--solid checkout__next">Continue to payment</button>
+    </div>
+  </form>
+</div>

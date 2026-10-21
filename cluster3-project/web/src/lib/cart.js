@@ -136,6 +136,38 @@ export function removeFromCart(lines, id) {
 }
 
 /**
+ * Lower each line to what is in stock, dropping lines that are sold out.
+ *
+ * Lines whose stock is not in the map are kept as they are: a product that
+ * could not be read is no reason to change what the visitor chose.
+ *
+ * @param {CartLine[]} lines - Current lines.
+ * @param {Map<number, number>} stockById - Units in stock per product id.
+ * @returns {{lines: CartLine[], changed: boolean}} The capped lines, and
+ *   whether any line was lowered or dropped.
+ */
+export function capToStock(lines, stockById) {
+  let changed = false;
+  const capped = [];
+  for (const line of lines) {
+    if (!stockById.has(line.id)) {
+      capped.push(line);
+      continue;
+    }
+    const stock = stockById.get(line.id);
+    if (stock <= 0) {
+      changed = true;
+    } else if (line.quantity > stock) {
+      changed = true;
+      capped.push({ id: line.id, quantity: stock });
+    } else {
+      capped.push(line);
+    }
+  }
+  return { lines: changed ? capped : lines, changed };
+}
+
+/**
  * Count the units in a cart, for the header badge.
  *
  * @param {CartLine[]} lines - Cart lines.

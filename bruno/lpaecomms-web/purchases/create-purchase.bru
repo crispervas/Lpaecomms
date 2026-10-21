@@ -33,7 +33,7 @@ body:json {
 docs {
   # Create a purchase
 
-  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `fulfillmentStatus`, `invoice`, `paymentDate` and `data` can change. `fulfillmentStatus` tracks shipping (`PENDING` → `SHIPPED` → `DELIVERED`, or `CANCELLED`) apart from payment.
+  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Creating a purchase also decrements each product's `stock` by the quantity bought, in the same transaction; a request that asks for more than is in stock is refused with 409 and nothing is written. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `fulfillmentStatus`, `invoice`, `paymentDate` and `data` can change. `fulfillmentStatus` tracks shipping (`PENDING` → `SHIPPED` → `DELIVERED`, or `CANCELLED`) apart from payment.
 
   The server fills `created` with an audit stamp (`client`, `server`, `serverDate`, `serverTime` in APP_TIMEZONE, `unixTime`, `user`, `role` from the token). `status`, `statusName`, `created`, `updated`, `createdAt`, `updatedAt` and any other undeclared key are ignored if sent. An optional top-level `time` (ISO string) is recorded as `created.client`.
 
@@ -48,7 +48,7 @@ docs {
   | `userId` | integer | yes on create | Id of an existing user. |
   | `paymentStatus` | string | yes on create | One of `PENDING`, `SUCCESS`, `FAILED`, `REJECTED`. |
   | `fulfillmentStatus` | string | no | One of `PENDING`, `SHIPPED`, `DELIVERED`, `CANCELLED`; defaults to `PENDING`. |
-  | `products` | array | yes on create | 1–100 lines of `{ productId: integer, quantity: integer 1–999 }`; each product must exist and be active. Create only. |
+  | `products` | array | yes on create | 1–100 lines of `{ productId: integer, quantity: integer 1–999 }`; each product must exist, be active and have enough stock. Create only. |
   | `taxes` | number | no | ≥ 0; defaults to 0. Create only. |
   | `discountAmount` | number | no | ≥ 0; defaults to 0. Create only. |
   | `reference` | string \| null | no | Max 100 characters. |
@@ -132,6 +132,22 @@ docs {
         {
           "field": "userId",
           "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 409 Conflict — not enough stock
+
+  A product's stock does not cover the total quantity requested for it (repeated lines for one product are summed). One `errors` entry per product that falls short. Nothing is written and no stock changes.
+
+    {
+      "message": "Some products do not have enough stock.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "products",
+          "message": "Only 2 left of Wireless Headphones."
         }
       ]
     }

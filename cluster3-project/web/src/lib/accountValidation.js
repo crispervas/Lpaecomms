@@ -3,12 +3,11 @@
  *
  * Read alongside lib/formRules.js, which applies the field table, and
  * lib/authValidation.js, whose wording and limits these reuse wherever the
- * fields overlap — a person gets the same message about an email here as on
- * the login page. The mobile Account tab (mobile/src/lib/profileRules.ts)
- * mirrors the same limits.
+ * fields overlap. The mobile Account tab (mobile/src/lib/profileRules.ts)
+ * mirrors the name and phone limits.
  *
- * **Nothing here saves a profile.** There is no user model yet; these rules
- * only decide whether a submission is well formed.
+ * The email is not a profile field: it is how the customer signs in, so it
+ * is shown on the page but cannot be changed through this form.
  */
 
 import {
@@ -16,9 +15,6 @@ import {
   normaliseFields,
   validateFields,
 } from './formRules.js';
-
-/** Basic email shape check: something@something.something. */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * At least seven digits, optionally led by "+", with the separators people
@@ -45,8 +41,9 @@ const tooLong = (maxLength) => `Please keep this to ${maxLength} characters or f
 /**
  * The profile form's fields, keyed by the `name` attribute of each control.
  *
- * The last name is optional because not everybody has one; the phone is
- * optional because the shop never needs to ring anyone.
+ * The last name is required because the account requires one (sign-up asks
+ * for it too); the phone and address are optional, filled in to pre-fill the
+ * checkout's shipping step.
  *
  * @type {Record<string, object>}
  */
@@ -60,20 +57,17 @@ export const PROFILE_FIELDS = attachHtmlPatterns({
     },
   },
   lastName: {
-    required: false,
-    maxLength: 100,
-    messages: { tooLong: tooLong(100) },
-  },
-  email: {
     required: true,
-    // The maximum length of an email address in RFC 5321.
-    maxLength: 254,
-    pattern: EMAIL_PATTERN,
+    maxLength: 100,
     messages: {
-      required: 'Please enter your email.',
-      invalid: 'Please enter a valid email address.',
-      tooLong: tooLong(254),
+      required: 'Please enter your last name.',
+      tooLong: tooLong(100),
     },
+  },
+  address: {
+    required: false,
+    maxLength: 200,
+    messages: { tooLong: tooLong(200) },
   },
   phone: {
     required: false,

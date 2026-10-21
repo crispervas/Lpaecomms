@@ -6,9 +6,8 @@
  * merged one. Read alongside lib/formRules.js, which applies these, and
  * lib/contactValidation.js, which is built the same way.
  *
- * **None of this authenticates anyone.** There is no user model, no password
- * hashing and no session yet; these rules only decide whether a submission is
- * well formed. The controller says so plainly on every submit.
+ * These rules only decide whether a submission is well formed; the auth
+ * controller checks the account itself.
  */
 
 import {
@@ -73,6 +72,14 @@ export const AUTH_FIELDS = {
         tooLong: 'Please keep this to 100 characters or fewer.',
       },
     },
+    lastName: {
+      required: true,
+      maxLength: 100,
+      messages: {
+        required: 'Please enter your last name.',
+        tooLong: 'Please keep this to 100 characters or fewer.',
+      },
+    },
     email: emailField(),
     password: {
       required: true,
@@ -107,12 +114,17 @@ export function resolveMode(tab) {
 /**
  * Reduce a request body to the fields the given mode renders.
  *
+ * The email is lower-cased: accounts are found by an exact match, and
+ * "Jo@Example.com" must reach the same account as "jo@example.com".
+ *
  * @param {'login'|'signup'} mode - Which form was submitted.
  * @param {Record<string, unknown>} body - Parsed request body.
  * @returns {Record<string, string>} One entry per field of that mode.
  */
 export function normaliseAuth(mode, body) {
-  return normaliseFields(AUTH_FIELDS[mode], body);
+  const values = normaliseFields(AUTH_FIELDS[mode], body);
+  values.email = values.email.toLowerCase();
+  return values;
 }
 
 /**

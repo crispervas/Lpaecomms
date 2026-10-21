@@ -16,6 +16,7 @@ import contactRoutes from './views/contact.routes.js';
 import authRoutes from './views/auth.routes.js';
 import accountRoutes from './views/account.routes.js';
 import cartRoutes from './views/cart.routes.js';
+import checkoutRoutes from './views/checkout.routes.js';
 import mashupRoutes from './views/mashup.routes.js';
 import preferencesRoutes from './views/preferences.routes.js';
 import { buildHealthRouter } from './api/health.routes.js';
@@ -23,6 +24,7 @@ import currencyRoutes from './api/currency.routes.js';
 import passwordRoutes from './api/password.routes.js';
 import contactApiRoutes from './api/contact.routes.js';
 import { requestTime } from '../middlewares/requestTime.js';
+import { requireSameOrigin } from '../middlewares/sameOrigin.js';
 import { buildCrudRouter } from './api/crud.routes.js';
 import { buildAuthRouter } from './api/auth.routes.js';
 import { buildUserStatusRouter } from './api/userStatus.routes.js';
@@ -41,7 +43,9 @@ export function registerRoutes(app, { prisma }) {
   const viewRouter = express.Router();
   const apiRouter = express.Router();
 
-  // View routes (HTML).
+  // View routes (HTML). Every form post on the site must come from the site:
+  // the session lives in a cookie, so a post from another site is refused.
+  viewRouter.use(requireSameOrigin);
   viewRouter.use('/', homeRoutes);
   viewRouter.use('/', catalogRoutes);
   viewRouter.use('/', productDetailRoutes);
@@ -50,6 +54,7 @@ export function registerRoutes(app, { prisma }) {
   viewRouter.use('/', authRoutes);
   viewRouter.use('/', accountRoutes);
   viewRouter.use('/', cartRoutes);
+  viewRouter.use('/', checkoutRoutes);
   viewRouter.use('/', preferencesRoutes);
   viewRouter.use('/', mashupRoutes);
 

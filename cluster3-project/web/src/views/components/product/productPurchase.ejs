@@ -1,5 +1,6 @@
 <%#
-  Purchase controls: the quantity stepper and the priced add-to-cart button.
+  Purchase controls: the stock line, the quantity stepper and the priced
+  add-to-cart button.
 
   A form posting to /cart/items, answered with a redirect to the cart, so
   adding works with no JavaScript: the quantity is a number field anyone can
@@ -7,25 +8,48 @@
   they render hidden and public/js/quantity-stepper.js reveals them — a
   visitor without it never meets a button that does nothing.
 
+  The quantity cannot go past the stock, and a sold-out product keeps the
+  form but disables it, so the page still says what it would cost. The server
+  caps whatever arrives anyway; these limits only save a wasted round trip.
+
   Expected locals:
     productId      — the product being added.
     priceAud       — the product's price, for the button's label.
+    stock          — units in stock.
     priceFormatter — an Intl.NumberFormat, passed in so one price never renders
                      two ways on the same page.
 %>
+<%
+  // Below this, the page warns that the product is running out.
+  const LOW_STOCK = 5;
+  const soldOut = stock <= 0;
+  const maxQuantity = Math.max(1, Math.min(99, stock));
+%>
+<% if (soldOut) { %>
+  <p class="stock-note stock-note--out">Out of stock</p>
+<% } else if (stock <= LOW_STOCK) { %>
+  <p class="stock-note">Only <%= stock %> left</p>
+<% } %>
 <form method="post" action="/cart/items" class="purchase" data-quantity-stepper>
   <input type="hidden" name="productId" value="<%= productId %>" />
 
   <div class="quantity">
     <button type="button" data-step="-1" aria-label="Decrease quantity"
+      <% if (soldOut) { %>disabled<% } %>
       class="quantity__button u-hidden">−</button>
-    <input type="number" name="quantity" value="1" min="1" max="99" step="1" inputmode="numeric"
+    <input type="number" name="quantity" value="1" min="1" max="<%= maxQuantity %>" step="1" inputmode="numeric"
+      <% if (soldOut) { %>disabled<% } %>
       aria-label="Quantity" class="quantity__value" />
     <button type="button" data-step="1" aria-label="Increase quantity"
+      <% if (soldOut) { %>disabled<% } %>
       class="quantity__button u-hidden">+</button>
   </div>
 
-  <button type="submit" class="button button--solid purchase__submit">
-    Add to cart — <%= priceFormatter.format(priceAud) %>
+  <button type="submit" class="button button--solid purchase__submit" <% if (soldOut) { %>disabled<% } %>>
+    <% if (soldOut) { %>
+      Sold out — <%= priceFormatter.format(priceAud) %>
+    <% } else { %>
+      Add to cart — <%= priceFormatter.format(priceAud) %>
+    <% } %>
   </button>
 </form>

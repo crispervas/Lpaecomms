@@ -105,6 +105,26 @@
 }
 
 // ── Purchase ───────────────────────────────────────────────────────────────
+// "Only 3 left" / "Out of stock", just above the purchase row.
+.stock-note {
+  margin-top: 1.5rem;
+  font-size: .875rem;
+  font-weight: 600;
+  color: @warning-text;
+
+  // The row below would otherwise sit 2.25rem further down.
+  + .purchase { margin-top: .75rem; }
+}
+
+.stock-note--out {
+  color: @error-text;
+}
+
+.purchase__submit:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 .purchase {
   display: flex;
   gap: .875rem;
