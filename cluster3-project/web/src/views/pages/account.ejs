@@ -2,8 +2,7 @@
 
     Two tabs share this URL — the profile form and the order history — and the
     server picks one from `?tab=`, so the sidebar's switch is plain links. The
-    page is a preview: the account is sample data and nothing is saved; see the
-    account controller. %>
+    signed-in customer's own profile and orders; see the account controller. %>
 <div class="account">
   <%- include('../components/account/accountSidebar', { tab, profile, initials }) %>
 

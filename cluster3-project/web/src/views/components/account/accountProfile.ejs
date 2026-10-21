@@ -1,15 +1,16 @@
-<%# The Profile tab: personal details form, then the password row.
+<%# The Profile tab: personal details form, then the sign-in details.
 
     The form posts back to /account and is judged by lib/accountValidation.js;
     `data-validate` lets form-validation.js show the same messages before
-    submitting. A well-formed submission is not saved — the controller answers
-    it with the preview notice.
+    submitting. A valid submission is saved and the page reloads with a
+    confirmation.
 
-    "Change password" is disabled with a "Coming soon" title, as the header's
-    inert controls are: there is no account whose password could change.
+    The email is shown but not editable: it is how the customer signs in.
+    "Change password" is disabled with a "Coming soon" title until a password
+    change flow exists.
 
     Expected locals:
-      profile — the stored profile (for the password date)
+      profile — the stored profile (for the email)
       fields  — PROFILE_FIELDS, the rule table
       values  — what to put back in each control
       errors  — field name to message, empty when there is nothing to report
@@ -20,15 +21,9 @@
     { field: 'lastName', label: 'Last name', type: 'text', placeholder: 'Kim', autocomplete: 'family-name' },
   ];
   const contactFields = [
-    { field: 'email', label: 'Email', type: 'email', placeholder: 'you@email.com', autocomplete: 'email' },
     { field: 'phone', label: 'Phone', type: 'tel', placeholder: '+61 412 345 678', autocomplete: 'tel' },
+    { field: 'address', label: 'Address', type: 'text', placeholder: '12 Queen St, Brisbane QLD 4000', autocomplete: 'street-address' },
   ];
-  // Parsed as UTC so the stored calendar date is the one displayed, whatever
-  // the server's own time zone.
-  const dateFormatter = new Intl.DateTimeFormat('en-AU', {
-    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
-  });
-  const passwordChanged = dateFormatter.format(new Date(`${profile.passwordChangedOn}T00:00:00Z`));
 
   const renderField = (item) => include('../shared/formField', {
     field: item.field,
@@ -43,11 +38,11 @@
   });
 %>
 <h1 class="account__title">Profile</h1>
-<p class="account__lead">Manage your personal details and password.</p>
+<p class="account__lead">Manage your personal details. Your phone and address fill in the checkout for you.</p>
 
 <% if (notice) { %>
-  <%# role="status": submitting moves focus nowhere, so without it a screen
-      reader user is given no sign anything happened. %>
+  <%# role="status": the redirect moves focus nowhere, so without it a screen
+      reader user is given no sign the save worked. %>
   <div role="status" class="notice account__notice"><%= notice %></div>
 <% } %>
 
@@ -64,8 +59,8 @@
 
 <div class="account-panel account-password">
   <div>
-    <p class="account-password__title">Password</p>
-    <p class="account-password__meta">Last changed <%= passwordChanged %></p>
+    <p class="account-password__title">Sign-in</p>
+    <p class="account-password__meta"><%= profile.email %></p>
   </div>
   <button type="button" disabled title="Coming soon" class="button button--outline account-password__button">
     Change password

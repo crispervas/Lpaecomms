@@ -1,10 +1,10 @@
 /**
- * @file Account page: profile rules, tab resolution and controller locals.
+ * @file Account page: profile rules, tab resolution and controller decisions.
  *
- * The page is a preview over sample data, so what is worth testing is the
- * deciding: which tab a query selects, what the profile form accepts, and that
- * a submission — valid or not — never changes the stored profile the sidebar
- * shows. Markup is not asserted; the controller's locals are.
+ * The page reads and saves the signed-in customer through CustomerModel, so
+ * what is worth testing is the deciding: which tab a query selects, what the
+ * profile form accepts, what a valid submission writes, and whose orders are
+ * shown. Markup is not asserted; the controller's locals are.
  */
 
 import { test } from 'node:test';
@@ -19,22 +19,24 @@ import {
 } from '../src/lib/accountValidation.js';
 import { AccountController } from '../src/controllers/account.controller.js';
 
-const VALID = {
-  firstName: 'Jordan',
-  lastName: 'Kim',
-  email: 'jordan.kim@email.com',
-  phone: '+1 (415) 555-0148',
-};
+const CUSTOMER = { id: 7, name: 'Jordan', lastName: 'Kim', email: 'jordan.kim@email.com' };
+const PROFILE = { ...CUSTOMER, phone: '+1 (415) 555-0148', address: '12 Queen St' };
+const VALID = { firstName: 'Jordan', lastName: 'Kim', phone: '+1 (415) 555-0148', address: '12 Queen St' };
+const ORDERS = [{
+  id: 9, reference: 'LPA-20261021-ABC123', placedOn: '2026-10-21', items: 2, title: 'Aria 87',
+  finalAmount: 258, paymentStatus: 'SUCCESS', fulfillmentStatus: 'PENDING',
+}];
 
 /**
- * A response double recording the status and the render call.
+ * A response double recording the status, the render call and redirects.
  *
- * @returns {Object} The double, with `statusCode` and `rendered` to assert on.
+ * @returns {Object} The double, with `statusCode`, `rendered` and `redirected`.
  */
 function fakeResponse() {
   return {
     statusCode: 200,
     rendered: null,
+    redirected: null,
     status(code) {
       this.statusCode = code;
       return this;
@@ -42,23 +44,31 @@ function fakeResponse() {
     render(view, locals) {
       this.rendered = { view, locals };
     },
+    redirect(status, url) {
+      this.redirected = { status, url };
+    },
   };
 }
 
 /**
- * A model double that counts order queries.
+ * A customer model double recording profile writes and order queries.
  *
- * @returns {Object} The double, with `orderCalls` to assert on.
+ * @returns {Object} The double, with `updates` and `orderCalls` to assert on.
  */
 function fakeModel() {
   return {
-    orderCalls: 0,
-    async getProfile() {
-      return { ...VALID, passwordChangedOn: '2026-06-26' };
+    updates: [],
+    orderCalls: [],
+    async findActive() {
+      return { ...PROFILE };
     },
-    async listOrders() {
-      this.orderCalls += 1;
-      return [{ number: 'LPA-1', title: 'A', placedOn: '2026-07-12', status: 'delivered', totalAud: 1 }];
+    async updateProfile(id, input) {
+      this.updates.push({ id, input });
+      return { ...PROFILE, ...input };
+    },
+    async listOrders(userId) {
+      this.orderCalls.push(userId);
+      return ORDERS;
     },
   };
 }
@@ -67,19 +77,20 @@ test('a complete profile raises no errors', () => {
   assert.deepEqual(validateProfile(VALID), {});
 });
 
-test('the last name and phone are optional', () => {
-  assert.deepEqual(validateProfile({ ...VALID, lastName: '', phone: '' }), {});
+test('the phone and address are optional', () => {
+  assert.deepEqual(validateProfile({ ...VALID, phone: '', address: '' }), {});
 });
 
-test('the first name and email are required', () => {
-  const errors = validateProfile({ ...VALID, firstName: '', email: '' });
+test('the first and last names are required', () => {
+  const errors = validateProfile({ ...VALID, firstName: '', lastName: '' });
 
   assert.equal(errors.firstName, 'Please enter your first name.');
-  assert.equal(errors.email, 'Please enter your email.');
+  assert.equal(errors.lastName, 'Please enter your last name.');
 });
 
-test('a malformed email is rejected', () => {
-  assert.equal(validateProfile({ ...VALID, email: 'jordan@' }).email, 'Please enter a valid email address.');
+test('the email is not a profile field: it cannot be changed here', () => {
+  assert.equal('email' in PROFILE_FIELDS, false);
+  assert.equal('email' in normaliseProfile({ ...VALID, email: 'evil@example.com' }), false);
 });
 
 test('a phone needs at least seven digits and only phone punctuation', () => {
@@ -119,51 +130,68 @@ test('initials take the first letter of each name', () => {
   assert.equal(initials('Jordan', ''), 'J');
 });
 
-test('the profile tab renders the stored profile and skips the orders query', async () => {
+test('the profile tab renders the customer and skips the orders query', async () => {
   const model = fakeModel();
   const res = fakeResponse();
-  await new AccountController(model).show({ query: {} }, res);
+  await new AccountController(model).show({ query: {}, customer: CUSTOMER }, res);
 
   const { locals } = res.rendered;
   assert.equal(locals.page, 'account');
   assert.equal(locals.tab, 'profile');
-  assert.equal(locals.values.email, VALID.email);
+  assert.deepEqual(locals.values, VALID);
+  assert.equal(locals.profile.email, CUSTOMER.email);
   assert.equal(locals.initials, 'JK');
   assert.deepEqual(locals.orders, []);
-  assert.equal(model.orderCalls, 0);
+  assert.deepEqual(model.orderCalls, []);
+  assert.equal(locals.notice, null);
 });
 
-test('the orders tab renders the order history', async () => {
+test('the orders tab lists the signed-in customer’s orders', async () => {
   const model = fakeModel();
   const res = fakeResponse();
-  await new AccountController(model).show({ query: { tab: 'orders' } }, res);
+  await new AccountController(model).show({ query: { tab: 'orders' }, customer: CUSTOMER }, res);
 
-  assert.equal(res.rendered.locals.tab, 'orders');
-  assert.equal(res.rendered.locals.orders.length, 1);
+  assert.deepEqual(model.orderCalls, [7]);
+  assert.equal(res.rendered.locals.orders, ORDERS);
   assert.deepEqual(res.rendered.locals.scripts, []);
 });
 
-test('an invalid submission answers 422 and keeps what was typed', async () => {
+test('a saved profile is confirmed after the redirect', async () => {
   const res = fakeResponse();
-  await new AccountController(fakeModel()).saveProfile(
-    { body: { ...VALID, firstName: 'Sam', email: 'nope' } },
+  await new AccountController(fakeModel()).show({ query: { saved: '1' }, customer: CUSTOMER }, res);
+  assert.equal(res.rendered.locals.notice, 'Your profile has been saved.');
+});
+
+test('an invalid submission answers 422, keeps what was typed and saves nothing', async () => {
+  const model = fakeModel();
+  const res = fakeResponse();
+  await new AccountController(model).saveProfile(
+    { body: { ...VALID, firstName: 'Sam', lastName: '' }, customer: CUSTOMER },
     res,
   );
 
   assert.equal(res.statusCode, 422);
   assert.equal(res.rendered.locals.values.firstName, 'Sam');
-  assert.ok(res.rendered.locals.errors.email);
-  assert.equal(res.rendered.locals.notice, null);
+  assert.ok(res.rendered.locals.errors.lastName);
+  assert.deepEqual(model.updates, []);
 });
 
-test('a valid submission is answered with the preview notice, not saved', async () => {
+test('a valid submission saves the customer’s own profile and redirects', async () => {
+  const model = fakeModel();
   const res = fakeResponse();
-  await new AccountController(fakeModel()).saveProfile({ body: { ...VALID, firstName: 'Sam' } }, res);
+  await new AccountController(model).saveProfile(
+    { body: { ...VALID, firstName: 'Sam', email: 'evil@example.com' }, customer: CUSTOMER },
+    res,
+  );
 
-  const { locals } = res.rendered;
-  assert.equal(res.statusCode, 200);
-  assert.match(locals.notice, /cannot be saved/);
-  // The form shows the submission; the sidebar keeps the stored profile.
-  assert.equal(locals.values.firstName, 'Sam');
-  assert.equal(locals.profile.firstName, 'Jordan');
+  assert.equal(model.updates.length, 1);
+  const { id, input } = model.updates[0];
+  assert.equal(id, 7);
+  assert.equal(input.name, 'Sam');
+  assert.equal(input.lastName, 'Kim');
+  assert.equal(input.phone, VALID.phone);
+  assert.equal(input.address, VALID.address);
+  assert.equal('email' in input, false);
+  assert.equal(input.updated.user, 7);
+  assert.deepEqual(res.redirected, { status: 303, url: '/account?saved=1' });
 });

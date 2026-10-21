@@ -1,22 +1,22 @@
-<%# The Orders tab: one card per past order, newest first.
+<%# The Orders tab: one card per order the customer placed, newest first.
 
-    The mockup ends each card with a "View →" link to a product page. It is
-    left out: there is no order detail page, and the sample orders name items
-    the live catalogue feed may not carry, so the link would lead nowhere
-    reliable. The thumbnail is a neutral tile for the same reason — the mockup
-    draws an empty image slot there too.
+    Each card links to the order's confirmation page, which shows its lines,
+    address and payment. The status shown is the shipping progress an admin
+    sets in the desktop app; payment is always taken at checkout, so it needs
+    no label of its own. The thumbnail is a neutral tile, as in the mockup.
 
     Expected locals:
-      orders — OrderSummary[] from models/account.model.js %>
+      orders — from CustomerModel.listOrders: id, reference, placedOn
+               ("YYYY-MM-DD"), items, title, finalAmount, fulfillmentStatus %>
 <%
-  const STATUS_LABELS = {
-    delivered: 'Delivered',
-    'in-transit': 'In transit',
-    cancelled: 'Cancelled',
+  // Shipping progress → label and the status modifier that colours it.
+  const STATUS = {
+    PENDING: { label: 'Processing', modifier: 'pending' },
+    SHIPPED: { label: 'Shipped', modifier: 'in-transit' },
+    DELIVERED: { label: 'Delivered', modifier: 'delivered' },
+    CANCELLED: { label: 'Cancelled', modifier: 'cancelled' },
   };
-  const priceFormatter = new Intl.NumberFormat('en-AU', {
-    style: 'currency', currency: 'AUD', maximumFractionDigits: 0,
-  });
+  const priceFormatter = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' });
   // Parsed as UTC so the stored calendar date is the one displayed, whatever
   // the server's own time zone.
   const dateFormatter = new Intl.DateTimeFormat('en-AU', {
@@ -27,10 +27,13 @@
 <p class="account__lead">Track and review your past purchases.</p>
 
 <% if (orders.length === 0) { %>
-  <p class="account-panel account-orders__empty">You have not placed any orders yet.</p>
+  <p class="account-panel account-orders__empty">
+    You have not placed any orders yet. <a href="/catalog">Browse the catalog</a>.
+  </p>
 <% } else { %>
   <ul class="account-orders">
-    <% orders.forEach((order) => { %>
+    <% orders.forEach((order) => {
+         const status = STATUS[order.fulfillmentStatus] ?? STATUS.PENDING; %>
       <li class="account-panel order-card">
         <span class="order-card__thumb" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -40,14 +43,17 @@
           </svg>
         </span>
         <div class="order-card__body">
-          <p class="order-card__title"><%= order.title %></p>
+          <p class="order-card__title">
+            <a href="/checkout/confirmation/<%= order.id %>"><%= order.title %></a>
+          </p>
           <p class="order-card__meta">
-            Order #<%= order.number %> · Placed
+            Order <%= order.reference ?? `#${order.id}` %> ·
+            <%= order.items %> item<%= order.items === 1 ? '' : 's' %> · Placed
             <time datetime="<%= order.placedOn %>"><%= dateFormatter.format(new Date(`${order.placedOn}T00:00:00Z`)) %></time>
           </p>
         </div>
-        <span class="order-status order-status--<%= order.status %>"><%= STATUS_LABELS[order.status] %></span>
-        <p class="order-card__total"><%= priceFormatter.format(order.totalAud) %></p>
+        <span class="order-status order-status--<%= status.modifier %>"><%= status.label %></span>
+        <p class="order-card__total"><%= priceFormatter.format(order.finalAmount) %></p>
       </li>
     <% }) %>
   </ul>

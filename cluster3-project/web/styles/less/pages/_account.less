@@ -64,6 +64,9 @@
 
 .account-nav__link {
   display: flex;
+  // Log out is a <button>; these line it up with the links above it.
+  width: 100%;
+  text-align: left;
   align-items: center;
   gap: .75rem;
   padding: .75rem .875rem;
@@ -240,6 +243,7 @@
   background-color: color-mix(in srgb, currentColor 12%, transparent);
 }
 
+.order-status--pending    { color: @muted; }
 .order-status--delivered  { color: @success-text; }
 .order-status--in-transit { color: @accent; }
 .order-status--cancelled  { color: @error-text; }
