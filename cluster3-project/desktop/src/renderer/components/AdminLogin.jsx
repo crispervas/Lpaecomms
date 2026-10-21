@@ -56,12 +56,14 @@ function FieldError({ id, message }) {
  * @param {(credentials: {email: string, password: string}) => Promise<string|null>} props.onSignIn
  *   Called once the form passes validation; resolves to the message to show,
  *   or null when the sign-in succeeded.
+ * @param {string|null} [props.notice] - Why the admin is back here, e.g. an
+ *   expired session; shown until the first submission.
  * @returns {JSX.Element} The centred sign-in card.
  */
-export function AdminLogin({ onSignIn }) {
+export function AdminLogin({ onSignIn, notice = null }) {
   const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
-  const [failure, setFailure] = useState(null);
+  const [failure, setFailure] = useState(notice);
   const [pending, setPending] = useState(false);
   const [showResetHelp, setShowResetHelp] = useState(false);
   const id = useId();

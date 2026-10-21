@@ -9,6 +9,12 @@
 /** Shown for a 5xx, whose own message is meant for logs rather than people. */
 const SERVER_FAULT = 'The API could not sign you in right now. Please try again shortly.';
 
+/**
+ * Shown on the sign-in screen when a call found the session expired. The same
+ * words as SESSION_EXPIRED in src/main/services/adminApi.js.
+ */
+export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.';
+
 /** Shown when a failure arrives with no message of its own. */
 const GENERIC_FAILURE = 'Sign-in failed. Please try again.';
 

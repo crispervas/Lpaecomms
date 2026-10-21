@@ -21,6 +21,17 @@
  *   was one.
  * @property {string|null} error - Human-readable description of the failure;
  *   for a non-2xx reply, the API's own `message`.
+ * @property {object|null} pagination - The body's `pagination`, for lists.
+ * @property {Array<{field?: string, message: string}>} errors - Per-field
+ *   messages the API sent with a 400 or 409; empty otherwise.
+ */
+
+/**
+ * @typedef {Object} RequestOptions
+ * @property {object} [body] - JSON body, for writes.
+ * @property {string|null} [token] - Bearer token for authenticated routes.
+ * @property {Object<string, string|number|undefined>} [query] - Query string
+ *   values; undefined ones are left out.
  */
 
 /**
@@ -34,7 +45,8 @@
  * @param {string} options.baseUrl - API base URL including the /api/v1 prefix.
  * @param {number} options.timeoutMs - Per-request timeout in milliseconds.
  * @returns {{getHealth: () => Promise<ApiEnvelope>,
- *   login: (credentials: {email: string, password: string}) => Promise<ApiEnvelope>}}
+ *   login: (credentials: {email: string, password: string}) => Promise<ApiEnvelope>,
+ *   request: (method: string, path: string, options?: RequestOptions) => Promise<ApiEnvelope>}}
  *   The API client.
  */
 function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
@@ -45,16 +57,23 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
    *
    * @param {string} method - HTTP method.
    * @param {string} path - Path under the base URL, starting with a slash.
-   * @param {object} [body] - JSON body, for writes.
+   * @param {RequestOptions} [options] - Body, token and query string.
    * @returns {Promise<ApiEnvelope>} The result envelope.
    */
-  async function send(method, path, body) {
-    const url = `${baseUrl}${path}`;
-    const init = { method, signal: AbortSignal.timeout(timeoutMs) };
+  async function send(method, path, { body, token, query } = {}) {
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(query ?? {})) {
+      if (value !== undefined) search.set(key, String(value));
+    }
+    const url = `${baseUrl}${path}${search.size > 0 ? `?${search}` : ''}`;
+
+    const headers = {};
+    const init = { method, headers, signal: AbortSignal.timeout(timeoutMs) };
     if (body !== undefined) {
-      init.headers = { 'Content-Type': 'application/json' };
+      headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
+    if (token) headers.Authorization = `Bearer ${token}`;
 
     let response;
     try {
@@ -70,6 +89,8 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
         error: timedOut
           ? `The API did not respond within ${timeoutMs} ms.`
           : `Cannot reach the API at ${url}.`,
+        pagination: null,
+        errors: [],
       };
     }
 
@@ -83,6 +104,8 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
           status: response.status,
           data: null,
           error: 'The API responded in an unexpected format.',
+          pagination: null,
+          errors: [],
         };
       }
       const failed = response.status < 200 || response.status >= 300;
@@ -91,6 +114,8 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
         status: response.status,
         data: payload.data,
         error: failed ? String(payload.message ?? `The API answered ${response.status}.`) : null,
+        pagination: payload.pagination ?? null,
+        errors: Array.isArray(payload.errors) ? payload.errors : [],
       };
     } catch {
       // The server answered, so ok stays true — the payload is what is wrong.
@@ -99,6 +124,8 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
         status: response.status,
         data: null,
         error: 'The API responded with a body that is not valid JSON.',
+        pagination: null,
+        errors: [],
       };
     }
   }
@@ -120,10 +147,10 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
    *   never rejects.
    */
   function login({ email, password }) {
-    return send('POST', '/auth/login', { email, password });
+    return send('POST', '/auth/login', { body: { email, password } });
   }
 
-  return { getHealth, login };
+  return { getHealth, login, request: send };
 }
 
 module.exports = { createApiClient };

@@ -11,6 +11,27 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
+/**
+ * Admin operations, each exposed as `window.api.<name>` over `admin:<name>`.
+ *
+ * Written out rather than imported: a sandboxed preload cannot require local
+ * files. tests/adminApi.test.js checks this list against ADMIN_OPERATIONS in
+ * services/adminApi.js, so the two cannot drift. Every function resolves to
+ * `{ok, status, data, error, pagination, errors}` and never rejects.
+ */
+const ADMIN_OPERATIONS = [
+  'listCategories', 'createCategory', 'updateCategory', 'deleteCategory',
+  'listProducts', 'createProduct', 'updateProduct', 'deleteProduct',
+  'listUsers', 'createUser', 'updateUser', 'deleteUser', 'blockUser', 'unblockUser',
+  'listOrders', 'updateOrder', 'deleteOrder',
+  'getStats', 'listRoles', 'listGenders', 'listDocumentTypes',
+];
+
+/** One named function per admin operation; nothing outside the list is reachable. */
+const adminFunctions = Object.fromEntries(
+  ADMIN_OPERATIONS.map((name) => [name, (...args) => ipcRenderer.invoke(`admin:${name}`, ...args)]),
+);
+
 contextBridge.exposeInMainWorld('api', {
   /**
    * Ask the main process for the REST API's health.
@@ -36,4 +57,6 @@ contextBridge.exposeInMainWorld('api', {
    * @returns {Promise<void>}
    */
   signOut: () => ipcRenderer.invoke('auth:sign-out'),
+
+  ...adminFunctions,
 });

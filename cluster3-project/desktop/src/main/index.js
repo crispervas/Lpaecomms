@@ -14,6 +14,8 @@ const { createApiClient } = require('./services/apiClient.js');
 const { createSession } = require('./services/session.js');
 const { registerHealthIpc } = require('./ipc/health.ipc.js');
 const { registerAuthIpc } = require('./ipc/auth.ipc.js');
+const { createAdminApi } = require('./services/adminApi.js');
+const { registerAdminIpc } = require('./ipc/admin.ipc.js');
 
 /**
  * Whether the window loads the compiled renderer rather than the dev server.
@@ -113,7 +115,10 @@ app.whenReady().then(() => {
     timeoutMs: config.apiTimeoutMs,
   });
   registerHealthIpc(apiClient);
-  registerAuthIpc(createSession({ apiClient }));
+  // One session for both: sign-in stores the token the admin calls send.
+  const session = createSession({ apiClient });
+  registerAuthIpc(session);
+  registerAdminIpc(createAdminApi({ apiClient, session }));
 
   createWindow();
 

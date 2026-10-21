@@ -113,31 +113,36 @@ signs in through `window.api.signIn`: the main process posts the credentials to
 receives only the account's name and email. The token lives in main-process
 memory, so quitting the app signs you out; "Sign out" forgets it at once.
 Wrong credentials, a non-admin account and an unreachable API each show their
-own message (`lib/signInResult.mjs`). Signing in opens the admin frame (`components/AdminLayout.jsx`): a sidebar
-with the Dashboard, Users, Orders, Catalog and Settings sections. They are
-previews labelled as such, because the API has no users, orders or statistics
-endpoints yet; they read the sample data in `data/`:
+own message (`lib/signInResult.mjs`). Signing in opens the admin frame
+(`components/AdminLayout.jsx`): a sidebar with the Dashboard, Users, Orders,
+Catalog and Settings sections.
 
-- **Dashboard** shows sample figures and the five newest orders; "View all →"
-  opens Orders.
-- **Users** has working search, role filter, sorting and paging. Blocking and
-  deleting change an in-memory copy; your own account cannot be blocked or
-  deleted. Adding and editing stay disabled until a mockup defines their forms.
-- **Orders** has the same table tools plus a panel, opened by View or Update
-  status, with the order's summary and a status picker. A new status shows on
-  the Dashboard too.
-- **Catalog** (no mockup) lists categories and the products in each, with
-  forms for a new category and a new product. The forms validate but save
-  nothing yet: `createCategory` and `createProduct` in `App.jsx` are where the
-  database calls go, and `data/catalog.mjs` documents the record shapes.
-- **Settings** has the mockup's six tabs. Store info validates but saves
-  nothing yet (`saveStoreInfo` in `App.jsx` is the seam). System status is
-  the one live part: its REST API row asks the main process for `/health` and
-  tells a database outage (Degraded) apart from an unreachable API (Down); the
-  other services are samples. Uploading a logo, adding shipping methods,
-  inviting admins and editing templates stay disabled until mockups exist.
+Every screen except Settings reads and writes the real database. The renderer
+calls named functions on `window.api` (`listProducts`, `updateOrder`,
+`blockUser`, …); the main process (`services/adminApi.js`) sends each with the
+session's token, fetches every page of a list, and checks ids and bodies
+before anything leaves the process. A 401 ends the session and returns to
+sign-in with "Your session has expired. Please sign in again." Rows are
+mapped to the screens' shapes in `lib/apiMapping.mjs`, and every successful
+write reloads the list it touched.
 
-Every change resets on sign-out.
+- **Dashboard** shows Total users, Total orders, Products live and Revenue
+  from `GET /stats`, products per category, and the five newest orders;
+  "View all →" opens Orders.
+- **Users** has search, role filter, sorting and paging; New user and Edit
+  open a form (`components/UserForm.jsx`, rules in `lib/userRules.mjs`);
+  Block/Unblock and Delete act at once (delete after a confirmation). Your own
+  account cannot be blocked or deleted — the API refuses it too.
+- **Orders** has the same table tools plus a panel, opened by View or Update,
+  that edits the shipping status, payment status, reference and invoice.
+  Orders are placed by customers, so there is no New order. Delete asks first.
+- **Catalog** lists categories and the products in each — drafts included —
+  with create, edit and delete for both. A category that still holds products
+  cannot be deleted; the API's reason shows in the confirmation.
+- **Settings** has the mockup's six tabs and is still a preview: Store info
+  validates but saves nothing (`saveStoreInfo` in `App.jsx` is the seam).
+  System status is live: its REST API row asks the main process for `/health`
+  and tells a database outage (Degraded) apart from an unreachable API (Down).
 
 Colours come from the `lpa` palette in `tailwind.config.js`; fonts are bundled
 with `@fontsource` because the CSP allows only `'self'`.

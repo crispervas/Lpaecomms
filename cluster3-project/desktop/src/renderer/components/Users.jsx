@@ -2,28 +2,33 @@
  * @file Admin Users screen.
  *
  * Built from the "Admin Users" desktop mockup: search, role filter, a sortable
- * and paged table, and per-row actions. It is a preview — the API has no users
- * endpoint yet — so it works on the in-memory list App holds: blocking and
- * deleting change that list for the rest of the session and nothing else.
- * Adding and editing stay disabled because no mockup defines their forms.
+ * and paged table, and per-row actions — edit, block or unblock, delete — plus
+ * a form for new accounts. Everything goes through window.api, and the list is
+ * loaded again after every successful change.
+ *
+ * The admin's own row cannot be blocked or deleted, which the API refuses too:
+ * doing either would lock them out of the console.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
+import { fromUserRecord, isSessionExpired, toSaveResult, toUser } from '../lib/apiMapping.mjs';
 import { formatDate } from '../lib/format.mjs';
 import { PAGE_SIZE, paginate, sortRows } from '../lib/table.mjs';
 import { ROLE_FILTERS, filterUsers, initialsOf } from '../lib/userTable.mjs';
+import { ConfirmBar, LoadNotice, Outcome } from './dataParts.jsx';
 import { Icon } from './Icon.jsx';
 import {
   FilterChips,
   Header,
   Pager,
-  PreviewNote,
   SQUARE_BUTTON,
   SearchField,
   SortableHeader,
   nextSort,
 } from './tableParts.jsx';
+import { UserForm } from './UserForm.jsx';
+import { useApiList } from './useApiList.js';
 
 /** The role chips; for users the label doubles as the value. */
 const ROLE_OPTIONS = ROLE_FILTERS.map((role) => ({ value: role, label: role }));
@@ -35,47 +40,131 @@ const ROLE_OPTIONS = ROLE_FILTERS.map((role) => ({ value: role, label: role }));
 const STATUS_BADGE = {
   active: { label: 'Active', className: 'bg-lpa-success-soft text-lpa-success' },
   blocked: { label: 'Blocked', className: 'bg-lpa-negative-soft text-lpa-negative' },
+  pending: { label: 'Pending', className: 'bg-lpa-track text-lpa-subtle' },
 };
+
+/** Lookup rows keep only what the selects show. */
+const toOption = ({ id, name }) => ({ id, name });
+
+/** The API's user field that the form calls something else. */
+const USER_FIELD_RENAME = { name: 'firstName' };
+
+/** Fields the user form shows, so an API message for any other field is not lost. */
+const USER_FIELDS = Object.freeze([
+  'firstName', 'lastName', 'email', 'password', 'roleId', 'genderId', 'documentTypeId', 'document', 'phone', 'address',
+]);
 
 /**
  * Render the Users screen.
  *
  * @param {object} props - Component props.
- * @param {ReadonlyArray<{id: string, name: string, email: string, role: string,
- *   status: 'active'|'blocked', signedUpOn: string}>} props.users - Every
- *   account.
- * @param {string} props.currentAdminId - The signed-in administrator's id; their
+ * @param {number} props.currentAdminId - The signed-in administrator's id; their
  *   own row cannot be blocked or deleted.
- * @param {(id: string) => void} props.onToggleBlock - Blocks an active account
- *   or unblocks a blocked one.
- * @param {(id: string) => void} props.onDelete - Removes an account.
+ * @param {() => void} props.onExpired - Called when the session has expired.
  * @returns {JSX.Element} The screen, for placement in AdminLayout.
  */
-export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
+export function Users({ currentAdminId, onExpired }) {
+  const userList = useApiList(window.api.listUsers, toUser, onExpired);
+  const roles = useApiList(window.api.listRoles, toOption, onExpired);
+  const genders = useApiList(window.api.listGenders, toOption, onExpired);
+  const documentTypes = useApiList(window.api.listDocumentTypes, toOption, onExpired);
+  const users = userList.items;
+
   const [query, setQuery] = useState('');
   const [role, setRole] = useState('All');
   const [sort, setSort] = useState({ key: null, direction: 'asc' });
   const [page, setPage] = useState(1);
+  // {item: object|null} while the form is open; item null for a new account.
+  const [form, setForm] = useState(null);
+  // {user, busy, error} for the delete awaiting confirmation.
   const [pendingDelete, setPendingDelete] = useState(null);
-  const cancelRef = useRef(null);
+  const [notice, setNotice] = useState('');
+  // Ids whose block/unblock is in flight, so a double click sends one request.
+  const [toggling, setToggling] = useState(() => new Set());
 
   const matching = filterUsers(users, { query, role });
   const shown = paginate(sortRows(matching, sort), page, PAGE_SIZE);
 
-  // Move focus into the confirmation so a keyboard user lands on its buttons.
-  useEffect(() => {
-    if (pendingDelete) cancelRef.current?.focus();
-  }, [pendingDelete]);
+  /**
+   * Handle a write's result: back to sign-in when expired, else report.
+   *
+   * @param {object} result - The write's envelope.
+   * @param {string} done - The notice on success.
+   * @returns {Promise<string|null>} Null on success, or the failure message.
+   */
+  async function settle(result, done) {
+    if (isSessionExpired(result)) {
+      onExpired();
+      return null;
+    }
+    if (!result.ok || result.status < 200 || result.status >= 300) {
+      return result.error ?? 'The change could not be saved.';
+    }
+    setNotice(done);
+    await userList.reload();
+    return null;
+  }
 
   /**
-   * Delete the account awaiting confirmation.
+   * Save the user form.
    *
-   * @returns {void}
+   * @param {object} record - A record that passed lib/userRules.mjs.
+   * @returns {Promise<{fieldErrors: Record<string, string>, error: string|null}|null>}
+   *   What the API refused, or null once stored.
    */
-  function confirmDelete() {
-    onDelete(pendingDelete.id);
-    setPendingDelete(null);
+  async function saveUser(record) {
+    const editing = form.item;
+    const body = fromUserRecord(record);
+    const result = await (editing ? window.api.updateUser(editing.id, body) : window.api.createUser(body));
+    if (isSessionExpired(result)) {
+      onExpired();
+      return null;
+    }
+    const refused = toSaveResult(result, USER_FIELD_RENAME, USER_FIELDS);
+    if (refused) return refused;
+
+    setForm(null);
+    setNotice(`${record.firstName} ${record.lastName} was ${editing ? 'saved' : 'created'}.`);
+    await userList.reload();
+    return null;
   }
+
+  /**
+   * Block an active account, or unblock a blocked or pending one.
+   *
+   * @param {object} user - The account.
+   * @returns {Promise<void>}
+   */
+  async function toggleBlock(user) {
+    if (toggling.has(user.id)) return;
+    setToggling((current) => new Set(current).add(user.id));
+    setNotice('');
+    const blocking = user.status === 'active';
+    const result = await (blocking ? window.api.blockUser(user.id) : window.api.unblockUser(user.id));
+    const failed = await settle(result, `${user.name} was ${blocking ? 'blocked' : 'unblocked'}.`);
+    if (failed) setNotice(failed);
+    setToggling((current) => {
+      const next = new Set(current);
+      next.delete(user.id);
+      return next;
+    });
+  }
+
+  /**
+   * Delete the account awaiting confirmation, keeping the bar open on failure.
+   *
+   * @returns {Promise<void>}
+   */
+  async function confirmDelete() {
+    const { user } = pendingDelete;
+    setPendingDelete((current) => ({ ...current, busy: true, error: null }));
+    const failed = await settle(await window.api.deleteUser(user.id), `${user.name} was deleted.`);
+    if (failed) setPendingDelete((current) => ({ ...current, busy: false, error: failed }));
+    else setPendingDelete(null);
+  }
+
+  const lookupsReady = [roles, genders, documentTypes].every((list) => list.state === 'ready');
+  const lookupFailure = [roles, genders, documentTypes].find((list) => list.state === 'error');
 
   return (
     <>
@@ -88,17 +177,39 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
         </div>
         <button
           type="button"
-          aria-disabled="true"
-          title="Adding users is coming soon"
-          className="cursor-not-allowed rounded-[10px] bg-lpa-ink px-5 py-3 text-sm font-semibold text-white"
+          disabled={!lookupsReady}
+          title={lookupsReady ? undefined : 'Loading roles, genders and document types…'}
+          onClick={() => {
+            setNotice('');
+            setPendingDelete(null);
+            setForm({ item: null });
+          }}
+          className="rounded-[10px] bg-lpa-ink px-5 py-3 text-sm font-semibold text-white hover:bg-lpa-ink-hover disabled:cursor-wait disabled:opacity-70"
         >
           + Add user
         </button>
       </header>
 
-      <PreviewNote>
-        Preview — sample accounts. Blocking and deleting last until you sign out.
-      </PreviewNote>
+      <LoadNotice state={userList.state} error={userList.error} onRetry={userList.reload} noun="users" />
+      {lookupFailure && (
+        <LoadNotice
+          state="error"
+          error={lookupFailure.error}
+          onRetry={() => Promise.all([roles.reload(), genders.reload(), documentTypes.reload()])}
+          noun="form options"
+        />
+      )}
+      <Outcome message={notice} />
+
+      {form && (
+        <UserForm
+          key={form.item?.id ?? 'new'}
+          initial={form.item}
+          lookups={{ roles: roles.items, genders: genders.items, documentTypes: documentTypes.items }}
+          onSave={saveUser}
+          onCancel={() => setForm(null)}
+        />
+      )}
 
       <div className="mb-5 flex items-center gap-3">
         <SearchField
@@ -122,32 +233,17 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
       </div>
 
       {pendingDelete && (
-        <div
-          role="alertdialog"
-          aria-labelledby="delete-user-title"
-          className="mb-5 flex items-center justify-between gap-4 rounded-[10px] border border-lpa-negative/30 bg-lpa-negative-soft px-4 py-3"
+        <ConfirmBar
+          id="delete-user-title"
+          confirmLabel="Delete"
+          busy={Boolean(pendingDelete.busy)}
+          error={pendingDelete.error ?? null}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
         >
-          <p id="delete-user-title" className="text-[13px] text-lpa-ink">
-            Delete <strong>{pendingDelete.name}</strong>? This removes the account from the list.
-          </p>
-          <div className="flex flex-none gap-2">
-            <button
-              ref={cancelRef}
-              type="button"
-              onClick={() => setPendingDelete(null)}
-              className="rounded-lg border border-lpa-line bg-lpa-surface px-3.5 py-2 text-[13px] font-semibold hover:bg-lpa-track"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={confirmDelete}
-              className="rounded-lg bg-lpa-negative px-3.5 py-2 text-[13px] font-semibold text-white hover:opacity-90"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+          Delete <strong>{pendingDelete.user.name}</strong>? The account can no longer sign in, and it leaves this
+          list.
+        </ConfirmBar>
       )}
 
       <section aria-label="Users" className="overflow-hidden rounded-2xl border border-lpa-line bg-lpa-surface">
@@ -179,7 +275,8 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
             {shown.items.map((user) => {
               const badge = STATUS_BADGE[user.status];
               const isSelf = user.id === currentAdminId;
-              const isBlocked = user.status === 'blocked';
+              // A pending account is not active yet, so its action is Unblock too.
+              const isBlocked = user.status !== 'active';
               const blockLabel = `${isBlocked ? 'Unblock' : 'Block'} ${user.name}`;
               return (
                 <tr key={user.id} className="border-b border-lpa-track">
@@ -208,10 +305,15 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        aria-disabled="true"
+                        disabled={!lookupsReady}
+                        onClick={() => {
+                          setNotice('');
+                          setPendingDelete(null);
+                          setForm({ item: user });
+                        }}
                         aria-label={`Edit ${user.name}`}
-                        title="Editing is coming soon"
-                        className={`h-[30px] w-[30px] cursor-not-allowed ${SQUARE_BUTTON}`}
+                        title={`Edit ${user.name}`}
+                        className={`h-[30px] w-[30px] ${SQUARE_BUTTON}`}
                       >
                         <Icon name="edit" size={13} className="text-lpa-ink" />
                       </button>
@@ -219,8 +321,8 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
                           would lock you out of the console. */}
                       <button
                         type="button"
-                        disabled={isSelf}
-                        onClick={() => onToggleBlock(user.id)}
+                        disabled={isSelf || toggling.has(user.id)}
+                        onClick={() => toggleBlock(user)}
                         aria-label={blockLabel}
                         title={isSelf ? 'You cannot block your own account' : blockLabel}
                         className={`h-[30px] w-[30px] ${SQUARE_BUTTON}`}
@@ -234,7 +336,10 @@ export function Users({ users, currentAdminId, onToggleBlock, onDelete }) {
                       <button
                         type="button"
                         disabled={isSelf}
-                        onClick={() => setPendingDelete(user)}
+                        onClick={() => {
+                          setForm(null);
+                          setPendingDelete({ user });
+                        }}
                         aria-label={`Delete ${user.name}`}
                         title={isSelf ? 'You cannot delete your own account' : `Delete ${user.name}`}
                         className={`h-[30px] w-[30px] ${SQUARE_BUTTON}`}

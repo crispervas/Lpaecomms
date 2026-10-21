@@ -1,21 +1,24 @@
 /**
  * @file Validation and grouping for the Catalog's categories and products.
  *
- * The forms run these rules before handing a record to their `onSave`. When
- * the database arrives, the API must enforce the same limits server-side —
- * client checks are for the user's benefit, never the only guard.
+ * The forms run these rules before handing a record to their `onSave`. The
+ * limits and formats are the API's (web/src/resources/category.resource.js and
+ * product.resource.js), so a form that passes here is not refused for length
+ * or format; the API still enforces them — client checks are for the user's
+ * benefit, never the only guard.
  *
  * Form fields arrive as strings; a passing form returns the record normalised
- * to the shapes documented in data/catalog.mjs.
+ * to numbers and trimmed text, ready for lib/apiMapping.mjs.
  */
 
 /** Longest accepted text per field. */
 export const CATALOG_MAX_LENGTH = Object.freeze({
-  categoryName: 60,
-  slug: 60,
-  description: 200,
-  productName: 100,
-  sku: 32,
+  categoryName: 100,
+  categoryCode: 50,
+  categoryDescription: 2000,
+  productName: 150,
+  productCode: 60,
+  productDescription: 5000,
 });
 
 /** Highest accepted price, in dollars; a guard against a mistyped extra digit. */
@@ -24,18 +27,19 @@ export const MAX_PRICE = 100_000;
 /** Statuses a product can have. */
 export const PRODUCT_STATUSES = Object.freeze(['active', 'draft']);
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const SKU_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
+// Stricter than the API's /^[a-z0-9-]+$/ — no leading, trailing or doubled
+// hyphens — so every code the form accepts the API accepts too.
+const CODE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PRICE_PATTERN = /^\d+(?:\.\d{1,2})?$/;
 const STOCK_PATTERN = /^\d+$/;
 
 /**
- * Derive a slug from a name: lowercase, accents dropped, words joined by "-".
+ * Derive a code from a name: lowercase, accents dropped, words joined by "-".
  *
  * @param {string} name - A display name.
- * @returns {string} The slug; empty when the name has no letters or digits.
+ * @returns {string} The code; empty when the name has no letters or digits.
  */
-export function slugify(name) {
+export function toCode(name) {
   return name
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -45,91 +49,117 @@ export function slugify(name) {
 }
 
 /**
- * Validate the new-category form.
+ * Message for text over its limit.
  *
- * Each field stops at its first failure: presence, length, format, then
- * uniqueness against the existing categories.
- *
- * @param {{name: string, slug: string, description: string}} values - What the
- *   user typed.
- * @param {ReadonlyArray<{name: string, slug: string}>} existing - Categories
- *   already in the catalog.
- * @returns {{errors: Record<string, string>, record: {name: string,
- *   slug: string, description: string}|null}} One message per failing field,
- *   and the trimmed record when there are none.
+ * @param {number} max - The limit.
+ * @returns {string} The message.
  */
-export function validateCategory(values, existing) {
-  const errors = {};
-  const name = values.name.trim();
-  const slug = values.slug.trim();
-  const description = values.description.trim();
-
-  if (!name) errors.name = 'Please enter a category name.';
-  else if (name.length > CATALOG_MAX_LENGTH.categoryName) {
-    errors.name = `Please keep this to ${CATALOG_MAX_LENGTH.categoryName} characters or fewer.`;
-  } else if (existing.some((category) => category.name.toLowerCase() === name.toLowerCase())) {
-    errors.name = 'A category with this name already exists.';
-  }
-
-  if (!slug) errors.slug = 'Please enter a slug.';
-  else if (slug.length > CATALOG_MAX_LENGTH.slug) {
-    errors.slug = `Please keep this to ${CATALOG_MAX_LENGTH.slug} characters or fewer.`;
-  } else if (!SLUG_PATTERN.test(slug)) {
-    errors.slug = 'Use lowercase letters, digits and single hyphens only.';
-  } else if (existing.some((category) => category.slug === slug)) {
-    errors.slug = 'Another category already uses this slug.';
-  }
-
-  if (description.length > CATALOG_MAX_LENGTH.description) {
-    errors.description = `Please keep this to ${CATALOG_MAX_LENGTH.description} characters or fewer.`;
-  }
-
-  const passed = Object.keys(errors).length === 0;
-  return { errors, record: passed ? { name, slug, description } : null };
+function tooLong(max) {
+  return `Please keep this to ${max} characters or fewer.`;
 }
 
 /**
- * Validate the new-product form.
+ * Check a code's presence, length, format and uniqueness.
  *
- * @param {{name: string, sku: string, categoryId: string, price: string,
- *   stock: string, status: string}} values - What the user typed.
- * @param {{categories: ReadonlyArray<{id: string}>,
- *   products: ReadonlyArray<{sku: string}>}} catalog - The current catalog,
- *   for the category check and SKU uniqueness.
- * @returns {{errors: Record<string, string>, record: {name: string,
- *   sku: string, categoryId: string, price: number, stock: number,
- *   status: string}|null}} One message per failing field, and the normalised
- *   record — SKU uppercased, price and stock as numbers — when there are none.
+ * @param {string} code - Trimmed, lowercased code.
+ * @param {number} max - Longest accepted code.
+ * @param {boolean} taken - Whether another record already uses it.
+ * @param {string} taker - "category" or "product", for the message.
+ * @returns {string|undefined} The message, or undefined when it passes.
  */
-export function validateProduct(values, { categories, products }) {
+function codeError(code, max, taken, taker) {
+  if (!code) return 'Please enter a code.';
+  if (code.length > max) return tooLong(max);
+  if (!CODE_PATTERN.test(code)) return 'Use lowercase letters, digits and single hyphens only.';
+  if (taken) return `Another ${taker} already uses this code.`;
+  return undefined;
+}
+
+/**
+ * Validate the category form, for a new category or an edited one.
+ *
+ * Each field stops at its first failure: presence, length, format, then
+ * uniqueness against the other categories.
+ *
+ * @param {{name: string, code: string, description: string}} values - What the
+ *   user typed.
+ * @param {ReadonlyArray<{id: number, name: string, code: string}>} existing -
+ *   Categories already in the catalog.
+ * @param {{exceptId?: number}} [options] - The category being edited, which
+ *   may keep its own name and code.
+ * @returns {{errors: Record<string, string>, record: {name: string,
+ *   code: string, description: string}|null}} One message per failing field,
+ *   and the trimmed record when there are none.
+ */
+export function validateCategory(values, existing, { exceptId } = {}) {
+  const errors = {};
+  const others = existing.filter((category) => category.id !== exceptId);
+  const name = values.name.trim();
+  const code = values.code.trim().toLowerCase();
+  const description = values.description.trim();
+
+  if (!name) errors.name = 'Please enter a category name.';
+  else if (name.length > CATALOG_MAX_LENGTH.categoryName) errors.name = tooLong(CATALOG_MAX_LENGTH.categoryName);
+  else if (others.some((category) => category.name.toLowerCase() === name.toLowerCase())) {
+    errors.name = 'A category with this name already exists.';
+  }
+
+  const codeMessage = codeError(
+    code, CATALOG_MAX_LENGTH.categoryCode, others.some((category) => category.code === code), 'category',
+  );
+  if (codeMessage) errors.code = codeMessage;
+
+  if (description.length > CATALOG_MAX_LENGTH.categoryDescription) {
+    errors.description = tooLong(CATALOG_MAX_LENGTH.categoryDescription);
+  }
+
+  const passed = Object.keys(errors).length === 0;
+  return { errors, record: passed ? { name, code, description } : null };
+}
+
+/**
+ * Validate the product form, for a new product or an edited one.
+ *
+ * @param {{name: string, code: string, categoryId: string, price: string,
+ *   stock: string, status: string, description: string}} values - What the
+ *   user typed; `categoryId` is the select's string value.
+ * @param {{categories: ReadonlyArray<{id: number}>,
+ *   products: ReadonlyArray<{id: number, code: string}>, exceptId?: number}} catalog -
+ *   The current catalog, for the category check and code uniqueness, and the
+ *   product being edited.
+ * @returns {{errors: Record<string, string>, record: {name: string,
+ *   code: string, categoryId: number, price: number, stock: number,
+ *   status: string, description: string}|null}} One message per failing
+ *   field, and the normalised record when there are none.
+ */
+export function validateProduct(values, { categories, products, exceptId }) {
   const errors = {};
   const name = values.name.trim();
-  // Uppercased before checking, so "kb-aria" is accepted and stored as "KB-ARIA".
-  const sku = values.sku.trim().toUpperCase();
+  // Lowercased before checking, so "KB-Aria" is accepted and stored as "kb-aria".
+  const code = values.code.trim().toLowerCase();
   const price = values.price.trim();
   const stock = values.stock.trim();
+  const description = values.description.trim();
+  const categoryId = Number(values.categoryId);
 
   if (!name) errors.name = 'Please enter a product name.';
-  else if (name.length > CATALOG_MAX_LENGTH.productName) {
-    errors.name = `Please keep this to ${CATALOG_MAX_LENGTH.productName} characters or fewer.`;
-  }
+  else if (name.length > CATALOG_MAX_LENGTH.productName) errors.name = tooLong(CATALOG_MAX_LENGTH.productName);
 
-  if (!sku) errors.sku = 'Please enter a SKU.';
-  else if (sku.length > CATALOG_MAX_LENGTH.sku) {
-    errors.sku = `Please keep this to ${CATALOG_MAX_LENGTH.sku} characters or fewer.`;
-  } else if (!SKU_PATTERN.test(sku)) {
-    errors.sku = 'Use letters, digits and single hyphens only.';
-  } else if (products.some((product) => product.sku === sku)) {
-    errors.sku = 'Another product already uses this SKU.';
-  }
+  const codeMessage = codeError(
+    code,
+    CATALOG_MAX_LENGTH.productCode,
+    products.some((product) => product.id !== exceptId && product.code === code),
+    'product',
+  );
+  if (codeMessage) errors.code = codeMessage;
 
-  if (!categories.some((category) => category.id === values.categoryId)) {
+  if (!categories.some((category) => category.id === categoryId)) {
     errors.categoryId = 'Please choose a category.';
   }
 
   if (!price) errors.price = 'Please enter a price.';
-  else if (!PRICE_PATTERN.test(price) || Number(price) <= 0) {
-    errors.price = 'Enter an amount above zero, with up to two decimals.';
+  else if (!PRICE_PATTERN.test(price)) {
+    errors.price = 'Enter an amount of zero or more, with up to two decimals.';
   } else if (Number(price) > MAX_PRICE) {
     errors.price = `Prices above $${MAX_PRICE.toLocaleString('en-US')} are not accepted.`;
   }
@@ -139,11 +169,15 @@ export function validateProduct(values, { categories, products }) {
 
   if (!PRODUCT_STATUSES.includes(values.status)) errors.status = 'Please choose a status.';
 
+  if (description.length > CATALOG_MAX_LENGTH.productDescription) {
+    errors.description = tooLong(CATALOG_MAX_LENGTH.productDescription);
+  }
+
   const passed = Object.keys(errors).length === 0;
   return {
     errors,
     record: passed
-      ? { name, sku, categoryId: values.categoryId, price: Number(price), stock: Number(stock), status: values.status }
+      ? { name, code, categoryId, price: Number(price), stock: Number(stock), status: values.status, description }
       : null,
   };
 }
@@ -151,8 +185,8 @@ export function validateProduct(values, { categories, products }) {
 /**
  * Count products per category.
  *
- * @param {ReadonlyArray<{categoryId: string}>} products - Every product.
- * @returns {Map<string, number>} Category id to product count; categories with
+ * @param {ReadonlyArray<{categoryId: number}>} products - Every product.
+ * @returns {Map<number, number>} Category id to product count; categories with
  *   no products are absent, so read with `?? 0`.
  */
 export function countByCategory(products) {

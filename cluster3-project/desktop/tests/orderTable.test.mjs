@@ -8,22 +8,23 @@ import assert from 'node:assert/strict';
 import { filterOrders, recentOrders } from '../src/renderer/lib/orderTable.mjs';
 
 const ORDERS = [
-  { id: '#LPA-10309', customer: 'Priya Nair', items: ['Frame 27" QHD'], status: 'delivered', placedOn: '2026-08-02' },
-  { id: '#LPA-10311', customer: 'Ava Chen', items: ['Frame 27" QHD', 'Nexus Dock'], status: 'shipped', placedOn: '2026-08-04' },
-  { id: '#LPA-10312', customer: 'Jordan Kim', items: ['Aria 87 Mechanical'], status: 'pending', placedOn: '2026-08-04' },
+  { id: 9, label: '#LPA-10309', customer: 'Priya Nair', email: 'priya@x.co', items: ['Frame 27" QHD'], status: 'delivered', placedOn: '2026-08-02' },
+  { id: 11, label: '#LPA-10311', customer: 'Ava Chen', email: 'ava@x.co', items: ['Frame 27" QHD', 'Nexus Dock'], status: 'shipped', placedOn: '2026-08-04' },
+  { id: 12, label: '#LPA-10312', customer: 'Jordan Kim', email: 'jordan@x.co', items: ['Aria 87 Mechanical'], status: 'pending', placedOn: '2026-08-04' },
 ];
 
-const ids = (orders) => orders.map((order) => order.id);
+const ids = (orders) => orders.map((order) => order.label);
 
 test('filters by status', () => {
   assert.deepEqual(ids(filterOrders(ORDERS, { query: '', status: 'shipped' })), ['#LPA-10311']);
   assert.equal(filterOrders(ORDERS, { query: '', status: 'all' }).length, 3);
 });
 
-test('searches the id, the customer and every item', () => {
+test('searches the label, the customer, their email and every item', () => {
   assert.deepEqual(ids(filterOrders(ORDERS, { query: '10312', status: 'all' })), ['#LPA-10312']);
   assert.deepEqual(ids(filterOrders(ORDERS, { query: 'priya', status: 'all' })), ['#LPA-10309']);
   assert.deepEqual(ids(filterOrders(ORDERS, { query: 'DOCK', status: 'all' })), ['#LPA-10311']);
+  assert.deepEqual(ids(filterOrders(ORDERS, { query: 'jordan@', status: 'all' })), ['#LPA-10312']);
 });
 
 test('combines search and status', () => {

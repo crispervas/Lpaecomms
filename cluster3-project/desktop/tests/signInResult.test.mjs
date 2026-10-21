@@ -5,7 +5,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { describeSignIn } from '../src/renderer/lib/signInResult.mjs';
+import { SESSION_EXPIRED_MESSAGE, describeSignIn } from '../src/renderer/lib/signInResult.mjs';
+import adminApi from '../src/main/services/adminApi.js';
 
 const USER = { id: 7, name: 'Ada', lastName: 'Lovelace', email: 'ada@lpaecomms.com', role: 'ADMIN' };
 
@@ -46,4 +47,8 @@ test('falls back to a generic message when none was given', () => {
 test('uses the email when the account has no name', () => {
   const user = { ...USER, name: '', lastName: '' };
   assert.equal(describeSignIn({ ok: true, status: 200, data: { user }, error: null }).admin.name, 'ada@lpaecomms.com');
+});
+
+test('the expiry notice says what the main process says', () => {
+  assert.equal(SESSION_EXPIRED_MESSAGE, adminApi.SESSION_EXPIRED);
 });

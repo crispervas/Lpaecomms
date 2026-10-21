@@ -64,6 +64,8 @@ test('maps a healthy 200 response', async () => {
     status: 200,
     data: { status: 'ok', db: 'connected' },
     error: null,
+    pagination: null,
+    errors: [],
   });
 });
 
@@ -88,6 +90,8 @@ test('reports a JSON body that is not the API envelope', async () => {
     status: 200,
     data: null,
     error: 'The API responded in an unexpected format.',
+    pagination: null,
+    errors: [],
   });
 });
 
@@ -173,7 +177,7 @@ test('maps a successful login to its data', async () => {
 
   const envelope = await client.login({ email: 'a@b.co', password: 'secret' });
 
-  assert.deepEqual(envelope, { ok: true, status: 200, data, error: null });
+  assert.deepEqual(envelope, { ok: true, status: 200, data, error: null, pagination: null, errors: [] });
 });
 
 test('carries the API message on a rejected login', async () => {
@@ -183,5 +187,30 @@ test('carries the API message on a rejected login', async () => {
 
   const envelope = await client.login({ email: 'a@b.co', password: 'wrong' });
 
-  assert.deepEqual(envelope, { ok: true, status: 401, data: null, error: 'Email or password is incorrect.' });
+  assert.deepEqual(envelope, { ok: true, status: 401, data: null, error: 'Email or password is incorrect.', pagination: null, errors: [] });
+});
+
+test('sends a bearer token and a query string when asked', async () => {
+  let request = null;
+  const client = clientWith(async (url, init) => {
+    request = { url, init };
+    return { status: 200, async json() { return { message: 'OK', data: [], pagination: null }; } };
+  });
+
+  await client.request('GET', '/products', { token: 'jwt', query: { page: 2, limit: 100, skip: undefined } });
+
+  assert.equal(request.url, 'http://localhost:3000/api/v1/products?page=2&limit=100');
+  assert.equal(request.init.headers.Authorization, 'Bearer jwt');
+});
+
+test('carries pagination and field errors from the API body', async () => {
+  const pagination = { total: 1, page: 1, limit: 100, totalPages: 1, count: 1, hasNextPage: false, hasPrevPage: false };
+  const listed = await clientWith(respondWith(200, { message: 'OK', data: [{ id: 1 }], pagination })).request('GET', '/products');
+  assert.deepEqual(listed.pagination, pagination);
+
+  const errors = [{ field: 'code', message: 'Code is already in use.' }];
+  const rejected = await clientWith(respondWith(409, { message: 'Already in use.', data: null, pagination: null, errors }))
+    .request('POST', '/products', { body: {} });
+  assert.deepEqual(rejected.errors, errors);
+  assert.equal(rejected.error, 'Already in use.');
 });

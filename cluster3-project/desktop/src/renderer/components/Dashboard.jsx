@@ -2,21 +2,24 @@
  * @file Admin Dashboard screen.
  *
  * Built from the "Admin Dashboard" desktop mockup: headline figures, the most
- * recent orders and products per category. It is a preview — the API has no
- * users, orders or statistics endpoints yet — so it renders the sample figures
- * in data/dashboard.mjs and says so on screen. Its recent orders are the
- * newest of the orders App holds, so a status changed on the Orders screen
- * shows here too.
+ * recent orders and products per category, all live. The figures come from
+ * GET /stats, counted by the database; the recent orders are the newest of
+ * the full order list, the same list the Orders screen shows.
+ *
+ * The mockup's month-over-month deltas are gone — the database keeps no
+ * history to compare against — and "Open tickets" became Revenue, since there
+ * are no support tickets to count.
  */
 
 import { useEffect, useState } from 'react';
 
-import { SAMPLE_CATEGORIES, SAMPLE_KPIS } from '../data/dashboard.mjs';
+import { toDashboard, toOrder } from '../lib/apiMapping.mjs';
 import { barWidths } from '../lib/barWidths.mjs';
 import { formatMoney } from '../lib/format.mjs';
 import { recentOrders } from '../lib/orderTable.mjs';
+import { LoadNotice } from './dataParts.jsx';
 import { OrderStatusBadge } from './OrderStatusBadge.jsx';
-import { PreviewNote } from './tableParts.jsx';
+import { useApiList, useApiResult } from './useApiList.js';
 
 /** "Aug 5, 2026, 2:40 PM", the mockup's timestamp format. */
 const TIMESTAMP_FORMAT = new Intl.DateTimeFormat('en-US', {
@@ -24,19 +27,14 @@ const TIMESTAMP_FORMAT = new Intl.DateTimeFormat('en-US', {
   timeStyle: 'short',
 });
 
-const NUMBER_FORMAT = new Intl.NumberFormat('en-US');
-
 /** How many orders the "Recent orders" panel lists. */
 const RECENT_ORDER_COUNT = 5;
 
-/**
- * Trend colour per KPI direction, written out in full because Tailwind's
- * scanner cannot see a class name assembled from a variable.
- */
-const TREND_CLASS = {
-  up: 'text-lpa-success',
-  down: 'text-lpa-negative',
-};
+/** What the figures show before the first load: dashes, not zeros. */
+const NO_FIGURES = Object.freeze({
+  kpis: ['Total users', 'Total orders', 'Products live', 'Revenue'].map((label) => ({ label, value: '—' })),
+  categories: [],
+});
 
 /** How often the header clock is refreshed, in milliseconds. */
 const CLOCK_INTERVAL_MS = 30_000;
@@ -77,15 +75,28 @@ function Panel({ className = '', children }) {
  * Render the Dashboard.
  *
  * @param {object} props - Component props.
- * @param {ReadonlyArray<{id: string, customer: string, placedOn: string,
- *   total: number, status: string}>} props.orders - Every order.
  * @param {(section: string) => void} props.onNavigate - Opens another section;
  *   "View all →" uses it to reach Orders.
+ * @param {() => void} props.onExpired - Called when the session has expired.
  * @returns {JSX.Element} The dashboard content, for placement in AdminLayout.
  */
-export function Dashboard({ orders, onNavigate }) {
+export function Dashboard({ onNavigate, onExpired }) {
   const now = useNow();
-  const widths = barWidths(SAMPLE_CATEGORIES);
+  const stats = useApiResult(window.api.getStats, toDashboard, NO_FIGURES, onExpired);
+  const orderList = useApiList(window.api.listOrders, toOrder, onExpired);
+  const figures = stats.value;
+  const widths = barWidths(figures.categories);
+  const recent = recentOrders(orderList.items, RECENT_ORDER_COUNT);
+  const failed = stats.state === 'error' ? stats : orderList;
+
+  /**
+   * Load the figures and the orders again.
+   *
+   * @returns {Promise<void>}
+   */
+  async function reloadAll() {
+    await Promise.all([stats.reload(), orderList.reload()]);
+  }
 
   return (
     <>
@@ -99,16 +110,15 @@ export function Dashboard({ orders, onNavigate }) {
         </time>
       </header>
 
-      <PreviewNote>Preview — these figures are sample data until the admin API exists.</PreviewNote>
+      {failed.state === 'error' && (
+        <LoadNotice state="error" error={failed.error} onRetry={reloadAll} noun="dashboard figures" />
+      )}
 
       <ul className="mb-7 grid grid-cols-2 gap-5 lg:grid-cols-4">
-        {SAMPLE_KPIS.map((kpi) => (
+        {figures.kpis.map((kpi) => (
           <li key={kpi.label} className="rounded-2xl border border-lpa-line bg-lpa-surface p-[22px]">
             <span className="mb-2.5 block text-[13px] text-lpa-subtle">{kpi.label}</span>
-            <span className="mb-2 block font-display text-[28px] font-bold">
-              {NUMBER_FORMAT.format(kpi.value)}
-            </span>
-            <span className={`text-xs font-semibold ${TREND_CLASS[kpi.trend]}`}>{kpi.delta}</span>
+            <span className="block font-display text-[28px] font-bold">{kpi.value}</span>
           </li>
         ))}
       </ul>
@@ -142,11 +152,18 @@ export function Dashboard({ orders, onNavigate }) {
               </tr>
             </thead>
             <tbody>
-              {recentOrders(orders, RECENT_ORDER_COUNT).map((order) => (
+              {orderList.state === 'ready' && recent.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-lpa-subtle">
+                    No orders yet.
+                  </td>
+                </tr>
+              )}
+              {recent.map((order) => (
                 <tr key={order.id} className="border-b border-lpa-track">
-                  <td className="py-3.5 font-semibold">{order.id}</td>
+                  <td className="truncate py-3.5 font-semibold">{order.label}</td>
                   <td className="truncate py-3.5 text-lpa-subtle">{order.customer}</td>
-                  <td className="py-3.5 font-semibold">{formatMoney(order.total)}</td>
+                  <td className="py-3.5 font-semibold">{formatMoney(order.total, { alwaysCents: true })}</td>
                   <td className="py-3.5">
                     <OrderStatusBadge status={order.status} />
                   </td>
@@ -158,8 +175,11 @@ export function Dashboard({ orders, onNavigate }) {
 
         <Panel className="p-[26px]">
           <h2 className="mb-6 font-display text-base font-semibold">Products by category</h2>
+          {stats.state === 'ready' && figures.categories.length === 0 && (
+            <p className="text-[13px] text-lpa-subtle">No categories yet.</p>
+          )}
           <ul className="flex flex-col gap-4">
-            {SAMPLE_CATEGORIES.map((category, index) => (
+            {figures.categories.map((category, index) => (
               <li key={category.name}>
                 <div className="mb-1.5 flex justify-between text-[13px]">
                   <span className="font-medium">{category.name}</span>

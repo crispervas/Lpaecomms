@@ -1,31 +1,45 @@
 /**
- * @file New-category and new-product forms for the Catalog screen.
+ * @file Category and product forms for the Catalog screen, for creating and
+ * editing alike.
  *
  * Both forms validate with lib/catalogRules.mjs and hand a normalised record to
- * `onSave`. They never store anything themselves: what `onSave` does — today a
- * preview notice, later a call through window.api — is the Catalog screen's
- * decision, so connecting the database does not touch these forms.
+ * `onSave`. They never store anything themselves: `onSave` (the Catalog
+ * screen, through window.api) answers with what the API refused, and the form
+ * shows it — per field where the API named one, above the buttons otherwise.
  */
 
 import { useEffect, useId, useRef, useState } from 'react';
 
-import { PRODUCT_STATUSES, slugify, validateCategory, validateProduct } from '../lib/catalogRules.mjs';
+import { PRODUCT_STATUSES, toCode, validateCategory, validateProduct } from '../lib/catalogRules.mjs';
 import { CONTROL, Field, borderClass } from './formParts.jsx';
 
 /** Display names of the product statuses. */
 const STATUS_LABEL = { active: 'Active', draft: 'Draft' };
 
 /**
- * Render the Cancel and submit buttons shared by both forms.
+ * What `onSave` resolves to: null once stored, or what the API refused.
+ *
+ * @typedef {{fieldErrors: Record<string, string>, error: string|null}|null} SaveResult
+ */
+
+/**
+ * Render the Cancel and submit buttons shared by both forms, with the save's
+ * failure above them.
  *
  * @param {object} props - Component props.
  * @param {string} props.submitLabel - The submit button's text.
+ * @param {boolean} props.busy - True while the save runs.
+ * @param {string|null} props.error - Why the last save failed, when no field says.
  * @param {() => void} props.onCancel - Called when the form is dismissed.
  * @returns {JSX.Element} The button row.
  */
-function FormActions({ submitLabel, onCancel }) {
+export function FormActions({ submitLabel, busy, error, onCancel }) {
   return (
-    <div className="col-span-2 flex justify-end gap-2 border-t border-lpa-track pt-5">
+    <div className="col-span-2 flex items-center justify-end gap-2 border-t border-lpa-track pt-5">
+      {/* Always mounted, so a screen reader announces a failure when it appears. */}
+      <p role="alert" className="mr-auto text-[13px] font-semibold text-lpa-negative empty:hidden">
+        {error}
+      </p>
       <button
         type="button"
         onClick={onCancel}
@@ -35,9 +49,10 @@ function FormActions({ submitLabel, onCancel }) {
       </button>
       <button
         type="submit"
-        className="rounded-lg bg-lpa-ink px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-lpa-ink-hover"
+        disabled={busy}
+        className="rounded-lg bg-lpa-ink px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-lpa-ink-hover disabled:cursor-wait disabled:opacity-70"
       >
-        {submitLabel}
+        {busy ? 'Saving…' : submitLabel}
       </button>
     </div>
   );
@@ -53,7 +68,7 @@ function FormActions({ submitLabel, onCancel }) {
  * @param {React.ReactNode} props.children - The fields and actions.
  * @returns {JSX.Element} The panel.
  */
-function FormPanel({ title, onSubmit, children }) {
+export function FormPanel({ title, onSubmit, children }) {
   const titleId = useId();
   const headingRef = useRef(null);
 
@@ -80,39 +95,81 @@ function FormPanel({ title, onSubmit, children }) {
 }
 
 /**
- * Render the new-category form.
+ * Run a validated record through `onSave` and keep its outcome.
  *
- * The slug follows the name until the user edits it, after which it is theirs.
+ * @param {(record: object) => Promise<SaveResult>} onSave - The screen's save.
+ * @param {(errors: Record<string, string>) => void} setErrors - The form's field errors.
+ * @returns {{busy: boolean, error: string|null, save: (record: object) => Promise<void>,
+ *   clearError: () => void}} The save state.
+ */
+function useSave(onSave, setErrors) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  /**
+   * Save a record, showing what the API refused.
+   *
+   * @param {object} record - A record that passed the client rules.
+   * @returns {Promise<void>}
+   */
+  async function save(record) {
+    setBusy(true);
+    setError(null);
+    const result = await onSave(record);
+    // On success the screen closes this form, so there is nothing to reset.
+    if (result) {
+      setBusy(false);
+      setErrors(result.fieldErrors);
+      setError(result.error);
+    }
+  }
+
+  return { busy, error, save, clearError: () => setError(null) };
+}
+
+/**
+ * Render the category form.
+ *
+ * The code follows the name until the user edits it, after which it is
+ * theirs; an edited category starts with its own code, so it never follows.
  *
  * @param {object} props - Component props.
- * @param {ReadonlyArray<{name: string, slug: string}>} props.categories -
+ * @param {ReadonlyArray<{id: number, name: string, code: string}>} props.categories -
  *   Existing categories, for the uniqueness checks.
- * @param {(record: {name: string, slug: string, description: string}) => void}
- *   props.onSave - Called with the validated category.
+ * @param {{id: number, name: string, code: string, description: string}|null} [props.initial] -
+ *   The category being edited; omitted for a new one.
+ * @param {(record: {name: string, code: string, description: string}) => Promise<SaveResult>}
+ *   props.onSave - Stores the validated category.
  * @param {() => void} props.onCancel - Called when the form is dismissed.
  * @returns {JSX.Element} The form panel.
  */
-export function CategoryForm({ categories, onSave, onCancel }) {
+export function CategoryForm({ categories, initial = null, onSave, onCancel }) {
   const id = useId();
-  const [values, setValues] = useState({ name: '', slug: '', description: '' });
-  const [slugEdited, setSlugEdited] = useState(false);
+  const [values, setValues] = useState({
+    name: initial?.name ?? '',
+    code: initial?.code ?? '',
+    description: initial?.description ?? '',
+  });
+  const [codeEdited, setCodeEdited] = useState(initial !== null);
   const [errors, setErrors] = useState({});
+  const { busy, error, save, clearError } = useSave(onSave, setErrors);
 
   /**
    * Store an edited field and clear its stale message.
    *
-   * @param {'name'|'slug'|'description'} field - The field edited.
+   * @param {'name'|'code'|'description'} field - The field edited.
    * @param {string} value - Its new text.
    * @returns {void}
    */
   function update(field, value) {
     setValues((current) => {
       const next = { ...current, [field]: value };
-      if (field === 'name' && !slugEdited) next.slug = slugify(value);
+      if (field === 'name' && !codeEdited) next.code = toCode(value);
       return next;
     });
-    if (field === 'slug') setSlugEdited(true);
-    setErrors((current) => ({ ...current, [field]: undefined, ...(field === 'name' ? { slug: undefined } : {}) }));
+    if (field === 'code') setCodeEdited(true);
+    setErrors((current) => ({ ...current, [field]: undefined, ...(field === 'name' ? { code: undefined } : {}) }));
+    clearError();
   }
 
   /**
@@ -123,13 +180,14 @@ export function CategoryForm({ categories, onSave, onCancel }) {
    */
   function handleSubmit(event) {
     event.preventDefault();
-    const { errors: found, record } = validateCategory(values, categories);
+    if (busy) return;
+    const { errors: found, record } = validateCategory(values, categories, { exceptId: initial?.id });
     setErrors(found);
-    if (record) onSave(record);
+    if (record) save(record);
   }
 
   return (
-    <FormPanel title="New category" onSubmit={handleSubmit}>
+    <FormPanel title={initial ? `Edit ${initial.name}` : 'New category'} onSubmit={handleSubmit}>
       <Field id={`${id}-name`} label="Name" error={errors.name}>
         {(describedBy) => (
           <input
@@ -143,16 +201,16 @@ export function CategoryForm({ categories, onSave, onCancel }) {
           />
         )}
       </Field>
-      <Field id={`${id}-slug`} label="Slug" hint="Used in catalogue URLs." error={errors.slug}>
+      <Field id={`${id}-code`} label="Code" hint="Used in catalogue URLs." error={errors.code}>
         {(describedBy) => (
           <input
-            id={`${id}-slug`}
-            value={values.slug}
-            onChange={(event) => update('slug', event.target.value)}
+            id={`${id}-code`}
+            value={values.code}
+            onChange={(event) => update('code', event.target.value)}
             placeholder="speakers"
-            aria-invalid={Boolean(errors.slug)}
+            aria-invalid={Boolean(errors.code)}
             aria-describedby={describedBy}
-            className={`${CONTROL} ${borderClass(errors.slug)}`}
+            className={`${CONTROL} ${borderClass(errors.code)}`}
           />
         )}
       </Field>
@@ -175,38 +233,49 @@ export function CategoryForm({ categories, onSave, onCancel }) {
           />
         )}
       </Field>
-      <FormActions submitLabel="Create category" onCancel={onCancel} />
+      <FormActions
+        submitLabel={initial ? 'Save changes' : 'Create category'}
+        busy={busy}
+        error={error}
+        onCancel={onCancel}
+      />
     </FormPanel>
   );
 }
 
 /**
- * Render the new-product form.
+ * Render the product form.
  *
  * @param {object} props - Component props.
- * @param {ReadonlyArray<{id: string, name: string}>} props.categories - The
+ * @param {ReadonlyArray<{id: number, name: string}>} props.categories - The
  *   categories a product can belong to.
- * @param {ReadonlyArray<{sku: string}>} props.products - Existing products, for
- *   the SKU uniqueness check.
- * @param {string} props.defaultCategoryId - The category preselected: the one
- *   the admin is looking at.
- * @param {(record: {name: string, sku: string, categoryId: string,
- *   price: number, stock: number, status: string}) => void} props.onSave -
- *   Called with the validated product.
+ * @param {ReadonlyArray<{id: number, code: string}>} props.products - Existing
+ *   products, for the code uniqueness check.
+ * @param {number|null} props.defaultCategoryId - The category preselected for a
+ *   new product: the one the admin is looking at.
+ * @param {{id: number, name: string, code: string, categoryId: number,
+ *   price: number, stock: number, status: string, description: string}|null} [props.initial] -
+ *   The product being edited; omitted for a new one.
+ * @param {(record: {name: string, code: string, categoryId: number,
+ *   price: number, stock: number, status: string, description: string}) => Promise<SaveResult>}
+ *   props.onSave - Stores the validated product.
  * @param {() => void} props.onCancel - Called when the form is dismissed.
  * @returns {JSX.Element} The form panel.
  */
-export function ProductForm({ categories, products, defaultCategoryId, onSave, onCancel }) {
+export function ProductForm({ categories, products, defaultCategoryId, initial = null, onSave, onCancel }) {
   const id = useId();
+  // Inputs hold text; the rules turn it back into numbers on submit.
   const [values, setValues] = useState({
-    name: '',
-    sku: '',
-    categoryId: defaultCategoryId,
-    price: '',
-    stock: '0',
-    status: 'draft',
+    name: initial?.name ?? '',
+    code: initial?.code ?? '',
+    categoryId: String(initial?.categoryId ?? defaultCategoryId ?? ''),
+    price: initial ? String(initial.price) : '',
+    stock: initial ? String(initial.stock) : '0',
+    status: initial?.status ?? 'draft',
+    description: initial?.description ?? '',
   });
   const [errors, setErrors] = useState({});
+  const { busy, error, save, clearError } = useSave(onSave, setErrors);
 
   /**
    * Store an edited field and clear its stale message.
@@ -218,6 +287,7 @@ export function ProductForm({ categories, products, defaultCategoryId, onSave, o
   function update(field, value) {
     setValues((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: undefined }));
+    clearError();
   }
 
   /**
@@ -228,9 +298,10 @@ export function ProductForm({ categories, products, defaultCategoryId, onSave, o
    */
   function handleSubmit(event) {
     event.preventDefault();
-    const { errors: found, record } = validateProduct(values, { categories, products });
+    if (busy) return;
+    const { errors: found, record } = validateProduct(values, { categories, products, exceptId: initial?.id });
     setErrors(found);
-    if (record) onSave(record);
+    if (record) save(record);
   }
 
   /**
@@ -253,12 +324,12 @@ export function ProductForm({ categories, products, defaultCategoryId, onSave, o
   );
 
   return (
-    <FormPanel title="New product" onSubmit={handleSubmit}>
+    <FormPanel title={initial ? `Edit ${initial.name}` : 'New product'} onSubmit={handleSubmit}>
       <Field id={`${id}-name`} label="Name" error={errors.name}>
         {textInput('name', { placeholder: 'Aria 75 Wireless' })}
       </Field>
-      <Field id={`${id}-sku`} label="SKU" hint="Stored in uppercase." error={errors.sku}>
-        {textInput('sku', { placeholder: 'KB-ARIA-75' })}
+      <Field id={`${id}-code`} label="Code" hint="Stored in lowercase." error={errors.code}>
+        {textInput('code', { placeholder: 'kb-aria-75' })}
       </Field>
       <Field id={`${id}-categoryId`} label="Category" error={errors.categoryId}>
         {(describedBy) => (
@@ -295,13 +366,37 @@ export function ProductForm({ categories, products, defaultCategoryId, onSave, o
           </select>
         )}
       </Field>
-      <Field id={`${id}-price`} label="Price (USD)" error={errors.price}>
+      <Field id={`${id}-price`} label="Price (AUD)" error={errors.price}>
         {textInput('price', { inputMode: 'decimal', placeholder: '139.00' })}
       </Field>
       <Field id={`${id}-stock`} label="Units in stock" error={errors.stock}>
         {textInput('stock', { inputMode: 'numeric' })}
       </Field>
-      <FormActions submitLabel="Create product" onCancel={onCancel} />
+      <Field
+        id={`${id}-description`}
+        label="Description"
+        hint="Optional."
+        error={errors.description}
+        className="col-span-2"
+      >
+        {(describedBy) => (
+          <textarea
+            id={`${id}-description`}
+            rows={3}
+            value={values.description}
+            onChange={(event) => update('description', event.target.value)}
+            aria-invalid={Boolean(errors.description)}
+            aria-describedby={describedBy}
+            className={`${CONTROL} resize-none ${borderClass(errors.description)}`}
+          />
+        )}
+      </Field>
+      <FormActions
+        submitLabel={initial ? 'Save changes' : 'Create product'}
+        busy={busy}
+        error={error}
+        onCancel={onCancel}
+      />
     </FormPanel>
   );
 }

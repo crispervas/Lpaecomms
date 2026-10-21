@@ -3,21 +3,30 @@
  *
  * No mockup covers this screen; it follows the other admin screens' style. It
  * lists categories on the left and the chosen category's products on the right,
- * and offers a form for a new category and one for a new product.
+ * and lets the admin create, edit and delete both.
  *
- * It is a display-only preview until the database exists. The forms validate
- * and hand their record to `onCreateCategory` / `onCreateProduct`, which App
- * supplies; today those report that nothing was saved, and this screen says so.
- * Connecting the database means changing those two handlers and where App reads
- * the lists from — this screen already treats both as asynchronous.
+ * Everything is read and written through window.api — drafts included, since
+ * the admin's token sees them. After every successful write both lists are
+ * loaded again, so the counts and the table never show a stale catalogue.
  */
 
 import { useState } from 'react';
 
+import {
+  fromCategoryRecord,
+  fromProductRecord,
+  isSessionExpired,
+  toCategory,
+  toProduct,
+  toSaveResult,
+} from '../lib/apiMapping.mjs';
 import { countByCategory } from '../lib/catalogRules.mjs';
 import { formatMoney } from '../lib/format.mjs';
 import { CategoryForm, ProductForm } from './CatalogForms.jsx';
-import { Header, PreviewNote } from './tableParts.jsx';
+import { ConfirmBar, LoadNotice, Outcome } from './dataParts.jsx';
+import { Icon } from './Icon.jsx';
+import { Header, SQUARE_BUTTON } from './tableParts.jsx';
+import { useApiList } from './useApiList.js';
 
 /**
  * Pick a category entry's classes, written out in full because Tailwind's
@@ -30,6 +39,10 @@ function categoryItemClass(isSelected) {
   return isSelected ? 'bg-lpa-tint text-lpa-accent' : 'text-lpa-ink hover:bg-lpa-track';
 }
 
+/** Fields each form shows, so an API message for any other field is not lost. */
+const CATEGORY_FIELDS = Object.freeze(['name', 'code', 'description']);
+const PRODUCT_FIELDS = Object.freeze(['name', 'code', 'categoryId', 'price', 'stock', 'description']);
+
 /** Product status pill classes, spelled out for the same reason. */
 const PRODUCT_STATUS = {
   active: { label: 'Active', className: 'bg-lpa-success-soft text-lpa-success' },
@@ -40,53 +53,126 @@ const PRODUCT_STATUS = {
  * Render the Catalog screen.
  *
  * @param {object} props - Component props.
- * @param {ReadonlyArray<{id: string, name: string, slug: string,
- *   description: string}>} props.categories - Every category.
- * @param {ReadonlyArray<{id: string, categoryId: string, name: string,
- *   sku: string, price: number, stock: number, status: string}>}
- *   props.products - Every product.
- * @param {(record: object) => Promise<{saved: boolean}>} props.onCreateCategory
- *   - Persists a validated category; `saved` says whether it was stored.
- * @param {(record: object) => Promise<{saved: boolean}>} props.onCreateProduct
- *   - Persists a validated product; `saved` says whether it was stored.
+ * @param {() => void} props.onExpired - Called when the session has expired.
  * @returns {JSX.Element} The screen, for placement in AdminLayout.
  */
-export function Catalog({ categories, products, onCreateCategory, onCreateProduct }) {
-  const [selectedId, setSelectedId] = useState(categories[0]?.id ?? null);
+export function Catalog({ onExpired }) {
+  const categoryList = useApiList(window.api.listCategories, toCategory, onExpired);
+  const productList = useApiList(window.api.listProducts, toProduct, onExpired);
+  const categories = categoryList.items;
+  const products = productList.items;
+
+  const [chosenId, setChosenId] = useState(null);
+  // {kind: 'category'|'product', item: object|null} — item null for "new".
   const [form, setForm] = useState(null);
+  // {kind, item, busy, error} for the delete awaiting confirmation.
+  const [pendingDelete, setPendingDelete] = useState(null);
   const [notice, setNotice] = useState('');
 
+  // Fall back to the first category until the admin picks one, and after the
+  // chosen one is deleted.
+  const selected = categories.find((category) => category.id === chosenId) ?? categories[0] ?? null;
+  const selectedId = selected?.id ?? null;
   const counts = countByCategory(products);
-  const selected = categories.find((category) => category.id === selectedId) ?? null;
   const shownProducts = products.filter((product) => product.categoryId === selectedId);
 
   /**
-   * Open a form, clearing the previous submission's notice.
+   * Load both lists again after a write.
    *
-   * @param {'category'|'product'} kind - Which form.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  function openForm(kind) {
-    setNotice('');
-    setForm(kind);
+  async function reloadAll() {
+    await Promise.all([categoryList.reload(), productList.reload()]);
   }
 
   /**
-   * Hand a validated record to its handler and report the outcome.
+   * Open a form, closing any delete confirmation and clearing the last notice.
    *
-   * @param {(record: object) => Promise<{saved: boolean}>} create - The handler.
-   * @param {{name: string}} record - The validated record.
+   * @param {'category'|'product'} kind - Which form.
+   * @param {object|null} item - The record to edit, or null for a new one.
+   * @returns {void}
+   */
+  function openForm(kind, item) {
+    setNotice('');
+    setPendingDelete(null);
+    setForm({ kind, item });
+  }
+
+  /**
+   * Send a validated record to the API, then close the form and reload.
+   *
+   * @param {Promise<object>} request - The window.api write in flight.
+   * @param {string} name - The record's name, for the notice.
+   * @param {boolean} creating - Whether this was a new record.
+   * @param {ReadonlyArray<string>} fields - The fields the open form shows.
+   * @returns {Promise<{fieldErrors: Record<string, string>, error: string|null}|null>}
+   *   What the API refused, or null once stored.
+   */
+  async function save(request, name, creating, fields) {
+    const result = await request;
+    if (isSessionExpired(result)) {
+      onExpired();
+      return null;
+    }
+    const refused = toSaveResult(result, {}, fields);
+    if (refused) return refused;
+
+    setForm(null);
+    setNotice(`“${name}” was ${creating ? 'created' : 'saved'}.`);
+    await reloadAll();
+    return null;
+  }
+
+  /**
+   * Save the category form.
+   *
+   * @param {{name: string, code: string, description: string}} record - The validated category.
+   * @returns {Promise<object|null>} As save().
+   */
+  function saveCategory(record) {
+    const editing = form.item;
+    const body = fromCategoryRecord(record);
+    const request = editing ? window.api.updateCategory(editing.id, body) : window.api.createCategory(body);
+    return save(request, record.name, !editing, CATEGORY_FIELDS);
+  }
+
+  /**
+   * Save the product form.
+   *
+   * @param {object} record - The validated product.
+   * @returns {Promise<object|null>} As save().
+   */
+  function saveProduct(record) {
+    const editing = form.item;
+    const body = fromProductRecord(record);
+    const request = editing ? window.api.updateProduct(editing.id, body) : window.api.createProduct(body);
+    return save(request, record.name, !editing, PRODUCT_FIELDS);
+  }
+
+  /**
+   * Delete the record awaiting confirmation; on failure keep the bar open with
+   * the API's reason, e.g. a category that still holds products.
+   *
    * @returns {Promise<void>}
    */
-  async function submit(create, record) {
-    const { saved } = await create(record);
-    setForm(null);
-    setNotice(
-      saved
-        ? `“${record.name}” was saved.`
-        : `“${record.name}” passed validation. It will be saved once the database is connected.`,
-    );
+  async function confirmDelete() {
+    const { kind, item } = pendingDelete;
+    setPendingDelete((current) => ({ ...current, busy: true, error: null }));
+    const result = await (kind === 'category' ? window.api.deleteCategory(item.id) : window.api.deleteProduct(item.id));
+    if (isSessionExpired(result)) {
+      onExpired();
+      return;
+    }
+    if (!result.ok || result.status !== 200) {
+      setPendingDelete((current) => ({ ...current, busy: false, error: result.error ?? 'It could not be deleted.' }));
+      return;
+    }
+    setPendingDelete(null);
+    setNotice(`“${item.name}” was deleted.`);
+    await reloadAll();
   }
+
+  const loading = categoryList.state !== 'ready' ? categoryList : productList;
 
   return (
     <>
@@ -100,38 +186,50 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
         </div>
         <button
           type="button"
-          onClick={() => openForm('category')}
+          onClick={() => openForm('category', null)}
           className="rounded-[10px] bg-lpa-ink px-5 py-3 text-sm font-semibold text-white hover:bg-lpa-ink-hover"
         >
           + New category
         </button>
       </header>
 
-      <PreviewNote>
-        Preview — sample catalog. The forms check what you enter, but nothing is saved until the
-        database is connected.
-      </PreviewNote>
+      <LoadNotice state={loading.state} error={loading.error} onRetry={reloadAll} noun="catalog" />
+      <Outcome message={notice} />
 
-      {/* A live region, so a screen reader hears the outcome of a submission. */}
-      <p role="status" className={notice ? 'mb-5 text-[13px] font-semibold text-lpa-success' : 'sr-only'}>
-        {notice}
-      </p>
-
-      {form === 'category' && (
+      {/* Keyed by the record, so switching from one edit to another starts a fresh form. */}
+      {form?.kind === 'category' && (
         <CategoryForm
+          key={form.item?.id ?? 'new'}
           categories={categories}
-          onSave={(record) => submit(onCreateCategory, record)}
+          initial={form.item}
+          onSave={saveCategory}
           onCancel={() => setForm(null)}
         />
       )}
-      {form === 'product' && (
+      {form?.kind === 'product' && (
         <ProductForm
+          key={form.item?.id ?? 'new'}
           categories={categories}
           products={products}
           defaultCategoryId={selectedId}
-          onSave={(record) => submit(onCreateProduct, record)}
+          initial={form.item}
+          onSave={saveProduct}
           onCancel={() => setForm(null)}
         />
+      )}
+
+      {pendingDelete && (
+        <ConfirmBar
+          id="catalog-delete-title"
+          confirmLabel="Delete"
+          busy={Boolean(pendingDelete.busy)}
+          error={pendingDelete.error ?? null}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        >
+          Delete the {pendingDelete.kind} <strong>{pendingDelete.item.name}</strong>? It disappears from the
+          catalog and the store.
+        </ConfirmBar>
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_1fr]">
@@ -147,7 +245,7 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
                   <button
                     type="button"
                     aria-current={isSelected ? 'true' : undefined}
-                    onClick={() => setSelectedId(category.id)}
+                    onClick={() => setChosenId(category.id)}
                     className={`flex w-full items-center justify-between rounded-[10px] px-3 py-2.5 text-left text-sm font-semibold ${categoryItemClass(isSelected)}`}
                   >
                     {category.name}
@@ -171,23 +269,47 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
                   <h2 id="catalog-selected" className="font-display text-base font-semibold">
                     {selected.name}
                   </h2>
-                  <p className="mt-0.5 text-xs text-lpa-subtle">/{selected.slug}</p>
+                  <p className="mt-0.5 text-xs text-lpa-subtle">/{selected.code}</p>
                   {selected.description && <p className="mt-2 text-[13px] text-lpa-subtle">{selected.description}</p>}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => openForm('product')}
-                  className="flex-none rounded-lg border border-lpa-line bg-lpa-surface px-3.5 py-2 text-[13px] font-semibold hover:bg-lpa-track"
-                >
-                  + New product
-                </button>
+                <div className="flex flex-none gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openForm('category', selected)}
+                    aria-label={`Edit category ${selected.name}`}
+                    title={`Edit category ${selected.name}`}
+                    className={`h-[34px] w-[34px] ${SQUARE_BUTTON}`}
+                  >
+                    <Icon name="edit" size={13} className="text-lpa-ink" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(null);
+                      setPendingDelete({ kind: 'category', item: selected });
+                    }}
+                    aria-label={`Delete category ${selected.name}`}
+                    title={`Delete category ${selected.name}`}
+                    className={`h-[34px] w-[34px] ${SQUARE_BUTTON}`}
+                  >
+                    <Icon name="trash" size={13} className="text-lpa-negative" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openForm('product', null)}
+                    className="rounded-lg border border-lpa-line bg-lpa-surface px-3.5 py-2 text-[13px] font-semibold hover:bg-lpa-track"
+                  >
+                    + New product
+                  </button>
+                </div>
               </div>
 
               <table className="w-full table-fixed border-collapse text-[13px]">
                 <colgroup>
-                  <col className="w-[46%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[18%]" />
+                  <col className="w-[38%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[18%]" />
                 </colgroup>
                 <thead className="border-y border-lpa-line bg-lpa-canvas">
@@ -196,12 +318,13 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
                     <Header>Price</Header>
                     <Header>Stock</Header>
                     <Header>Status</Header>
+                    <Header alignRight>Actions</Header>
                   </tr>
                 </thead>
                 <tbody>
                   {shownProducts.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-10 text-center text-lpa-subtle">
+                      <td colSpan={5} className="px-6 py-10 text-center text-lpa-subtle">
                         No products in this category yet.
                       </td>
                     </tr>
@@ -212,7 +335,7 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
                       <tr key={product.id} className="border-b border-lpa-track last:border-b-0">
                         <td className="py-4 pl-3 first:pl-6 last:pr-6">
                           <div className="truncate font-semibold">{product.name}</div>
-                          <div className="truncate text-xs text-lpa-subtle">{product.sku}</div>
+                          <div className="truncate text-xs text-lpa-subtle">{product.code}</div>
                         </td>
                         <td className="py-4 pl-3 font-semibold">{formatMoney(product.price)}</td>
                         <td className="py-4 pl-3">
@@ -222,10 +345,35 @@ export function Catalog({ categories, products, onCreateCategory, onCreateProduc
                             product.stock
                           )}
                         </td>
-                        <td className="py-4 pl-3 pr-6">
+                        <td className="py-4 pl-3">
                           <span className={`inline-block rounded-2xl px-2.5 py-1 text-[11px] font-semibold ${status.className}`}>
                             {status.label}
                           </span>
+                        </td>
+                        <td className="py-4 pl-3 pr-6">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openForm('product', product)}
+                              aria-label={`Edit ${product.name}`}
+                              title={`Edit ${product.name}`}
+                              className={`h-[30px] w-[30px] ${SQUARE_BUTTON}`}
+                            >
+                              <Icon name="edit" size={13} className="text-lpa-ink" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setForm(null);
+                                setPendingDelete({ kind: 'product', item: product });
+                              }}
+                              aria-label={`Delete ${product.name}`}
+                              title={`Delete ${product.name}`}
+                              className={`h-[30px] w-[30px] ${SQUARE_BUTTON}`}
+                            >
+                              <Icon name="trash" size={13} className="text-lpa-negative" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
