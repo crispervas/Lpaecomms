@@ -89,16 +89,25 @@
   gap: .5rem;
   // A fixed rem width grows in lockstep with the text size, which is what
   // pushed the whole header row wider than its container at 125%. The field
-  // carries no function yet — it is disabled, with a "Coming soon" title — so
-  // it is the right thing to give up width first when the row runs out of
-  // room: a flex basis lets it shrink instead of widening the header, and the
-  // minimum keeps its icon and enough of its placeholder visible to still
-  // read as a search field.
+  // gives up width first when the row runs out of room — the cart and login
+  // beside it cannot shrink — so a flex basis lets it narrow instead of
+  // widening the header, and the minimum keeps its icon and enough of its
+  // placeholder visible to still read as a search field.
   flex: 0 1 14rem;
   min-width: 6rem;
   padding: .625rem 1rem;
   background-color: @subtle;
   border-radius: @radius-full;
+
+  // The input hides its own outline to sit flush in the pill, so the pill
+  // carries the keyboard focus ring instead.
+  &:focus-within { outline: 2px solid @accent; outline-offset: 2px; }
+}
+
+// The copy inside the collapsed menu spans the menu's width.
+.search--block {
+  flex-basis: auto;
+  margin-bottom: .5rem;
 }
 
 .search__icon {

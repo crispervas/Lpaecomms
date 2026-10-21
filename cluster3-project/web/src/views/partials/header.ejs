@@ -6,8 +6,9 @@
   app.js). The menu collapses into a toggle button below the `sm` breakpoint;
   the toggle is driven by /js/nav.js.
 
-  The search field comes from the mockup but is deliberately inert — it has
-  no backend to query — and `disabled` keeps it out of the tab order. The cart
+  The search field is a GET form to /catalog, so a search is a URL like any
+  other catalog view; on the catalog it shows the current search (`q`, set by
+  the catalog controller). The cart
   links to /cart with a badge counted from the cart cookie (`cartCount`, set
   on res.locals by config/cart.js).
 %>
@@ -31,6 +32,8 @@
   // Three digits would not fit the badge, so a big cart reads "99+".
   const cartBadge = cartUnits > 99 ? '99+' : String(cartUnits);
   const cartLabel = `Cart, ${cartUnits} ${cartUnits === 1 ? 'item' : 'items'}`;
+  // Only the catalog passes `q`; every other page renders an empty field.
+  const searchText = typeof q === 'string' ? q : '';
   // Home matches only "/"; other links match their path and anything below it.
   const isActive = (href) =>
     href === '/' ? currentPath === '/' : currentPath.startsWith(href);
@@ -52,15 +55,15 @@
     </nav>
 
     <div class="site-tools">
-      <div class="search">
+      <form action="/catalog" method="get" role="search" class="search">
         <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" aria-hidden="true">
           <circle cx="11" cy="11" r="7"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="search" placeholder="Search peripherals..." aria-label="Search products" disabled
-          title="Coming soon" class="search__input" />
-      </div>
+        <input type="search" name="q" value="<%= searchText %>" maxlength="100"
+          placeholder="Search peripherals..." aria-label="Search products" class="search__input" />
+      </form>
 
       <%# The badge is counted from the cart cookie by config/cart.js. It is
           aria-hidden because the link's own label already says the number,
@@ -106,6 +109,16 @@
 
   <nav id="mobile-nav" class="mobile-nav">
     <div class="mobile-nav__list">
+      <%# Search again, for the same reason as Cart and Login below. %>
+      <form action="/catalog" method="get" role="search" class="search search--block">
+        <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="search" name="q" value="<%= searchText %>" maxlength="100"
+          placeholder="Search peripherals..." aria-label="Search products" class="search__input" />
+      </form>
       <% navLinks.forEach((link) => { %>
         <a href="<%= link.href %>"
           class="mobile-nav__link<%= isActive(link.href) ? ' is-active' : '' %>">

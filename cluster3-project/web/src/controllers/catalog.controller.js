@@ -8,8 +8,7 @@
  * desktop must stay free to change.
  */
 
-/** The catalog's grid is three rows of four. */
-const CATALOG_LIMIT = 12;
+import { parseCatalogQuery } from '../lib/catalogQuery.js';
 
 /**
  * Controller for the storefront catalog page.
@@ -27,10 +26,11 @@ export class CatalogController {
   }
 
   /**
-   * Render the catalog page, optionally filtered to one category.
+   * Render one page of the catalog, optionally filtered to one category and
+   * to a search.
    *
-   * @param {import('express').Request} req - Incoming request; `category` is
-   *   read from the query string.
+   * @param {import('express').Request} req - Incoming request; `q`, `page`
+   *   and `category` are read from the query string.
    * @param {import('express').Response} res - Outgoing response.
    * @param {import('express').NextFunction} next - Used to fall through to the
    *   shared 404 page when the requested category does not exist.
@@ -47,9 +47,7 @@ export class CatalogController {
       console.error('🪵 Catalog: categories unavailable:', { message: error.message });
     }
 
-    // Express parses a repeated query parameter into an array; only a plain
-    // string can name a category.
-    const requestedSlug = typeof req.query.category === 'string' ? req.query.category : null;
+    const { q, page, category: requestedSlug } = parseCatalogQuery(req.query);
     const activeCategory = categories.find((category) => category.slug === requestedSlug) ?? null;
 
     // A slug matching nothing is a URL for a category that does not exist — but
@@ -61,6 +59,8 @@ export class CatalogController {
     }
 
     let products = [];
+    let total = 0;
+    let pageCount = 1;
     // Tracked separately from `products.length` because an empty array has two
     // meanings the user is owed the difference between: a feed that fell over
     // is not a catalogue that happens to be empty.
@@ -72,23 +72,33 @@ export class CatalogController {
       catalogueAvailable = false;
     } else {
       try {
-        products = await this.productModel.listByCategory(
-          activeCategory ? activeCategory.id : null,
-          CATALOG_LIMIT,
-        );
+        ({ items: products, total, pageCount } = await this.productModel.search({
+          categoryId: activeCategory ? activeCategory.id : null,
+          q,
+          page,
+        }));
       } catch (error) {
         catalogueAvailable = false;
         console.error('🪵 Catalog: products unavailable:', { message: error.message });
       }
     }
 
+    let title = 'Lpaecomms — Catalog';
+    if (q) title = `Lpaecomms — Results for "${q}"`;
+    else if (activeCategory) title = `Lpaecomms — ${activeCategory.name}`;
+
     res.render('layouts/base', {
-      title: activeCategory ? `Lpaecomms — ${activeCategory.name}` : 'Lpaecomms — Catalog',
+      title,
+      // `page` already names the layout's template, hence `pageNumber` below.
       page: 'catalog',
       categories,
       activeCategory,
       products,
       catalogueAvailable,
+      q,
+      pageNumber: page,
+      pageCount,
+      total,
     });
   }
 }

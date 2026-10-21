@@ -88,6 +88,36 @@ export class ProductModel {
   }
 
   /**
+   * One page of the catalogue, optionally narrowed to a category and to
+   * products whose name, code or description contains the search text.
+   *
+   * @param {Object} options - What to read.
+   * @param {number|null} options.categoryId - Category, or null for all.
+   * @param {string} options.q - Search text; empty for none.
+   * @param {number} options.page - Page number, from 1.
+   * @param {number} [options.pageSize] - Cards per page.
+   * @returns {Promise<{items: Array<{id: number, name: string, category: string, priceAud: number, imageUrl: string}>, total: number, page: number, pageCount: number}>}
+   *   The page's cards, the total match count and the number of pages (at least 1).
+   */
+  async search({ categoryId, q, page, pageSize = DEFAULT_CATALOG_LIMIT }) {
+    const where = { ...ACTIVE };
+    if (categoryId !== null) where.categoryId = categoryId;
+    if (q) {
+      where.OR = ['name', 'code', 'description'].map((field) => ({
+        [field]: { contains: q, mode: 'insensitive' },
+      }));
+    }
+    // One transaction so the count and the page come from the same snapshot.
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where, select: CARD_SELECT, orderBy: { id: 'desc' }, skip: (page - 1) * pageSize, take: pageSize,
+      }),
+    ]);
+    return { items: rows.map(toGridCard), total, page, pageCount: Math.max(1, Math.ceil(total / pageSize)) };
+  }
+
+  /**
    * Products for the home page's trending grid.
    *
    * @param {number} [limit] - How many.
@@ -102,7 +132,7 @@ export class ProductModel {
    * One active product for the detail page.
    *
    * @param {number|string} id - Product id from the URL.
-   * @returns {Promise<{id: number, name: string, category: {id: number|null, name: string, slug: string}, priceAud: number, description: string, imageUrls: Array<string>}|null>}
+   * @returns {Promise<{id: number, name: string, category: {id: number|null, name: string, slug: string}, priceAud: number, description: string, imageUrls: Array<string>, stock: number}|null>}
    *   The product, or null when it does not exist or is inactive.
    */
   async getById(id) {
@@ -114,7 +144,7 @@ export class ProductModel {
 
     const row = await this.prisma.product.findFirst({
       where: { ...ACTIVE, id: Number(id) },
-      select: { ...CARD_SELECT, description: true },
+      select: { ...CARD_SELECT, description: true, stock: true },
     });
     if (!row) return null;
 
@@ -125,6 +155,7 @@ export class ProductModel {
       priceAud: row.price,
       description: row.description ?? '',
       imageUrls: row.img ?? [],
+      stock: row.stock,
     };
   }
 

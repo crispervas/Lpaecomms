@@ -1,0 +1,46 @@
+<%#
+  Catalog pagination: Previous, the page numbers and Next.
+
+  Expected locals:
+    pageNumber   — the page shown, from 1
+    pageCount    — how many pages the current filter has
+    q            — the search text, '' for none
+    categorySlug — the active category's slug, or null
+
+  Links rather than buttons, like the category pills: the page lives in the URL
+  so it can be shared and the back button works. Every link keeps the search
+  and the category, or paging would silently drop the filter. Renders nothing
+  for a single page.
+%>
+<% if (pageCount > 1) { %>
+  <%
+    const hrefFor = (number) => {
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (categorySlug) params.set('category', categorySlug);
+      if (number > 1) params.set('page', String(number));
+      const query = params.toString();
+      return query ? `/catalog?${query}` : '/catalog';
+    };
+  %>
+  <nav aria-label="Pagination" class="pagination">
+    <ul class="pagination__list">
+      <% if (pageNumber > 1) { %>
+        <li><a href="<%= hrefFor(pageNumber - 1) %>" rel="prev" class="button button--pill">Previous</a></li>
+      <% } %>
+      <% for (let number = 1; number <= pageCount; number += 1) { %>
+        <li>
+          <a href="<%= hrefFor(number) %>"
+            <% if (number === pageNumber) { %>aria-current="page"<% } %>
+            aria-label="Page <%= number %>"
+            class="button button--pill<%= number === pageNumber ? ' is-active' : '' %>">
+            <%= number %>
+          </a>
+        </li>
+      <% } %>
+      <% if (pageNumber < pageCount) { %>
+        <li><a href="<%= hrefFor(pageNumber + 1) %>" rel="next" class="button button--pill">Next</a></li>
+      <% } %>
+    </ul>
+  </nav>
+<% } %>

@@ -4,23 +4,33 @@
   Expected locals:
     categories — array of {id, name, slug}
     activeSlug — the slug in the URL, or null for the unfiltered view
+    q          — the search text, '' for none; kept by every pill so choosing
+                 a category narrows the search instead of discarding it
 
   The pills are links rather than buttons because the filter lives in the URL:
   that is what makes a filtered view shareable and the back button work. The
   active pill carries aria-current as well as the dark fill, so the selection is
-  not conveyed by colour alone.
+  not conveyed by colour alone. A pill always lands on page 1: the old page
+  number means nothing in a different category.
+%>
+<%
+  const searchParam = q ? `q=${encodeURIComponent(q)}` : '';
+  const hrefFor = (slug) => {
+    const parts = [searchParam, slug ? `category=${encodeURIComponent(slug)}` : ''].filter(Boolean);
+    return parts.length ? `/catalog?${parts.join('&')}` : '/catalog';
+  };
 %>
 <nav aria-label="Product categories" class="catalog-filters">
   <ul class="catalog-filters__list">
     <li>
-      <a href="/catalog" <% if (!activeSlug) { %>aria-current="page"<% } %>
+      <a href="<%= hrefFor(null) %>" <% if (!activeSlug) { %>aria-current="page"<% } %>
         class="button button--pill<%= activeSlug ? '' : ' is-active' %>">
         All
       </a>
     </li>
     <% categories.forEach((category) => { %>
       <li>
-        <a href="/catalog?category=<%= encodeURIComponent(category.slug) %>"
+        <a href="<%= hrefFor(category.slug) %>"
           <% if (activeSlug === category.slug) { %>aria-current="page"<% } %>
           class="button button--pill<%= activeSlug === category.slug ? ' is-active' : '' %>">
           <%= category.name %>

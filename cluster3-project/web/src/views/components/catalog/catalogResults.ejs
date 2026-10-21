@@ -7,6 +7,8 @@
     activeCategory     — the selected category object, or null/undefined for
                           the unfiltered view; only its presence is read here,
                           to choose which empty-state wording applies
+    q                  — the search text, '' for none
+    total              — how many products match across every page
 
   An empty `products` means two different things, and the page must not blur
   them: a feed that fell over is not a category that happens to be empty.
@@ -25,6 +27,10 @@
 <section class="catalog-results">
   <% if (!catalogueAvailable) { %>
     <p class="empty-note">Our catalogue is unavailable right now. Please check back shortly.</p>
+  <% } else if (!products.length && q) { %>
+    <p class="empty-note empty-note--page">
+      No products match “<%= q %>”. <a href="/catalog">See all products</a>.
+    </p>
   <% } else if (!products.length) { %>
     <p class="empty-note empty-note--page">
       <%= activeCategory ? 'No products in this category yet.' : 'No products available yet.' %>
@@ -39,7 +45,7 @@
       });
     %>
     <p class="catalog-results__count">
-      Showing <%= products.length %> product<%= products.length === 1 ? '' : 's' %>
+      Showing <%= products.length %> of <%= total %> product<%= total === 1 ? '' : 's' %>
     </p>
     <div class="product-grid">
       <% products.forEach((product) => { %>
