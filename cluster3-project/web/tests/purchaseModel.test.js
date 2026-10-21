@@ -11,13 +11,13 @@ import purchaseResource from '../src/resources/purchase.resource.js';
 import { createFakePrisma } from './helpers/fakePrisma.js';
 
 const products = [
-  { id: 1, price: 10.5 },
-  { id: 2, price: 3 },
+  { id: 1, name: 'Aria', price: 10.5, stock: 99 },
+  { id: 2, name: 'Glide', price: 3, stock: 99 },
 ];
 
 test('totals are computed from current prices, not from the client', async () => {
   const prisma = createFakePrisma({
-    product: { findMany: products },
+    product: { findMany: products, updateMany: { count: 1 } },
     purchase: { create: (a) => ({ id: 9, ...a.data }) },
   });
   await new PurchaseModel(prisma, purchaseResource).create({
@@ -36,7 +36,7 @@ test('totals are computed from current prices, not from the client', async () =>
 
 test('a discount larger than the total floors the final amount at zero', async () => {
   const prisma = createFakePrisma({
-    product: { findMany: [products[1]] },
+    product: { findMany: [products[1]], updateMany: { count: 1 } },
     purchase: { create: (a) => a.data },
   });
   await new PurchaseModel(prisma, purchaseResource).create({
@@ -97,4 +97,48 @@ test('a draft product cannot be bought', async () => {
     (err) => err.output?.statusCode === 400,
   );
   assert.equal(prisma.calls[0].args.where.published, true);
+});
+
+test('a purchase decrements stock once per product, summing repeated lines', async () => {
+  const prisma = createFakePrisma({
+    product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 5 }], updateMany: { count: 1 } },
+    purchase: { create: (a) => a.data },
+  });
+  await new PurchaseModel(prisma, purchaseResource).create({
+    userId: 1, paymentStatus: 'SUCCESS', created: {},
+    products: [{ productId: 1, quantity: 2 }, { productId: 1, quantity: 1 }],
+  });
+  const updates = prisma.calls.filter((c) => c.method === 'updateMany');
+  assert.deepEqual(updates.map((c) => c.args), [
+    { where: { id: 1, stock: { gte: 3 } }, data: { stock: { decrement: 3 } } },
+  ]);
+});
+
+test('asking for more than the stock is a 409 and no purchase is written', async () => {
+  const prisma = createFakePrisma({
+    product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 2 }], updateMany: { count: 1 } },
+    purchase: { create: {} },
+  });
+  await assert.rejects(
+    new PurchaseModel(prisma, purchaseResource).create({
+      userId: 1, paymentStatus: 'SUCCESS', created: {}, products: [{ productId: 1, quantity: 3 }],
+    }),
+    (err) => err.output.statusCode === 409 && /Only 2 left of Aria/.test(err.data.details[0].message),
+  );
+  assert.equal(prisma.calls.some((c) => c.model === 'purchase'), false);
+  assert.equal(prisma.calls.some((c) => c.method === 'updateMany'), false);
+});
+
+test('a lost race on the conditional decrement is a 409', async () => {
+  const prisma = createFakePrisma({
+    product: { findMany: [{ id: 1, name: 'Aria', price: 10, stock: 5 }], updateMany: { count: 0 } },
+    purchase: { create: {} },
+  });
+  await assert.rejects(
+    new PurchaseModel(prisma, purchaseResource).create({
+      userId: 1, paymentStatus: 'SUCCESS', created: {}, products: [{ productId: 1, quantity: 1 }],
+    }),
+    (err) => err.output.statusCode === 409,
+  );
+  assert.equal(prisma.calls.some((c) => c.model === 'purchase'), false);
 });
