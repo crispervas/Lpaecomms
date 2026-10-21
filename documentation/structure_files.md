@@ -121,15 +121,26 @@ web/
 │   ├── resources.routes.test.js   # Every resource mounted with its access level; product filters
 │   ├── userModel.test.js          # Password hashing and omission, soft delete sets deletedAt
 │   ├── auth.api.test.js           # POST /auth/login: token, identical 401s
-│   ├── purchaseModel.test.js      # Server-side totals, missing products, immutable money
+│   ├── auth.controller.test.js    # Web log in/sign-up/log out: session cookie, identical 401s, safe next, admins refused
+│   ├── session.test.js            # lpa_session options, token lifetime parsing, the safeNext redirect guard
+│   ├── customerSession.test.js    # Cookie → req.customer; blocked/deleted/admin/expired become anonymous; requireCustomer
+│   ├── customerModel.test.js      # CustomerModel queries: active customer, sign-up writes, orders scoped to their owner
+│   ├── purchaseModel.test.js      # Server-side totals, missing products, immutable money, stock decrement and 409
 │   ├── convert.api.test.js        # Currency conversion endpoint, validation order, and caching
 │   ├── passwordBreaches.api.test.js # Breached password lookup endpoint (k-anonymity)
-│   ├── productModel.test.js       # Storefront ProductModel on Prisma: card/detail shapes, order, exclusions
+│   ├── productModel.test.js       # Storefront ProductModel on Prisma: card/detail shapes, search and paging, exclusions
+│   ├── catalog.test.js            # Catalog controller: search, page and category reach the model; titles
+│   ├── catalogQuery.test.js       # ?q / ?page / ?category parsing and fallbacks
 │   ├── categoryModel.test.js      # Storefront CategoryModel: only categories with active products, code → slug
 │   ├── contactValidation.test.js  # Contact form rules: required, formats, limits, browser/server parity
-│   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum
-│   ├── account.test.js            # Account page: profile rules, tab whitelist, controller locals (preview never saves)
-│   ├── cart.test.js               # Cart cookie rules (parse, limits, merge) and the controller's pricing, pruning and redirects
+│   ├── authValidation.test.js     # Login/sign-up rules: per-mode fields, password minimum, lower-cased email
+│   ├── cardValidation.test.js     # Simulated payment rules: Luhn, expiry, CVC, brand and last four
+│   ├── shippingValidation.test.js # Checkout shipping rules: required fields, 4-digit postcode, phone
+│   ├── checkout.test.js           # Checkout controller: steps, card never echoed or stored, 409 back to cart, owner-only confirmation
+│   ├── checkoutLib.test.js        # lpa_checkout cookie round-trip and the order reference
+│   ├── account.test.js            # Account page: profile rules, tab whitelist, profile save and the customer's own orders
+│   ├── cart.test.js               # Cart cookie rules (parse, limits, merge, stock cap) and the controller's pricing, pruning and redirects
+│   ├── cart.controller.test.js    # Cart lowered to the stock, sold-out lines dropped, canCheckout
 │   ├── stylesheetTokens.test.js   # Every palette value reaches :root/_tokens.less or its theme block; no colour escapes the token layer
 │   ├── themeContrast.test.js      # Computes WCAG ratios from the palette for all four themes; AA for text and 3:1 for control borders, AAA in contrast
 │   ├── textScale.test.js          # No px font-size in styles/less/; the three text-size steps compile to 100%/112.5%/125%
@@ -239,8 +250,22 @@ what a failed map looks like.
 > posted `mode` go through the same whitelist, since both arrive from the
 > client. The controller strips the password out of every render — echoing it
 > back would write it into the browser cache, any proxy log, and view-source.
-> None of this authenticates anyone: there is no user model yet, and every
-> well-formed submission says so.
+> Both modes are real for customers and end with the session cookie set; a
+> hidden `next` field brings the visitor back to where they were (for
+> example the checkout), but only to a path on this site.
+
+> **Customer sessions and the checkout.** The web's customers sign in with the
+> same JWT the API issues, kept in the httpOnly `lpa_session` cookie
+> (`lib/session.js`). `middlewares/customerSession.js` re-reads the account on
+> every request, so a customer an admin blocks is signed out at once, and puts
+> them on `req.customer`/`res.locals.customer`; `requireCustomer` guards
+> `/account` and `/checkout/*`. Admins cannot sign in on the web. The checkout
+> runs Cart → Shipping (address kept in the session cookie `lpa_checkout`) →
+> Payment → Confirmation. Payment is **simulated**: the card is validated and
+> never charged, and the order keeps only its brand and last four digits.
+> The order is created by `PurchaseModel`, which prices it from the catalogue
+> and takes the stock in the same transaction — a shortfall is a 409 that sends
+> the customer back to the cart.
 
 > **Customisation is chosen; personalisation is decided.** Two unrelated
 > cookies carry this distinction all the way through the code. `lpa_prefs`
@@ -280,9 +305,10 @@ src/
 │   │   ├── home.routes.js
 │   │   ├── about.routes.js
 │   │   ├── contact.routes.js
-│   │   ├── auth.routes.js
-│   │   ├── account.routes.js # GET/POST /account (Profile and Orders tabs; preview, nothing saved)
+│   │   ├── auth.routes.js    # GET/POST /login (log in and sign up), POST /logout
+│   │   ├── account.routes.js # GET/POST /account (Profile and Orders tabs), behind requireCustomer
 │   │   ├── cart.routes.js    # GET /cart; POST /cart/items (add), /cart/items/:id (quantity), /cart/items/:id/remove
+│   │   ├── checkout.routes.js # GET/POST /checkout/shipping, /checkout/payment; GET /checkout/confirmation/:id (requireCustomer)
 │   │   ├── mashup.routes.js
 │   │   ├── catalog.routes.js
 │   │   ├── productDetail.routes.js
@@ -300,9 +326,10 @@ src/
 │   ├── home.controller.js
 │   ├── about.controller.js
 │   ├── contact.controller.js
-│   ├── auth.controller.js # Login page; a well-formed log in redirects to the Account preview
-│   ├── account.controller.js # Account page: show() by ?tab=, saveProfile() validates and answers with a preview notice
-│   ├── cart.controller.js # Cart page priced from the catalogue; add/update/remove write lpa_cart and redirect 303
+│   ├── auth.controller.js # Login page: customer log in and sign-up set lpa_session; log out clears it
+│   ├── account.controller.js # Account page: the customer's profile (saved) and their orders, by ?tab=
+│   ├── cart.controller.js # Cart page priced from the catalogue and capped to stock; add/update/remove write lpa_cart and redirect 303
+│   ├── checkout.controller.js # Shipping, simulated payment (creates the purchase), owner-only confirmation
 │   ├── mashup.controller.js
 │   ├── health.controller.js
 │   ├── crud.controller.js # API: generic list/show/create/update/destroy for every resource
@@ -312,7 +339,7 @@ src/
 │   ├── contactApi.controller.js # API: POST /api/v1/contact (web form rules, 202/422)
 │   ├── currency.controller.js
 │   ├── password.controller.js
-│   ├── catalog.controller.js  # Catalog page: category filter, product grid
+│   ├── catalog.controller.js  # Catalog page: search, category filter, paginated product grid
 │   ├── productDetail.controller.js # One product's page: gallery, price, related; records the view in lpa_recent
 │   └── preferences.controller.js # /preferences: show(), save() (whitelist check, cookie write, redirect or 204)
 ├── models/               # MODEL: data access (database and external sources)
@@ -322,15 +349,16 @@ src/
 │   ├── categoryCrud.model.js # CategoryCrudModel: refuses to delete a category holding products
 │   ├── stats.model.js    # Dashboard counts and revenue, counted in the database
 │   ├── user.model.js     # UserModel: bcrypt hashing, password never read back, login lookup
-│   ├── purchase.model.js # PurchaseModel: purchase + lines in one transaction, server-side totals
-│   ├── product.model.js  # Storefront reads of the catalogue (Prisma): cards, detail, history
+│   ├── purchase.model.js # PurchaseModel: purchase + lines in one transaction, server-side totals, stock decrement (409 when short)
+│   ├── product.model.js  # Storefront reads of the catalogue (Prisma): search/paging, cards, detail with stock, history
 │   ├── currency.model.js  # Exchange rates via API Ninjas (cached)
 │   ├── breach.model.js  # Have I Been Pwned range lookup (k-anonymity)
 │   ├── category.model.js  # Storefront categories (Prisma), empty ones filtered out
-│   └── account.model.js  # Sample profile and order history until authentication exists
+│   └── customer.model.js # The web customer: login lookup, sign-up, profile, their own orders
 ├── middlewares/          # API request pipeline
 │   ├── requestTime.js    # req.time / req.clientTime, fixed once per request
-│   ├── audit.js          # createTime / updateTime: created/updated audit stamps (APP_TIMEZONE)
+│   ├── audit.js          # createTime / updateTime: created/updated audit stamps (APP_TIMEZONE); stamp() for view writes
+│   ├── customerSession.js # View side: lpa_session → req.customer / res.locals.customer; requireCustomer guard
 │   ├── validate.js       # zod params/query/body parsing → req.valid, 400 with per-field errors
 │   ├── authenticate.js   # Bearer JWT → req.user, 401 otherwise
 │   ├── optionalAuthenticate.js # Public reads: req.user from a valid token, anonymous otherwise
@@ -358,7 +386,12 @@ src/
 │   ├── contactValidation.js # Contact form rules, shared by controller, view and browser
 │   ├── authValidation.js # Login and sign-up rules, keyed by mode
 │   ├── accountValidation.js # Profile form rules, the ?tab= whitelist, avatar initials
-│   ├── cart.js           # lpa_cart cookie: parse/serialise ids and quantities, limits (99 units, 20 lines), totals in cents
+│   ├── catalogQuery.js   # ?q / ?page / ?category parsing for the catalog page
+│   ├── session.js        # lpa_session cookie options, token lifetime, safeNext() redirect guard
+│   ├── cardValidation.js # Simulated payment rules: Luhn, expiry, CVC; cardSummary() → brand + last4
+│   ├── shippingValidation.js # Checkout shipping form rules
+│   ├── checkout.js       # lpa_checkout cookie (shipping between steps) and orderReference()
+│   ├── cart.js           # lpa_cart cookie: parse/serialise ids and quantities, limits (99 units, 20 lines), capToStock, totals in cents
 │   ├── preferences.js    # THEMES/TEXT_SIZES whitelists, cookie parse/serialise, safe-return-path guard — no Express import
 │   └── recentlyViewed.js # Browsing-history cookie: parse, push (dedupe + move-to-front), serialise, RECENT_LIMIT (8)
 ├── views/                # VIEW: server-rendered EJS templates
@@ -376,10 +409,11 @@ src/
 │   │   │   └── homeRecentlyViewed.ejs # "Recently viewed" and "Picked for you": both personalisation blocks, either may be empty
 │   │   ├── catalog/
 │   │   │   ├── catalogFilters.ejs # Catalog category pills (links, URL-driven)
-│   │   │   └── catalogResults.ejs # Catalog grid, count label and empty states
+│   │   │   ├── catalogResults.ejs # Catalog grid, count label and empty states (search included)
+│   │   │   └── catalogPagination.ejs # Previous / page numbers / Next links keeping q and category
 │   │   ├── product/
 │   │   │   ├── productGallery.ejs  # Product gallery: main image plus the rest
-│   │   │   ├── productPurchase.ejs # Quantity and add-to-cart form, posting to /cart/items
+│   │   │   ├── productPurchase.ejs # Stock line, quantity (max = stock) and add-to-cart form, posting to /cart/items
 │   │   │   └── productRelated.ejs  # "You might also like": same category, current excluded
 │   │   ├── about/
 │   │   │   ├── aboutMission.ejs  # About mission block: eyebrow and headline (static markup)
@@ -399,11 +433,11 @@ src/
 │   │   │   ├── authTabs.ejs   # Log in / Sign up switch, rendered as links
 │   │   │   └── authForm.ejs   # The form itself, both modes, with the hidden mode field
 │   │   ├── account/
-│   │   │   ├── accountSidebar.ejs # Avatar card, Profile/Orders links, Log out
-│   │   │   ├── accountProfile.ejs # Personal details form and the (disabled) password change
-│   │   │   └── accountOrders.ejs  # One card per order: status pill and AUD total
+│   │   │   ├── accountSidebar.ejs # Avatar card, Profile/Orders links, Log out (POST)
+│   │   │   ├── accountProfile.ejs # Name, phone and address form; sign-in email; (disabled) password change
+│   │   │   └── accountOrders.ejs  # One card per order: shipping status, AUD total, link to its confirmation
 │   │   ├── cart/
-│   │   │   ├── checkoutSteps.ejs # Cart / Shipping / Payment indicator (ordered list, aria-current=step)
+│   │   │   ├── checkoutSteps.ejs # Cart / Shipping / Payment indicator (ordered list, aria-current=step; done steps link back)
 │   │   │   ├── cartLine.ejs      # One line: image, name, −/+ submit-button stepper, total, remove
 │   │   │   └── cartSummary.ejs   # Subtotal, shipping "calculated at checkout", estimated total
 │   │   ├── preferences/
@@ -417,7 +451,10 @@ src/
 │       ├── contact.ejs
 │       ├── login.ejs
 │       ├── account.ejs  # Sidebar beside the Profile or Orders tab
-│       ├── cart.ejs     # Checkout step 1: lines beside the order summary; Shipping disabled until checkout exists
+│       ├── cart.ejs     # Checkout step 1: lines beside the order summary, then Continue to shipping
+│       ├── checkoutShipping.ejs # Checkout step 2: delivery address form
+│       ├── checkoutPayment.ejs  # Checkout step 3: simulated card form beside the order summary
+│       ├── checkoutConfirmation.ejs # The placed order: reference, lines, address, card brand and last four
 │       ├── mashup.ejs
 │       ├── catalog.ejs
 │       ├── productDetail.ejs
