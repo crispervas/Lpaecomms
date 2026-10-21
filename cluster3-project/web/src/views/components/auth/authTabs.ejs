@@ -6,11 +6,14 @@
     sign-up form would be unreachable.
 
     Expected locals:
-      mode — 'login' or 'signup', the tab currently shown %>
+      mode — 'login' or 'signup', the tab currently shown
+      next — where a successful sign-in goes; kept by both tabs so switching
+             to sign-up on the way to the checkout still ends at the checkout %>
 <%
+  const nextParam = next && next !== '/account' ? `next=${encodeURIComponent(next)}` : '';
   const tabs = [
-    { key: 'login', href: '/login', label: 'Log in' },
-    { key: 'signup', href: '/login?tab=signup', label: 'Sign up' },
+    { key: 'login', href: nextParam ? `/login?${nextParam}` : '/login', label: 'Log in' },
+    { key: 'signup', href: `/login?tab=signup${nextParam ? `&${nextParam}` : ''}`, label: 'Sign up' },
   ];
 %>
 <div class="auth-tabs">

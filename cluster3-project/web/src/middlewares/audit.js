@@ -99,5 +99,8 @@ export function makeAudit({ now = () => new Date(), timeZone = config.appTimezon
   return { stamp, createTime, updateTime };
 }
 
-/** Default instances, on the real clock and APP_TIMEZONE. */
-export const { createTime, updateTime } = makeAudit();
+/**
+ * Default instances, on the real clock and APP_TIMEZONE. `stamp` is exported
+ * for the web views, which write rows without going through these middlewares.
+ */
+export const { stamp, createTime, updateTime } = makeAudit();
