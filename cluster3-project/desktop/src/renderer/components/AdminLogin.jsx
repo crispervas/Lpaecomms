@@ -2,10 +2,10 @@
  * @file Admin sign-in screen.
  *
  * The first screen of the desktop client, built from the "Admin Login" desktop
- * mockup. It is a preview until the API gains authentication: a submission that
- * passes the client-side rules is handed to the parent as-is, with no request
- * and no credential check. When a login endpoint exists, it is reached through a
- * named function on window.api — this screen never performs a request itself.
+ * mockup. A submission that passes the client-side rules is handed to the
+ * parent, which signs in through window.api; this screen never performs a
+ * request itself. Whatever the parent reports back — wrong password, a
+ * non-admin account, an unreachable API — is shown above the submit button.
  */
 
 import { useId, useState } from 'react';
@@ -53,13 +53,16 @@ function FieldError({ id, message }) {
  * Render the admin sign-in card.
  *
  * @param {object} props - Component props.
- * @param {(account: {email: string}) => void} props.onSignIn - Called with the
- *   trimmed email once the form passes validation.
+ * @param {(credentials: {email: string, password: string}) => Promise<string|null>} props.onSignIn
+ *   Called once the form passes validation; resolves to the message to show,
+ *   or null when the sign-in succeeded.
  * @returns {JSX.Element} The centred sign-in card.
  */
 export function AdminLogin({ onSignIn }) {
   const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
+  const [failure, setFailure] = useState(null);
+  const [pending, setPending] = useState(false);
   const [showResetHelp, setShowResetHelp] = useState(false);
   const id = useId();
 
@@ -74,26 +77,39 @@ export function AdminLogin({ onSignIn }) {
     const { name, value } = event.target;
     setValues((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: undefined }));
+    setFailure(null);
   }
 
   /**
    * Validate on submit and hand a passing form to the parent.
    *
    * @param {React.FormEvent<HTMLFormElement>} event - The form submission.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (pending) return;
+
+    const form = event.currentTarget;
     const found = validateLogin(values);
     setErrors(found);
+    setFailure(null);
 
-    if (Object.keys(found).length === 0) {
-      onSignIn({ email: values.email.trim() });
+    if (Object.keys(found).length > 0) {
+      // Send the user to the first field that needs attention.
+      form.elements.namedItem(found.email ? 'email' : 'password').focus();
       return;
     }
 
-    // Send the user to the first field that needs attention.
-    event.currentTarget.elements.namedItem(found.email ? 'email' : 'password').focus();
+    setPending(true);
+    const message = await onSignIn({ email: values.email.trim(), password: values.password });
+    // On success the parent swaps this screen out, so there is nothing to reset.
+    if (message) {
+      setPending(false);
+      setFailure(message);
+      setValues((current) => ({ ...current, password: '' }));
+      form.elements.namedItem('password').focus();
+    }
   }
 
   return (
@@ -173,11 +189,17 @@ export function AdminLogin({ onSignIn }) {
             </p>
           </div>
 
+          {/* Always mounted so screen readers announce the message when it appears. */}
+          <p role="alert" className="mb-4 text-center text-[13px] text-lpa-danger empty:hidden">
+            {failure}
+          </p>
+
           <button
             type="submit"
-            className="block w-full rounded-[10px] bg-lpa-ink p-3.5 text-center text-sm font-semibold text-white hover:bg-lpa-ink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-lpa-accent focus-visible:ring-offset-2"
+            disabled={pending}
+            className="block w-full rounded-[10px] bg-lpa-ink p-3.5 text-center text-sm font-semibold text-white hover:bg-lpa-ink-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-lpa-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70"
           >
-            Sign in
+            {pending ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
 

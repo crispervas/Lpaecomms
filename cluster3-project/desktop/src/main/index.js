@@ -11,7 +11,9 @@ const { app, BrowserWindow, session } = require('electron');
 
 const { config } = require('./config/index.js');
 const { createApiClient } = require('./services/apiClient.js');
+const { createSession } = require('./services/session.js');
 const { registerHealthIpc } = require('./ipc/health.ipc.js');
+const { registerAuthIpc } = require('./ipc/auth.ipc.js');
 
 /**
  * Whether the window loads the compiled renderer rather than the dev server.
@@ -105,13 +107,13 @@ function createWindow() {
 app.whenReady().then(() => {
   applySecurityPolicy();
 
-  registerHealthIpc(
-    createApiClient({
-      fetchImpl: fetch,
-      baseUrl: config.apiBaseUrl,
-      timeoutMs: config.apiTimeoutMs,
-    }),
-  );
+  const apiClient = createApiClient({
+    fetchImpl: fetch,
+    baseUrl: config.apiBaseUrl,
+    timeoutMs: config.apiTimeoutMs,
+  });
+  registerHealthIpc(apiClient);
+  registerAuthIpc(createSession({ apiClient }));
 
   createWindow();
 

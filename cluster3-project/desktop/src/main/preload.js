@@ -19,4 +19,21 @@ contextBridge.exposeInMainWorld('api', {
    *   The result envelope. Never rejects.
    */
   getHealth: () => ipcRenderer.invoke('api:health'),
+
+  /**
+   * Sign an administrator in. The token stays in the main process; only the
+   * account's public fields come back.
+   *
+   * @param {{email: string, password: string}} credentials - What the admin typed.
+   * @returns {Promise<{ok: boolean, status: number|null, data: {user: object}|null, error: string|null}>}
+   *   The result envelope. Never rejects.
+   */
+  signIn: (credentials) => ipcRenderer.invoke('auth:sign-in', credentials),
+
+  /**
+   * End the session and forget its token.
+   *
+   * @returns {Promise<void>}
+   */
+  signOut: () => ipcRenderer.invoke('auth:sign-out'),
 });

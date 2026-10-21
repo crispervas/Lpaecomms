@@ -6,9 +6,11 @@
  * accounts and orders, and the catalog. Screens are mounted inside it, and none of them knows the API's
  * address — every call goes through the preload bridge.
  *
- * The session is held in memory only. Until the API gains authentication there
- * is nothing worth persisting, and a restart returning to the sign-in screen is
- * the safer default for an admin console.
+ * Sign-in is real: the main process checks the credentials against the API,
+ * refuses any account that is not an administrator, and keeps the access token
+ * to itself. The renderer holds only the account's name and email, in memory,
+ * so a restart returns to the sign-in screen — the safer default for an admin
+ * console. The screens behind it are still previews on sample data.
  */
 
 import { useState } from 'react';
@@ -23,6 +25,7 @@ import { Users } from './components/Users.jsx';
 import { SAMPLE_CATALOG_CATEGORIES, SAMPLE_CATALOG_PRODUCTS } from './data/catalog.mjs';
 import { SAMPLE_ORDERS } from './data/orders.mjs';
 import { SAMPLE_ADMIN, SAMPLE_USERS } from './data/users.mjs';
+import { describeSignIn } from './lib/signInResult.mjs';
 
 /**
  * Persist a new category.
@@ -81,16 +84,33 @@ export function App() {
   const [users, setUsers] = useState(SAMPLE_USERS);
   const [orders, setOrders] = useState(SAMPLE_ORDERS);
 
+  /**
+   * Sign in through the main process and open the admin frame on success.
+   *
+   * @param {{email: string, password: string}} credentials - A form that passed
+   *   lib/loginRules.mjs.
+   * @returns {Promise<string|null>} The message for the form, or null once
+   *   signed in.
+   */
+  async function signIn(credentials) {
+    const result = describeSignIn(await window.api.signIn(credentials));
+    if (result.message) return result.message;
+    setAccount(result.admin);
+    return null;
+  }
+
   if (account === null) {
-    return <AdminLogin onSignIn={setAccount} />;
+    return <AdminLogin onSignIn={signIn} />;
   }
 
   /**
    * End the session and start the next one from a fresh preview.
    *
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  function signOut() {
+  async function signOut() {
+    // Forget the token before leaving the frame, so nothing signed-in outlives it.
+    await window.api.signOut();
     setAccount(null);
     setSection('dashboard');
     setUsers(SAMPLE_USERS);
@@ -133,11 +153,13 @@ export function App() {
   }
 
   return (
-    <AdminLayout current={section} onNavigate={setSection} admin={SAMPLE_ADMIN} onSignOut={signOut}>
+    <AdminLayout current={section} onNavigate={setSection} admin={account} onSignOut={signOut}>
       {section === 'dashboard' && <Dashboard orders={orders} onNavigate={setSection} />}
       {section === 'users' && (
         <Users
           users={users}
+          // The list is still sample data, so the signed-in account is matched
+          // to its sample stand-in until Users reads from the API.
           currentAdminId={SAMPLE_ADMIN.id}
           onToggleBlock={toggleBlock}
           onDelete={deleteUser}

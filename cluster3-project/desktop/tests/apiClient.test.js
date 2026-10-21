@@ -48,7 +48,7 @@ function rejectWith(name, message) {
  * Create a client with sane defaults and an injected fetch.
  *
  * @param {Function} fetchImpl - Stubbed fetch.
- * @returns {{getHealth: Function}} The client under test.
+ * @returns {{getHealth: Function, login: Function}} The client under test.
  */
 function clientWith(fetchImpl) {
   return createApiClient({ fetchImpl, baseUrl: BASE_URL, timeoutMs: 5000 });
@@ -75,7 +75,7 @@ test('maps a degraded 503 response as a reply, not a failure', async () => {
   assert.equal(envelope.ok, true, 'a 503 is still an answer from the server');
   assert.equal(envelope.status, 503);
   assert.deepEqual(envelope.data, { status: 'degraded', db: 'unreachable' });
-  assert.equal(envelope.error, null);
+  assert.equal(envelope.error, 'Database unreachable', 'a non-2xx carries the API message');
 });
 
 test('reports a JSON body that is not the API envelope', async () => {
@@ -150,4 +150,38 @@ test('never rejects, whatever fetch does', async () => {
 
   assert.equal(envelope.ok, false);
   assert.equal(typeof envelope.error, 'string');
+});
+
+test('posts the credentials as JSON to the login path', async () => {
+  let request = null;
+  const client = clientWith(async (url, init) => {
+    request = { url, init };
+    return { status: 200, async json() { return { message: 'Signed in', data: { token: 't' }, pagination: null }; } };
+  });
+
+  await client.login({ email: 'admin@lpaecomms.com', password: 'secret' });
+
+  assert.equal(request.url, 'http://localhost:3000/api/v1/auth/login');
+  assert.equal(request.init.method, 'POST');
+  assert.equal(request.init.headers['Content-Type'], 'application/json');
+  assert.deepEqual(JSON.parse(request.init.body), { email: 'admin@lpaecomms.com', password: 'secret' });
+});
+
+test('maps a successful login to its data', async () => {
+  const data = { token: 'jwt', user: { id: 1, name: 'Ada', lastName: 'Lovelace', email: 'a@b.co', role: 'ADMIN' } };
+  const client = clientWith(respondWith(200, { message: 'Signed in', data, pagination: null }));
+
+  const envelope = await client.login({ email: 'a@b.co', password: 'secret' });
+
+  assert.deepEqual(envelope, { ok: true, status: 200, data, error: null });
+});
+
+test('carries the API message on a rejected login', async () => {
+  const client = clientWith(
+    respondWith(401, { message: 'Email or password is incorrect.', data: null, pagination: null, errors: [] }),
+  );
+
+  const envelope = await client.login({ email: 'a@b.co', password: 'wrong' });
+
+  assert.deepEqual(envelope, { ok: true, status: 401, data: null, error: 'Email or password is incorrect.' });
 });

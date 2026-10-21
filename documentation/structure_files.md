@@ -675,6 +675,8 @@ desktop/
 │   ├── describeHealth.test.mjs   # Health envelope → service state
 │   ├── apiClient.test.js         # Result envelope for every failure mode
 │   ├── loginRules.test.mjs       # Admin sign-in validation
+│   ├── session.test.js           # Admin-only session; token kept in main
+│   ├── signInResult.test.mjs     # Sign-in envelope → account or form message
 │   ├── barWidths.test.mjs        # Dashboard bar scaling
 │   ├── table.test.mjs            # Sorting, paging and search shared by tables
 │   ├── userTable.test.mjs        # Users filtering and initials
@@ -690,11 +692,13 @@ desktop/
     │   ├── config/packaged.js    # Bakes and reads a packaged build's config
     │   ├── config/index.js       # Picks the source: baked file or .env
     │   ├── services/apiClient.js # HTTP client returning result envelopes
-    │   └── ipc/health.ipc.js     # Registers the api:health channel
+    │   ├── services/session.js   # Admin session: role check, token held in main
+    │   ├── ipc/health.ipc.js     # Registers the api:health channel
+    │   └── ipc/auth.ipc.js       # Registers auth:sign-in and auth:sign-out
     └── renderer/         # React; no Node, no network
         ├── main.jsx              # React root; bundles the @fontsource fonts
         ├── App.jsx               # Sign-in gate, section, session data, save seams
-        ├── components/AdminLogin.jsx  # Admin sign-in screen (preview, no auth yet)
+        ├── components/AdminLogin.jsx  # Admin sign-in screen (live, admins only)
         ├── components/AdminLayout.jsx # Sidebar frame shared by every admin screen
         ├── components/Icon.jsx        # The mockups' stroke icons, by name
         ├── components/Dashboard.jsx   # Dashboard screen (preview, sample data)
@@ -714,6 +718,7 @@ desktop/
         ├── lib/describeHealth.mjs # Health envelope → state for System status
         ├── lib/loginRules.mjs    # Sign-in rules shared in wording with web/mobile
         ├── lib/barWidths.mjs     # Scales category counts into bar widths
+        ├── lib/signInResult.mjs  # Sign-in envelope → signed-in account or message
         ├── lib/table.mjs         # Sorting, paging and search for every table
         ├── lib/userTable.mjs     # Users filtering and avatar initials
         ├── lib/orderTable.mjs    # Orders filtering and the newest orders

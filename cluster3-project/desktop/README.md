@@ -106,10 +106,14 @@ connections whenever the compiled renderer is served.
 ## Screens
 
 The app opens on the admin sign-in screen (`components/AdminLogin.jsx`), built
-from the "Admin Login" desktop mockup. It is a preview until the API gains
-authentication: a form that passes `lib/loginRules.mjs` opens the app with no
-request, and the session lives in memory only, so a restart signs you out.
-Signing in opens the admin frame (`components/AdminLayout.jsx`): a sidebar
+from the "Admin Login" desktop mockup. A form that passes `lib/loginRules.mjs`
+signs in through `window.api.signIn`: the main process posts the credentials to
+`POST /auth/login`, refuses any account whose role is not `ADMIN`
+(`services/session.js`), and keeps the access token to itself — the renderer
+receives only the account's name and email. The token lives in main-process
+memory, so quitting the app signs you out; "Sign out" forgets it at once.
+Wrong credentials, a non-admin account and an unreachable API each show their
+own message (`lib/signInResult.mjs`). Signing in opens the admin frame (`components/AdminLayout.jsx`): a sidebar
 with the Dashboard, Users, Orders, Catalog and Settings sections. They are
 previews labelled as such, because the API has no users, orders or statistics
 endpoints yet; they read the sample data in `data/`:

@@ -11,14 +11,16 @@
 /**
  * Result of an API call.
  *
- * @typedef {Object} HealthEnvelope
+ * @typedef {Object} ApiEnvelope
  * @property {boolean} ok - True when an HTTP response arrived. NOT "all is
  *   well": a 503 from /health is a successful exchange reporting a database
  *   outage, and the screen must be able to tell those apart.
  * @property {number|null} status - HTTP status code, or null when no response
  *   arrived at all.
- * @property {object|null} data - Parsed JSON body, when there was one.
- * @property {string|null} error - Human-readable description of the failure.
+ * @property {object|null} data - The `data` field of the API's body, when there
+ *   was one.
+ * @property {string|null} error - Human-readable description of the failure;
+ *   for a non-2xx reply, the API's own `message`.
  */
 
 /**
@@ -31,22 +33,32 @@
  * @param {Function} options.fetchImpl - fetch-compatible implementation.
  * @param {string} options.baseUrl - API base URL including the /api/v1 prefix.
  * @param {number} options.timeoutMs - Per-request timeout in milliseconds.
- * @returns {{getHealth: () => Promise<HealthEnvelope>}} The API client.
+ * @returns {{getHealth: () => Promise<ApiEnvelope>,
+ *   login: (credentials: {email: string, password: string}) => Promise<ApiEnvelope>}}
+ *   The API client.
  */
 function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
   /**
-   * Ask the API whether it and its database are healthy.
+   * Perform one request and describe its outcome as an envelope.
    *
    * Resolves for every outcome and rejects for none, by design.
    *
-   * @returns {Promise<HealthEnvelope>} The result envelope.
+   * @param {string} method - HTTP method.
+   * @param {string} path - Path under the base URL, starting with a slash.
+   * @param {object} [body] - JSON body, for writes.
+   * @returns {Promise<ApiEnvelope>} The result envelope.
    */
-  async function getHealth() {
-    const url = `${baseUrl}/health`;
+  async function send(method, path, body) {
+    const url = `${baseUrl}${path}`;
+    const init = { method, signal: AbortSignal.timeout(timeoutMs) };
+    if (body !== undefined) {
+      init.headers = { 'Content-Type': 'application/json' };
+      init.body = JSON.stringify(body);
+    }
 
     let response;
     try {
-      response = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs) });
+      response = await fetchImpl(url, init);
     } catch (cause) {
       // AbortSignal.timeout raises TimeoutError; an aborted request raises
       // AbortError. Everything else here means the host was never reached.
@@ -62,10 +74,10 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
     }
 
     try {
-      const body = await response.json();
+      const payload = await response.json();
       // The API wraps every payload as { message, data, pagination }; the IPC
       // envelope carries only `data`, so the renderer never sees the wrapper.
-      if (body === null || typeof body !== 'object' || !('data' in body)) {
+      if (payload === null || typeof payload !== 'object' || !('data' in payload)) {
         return {
           ok: true,
           status: response.status,
@@ -73,7 +85,13 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
           error: 'The API responded in an unexpected format.',
         };
       }
-      return { ok: true, status: response.status, data: body.data, error: null };
+      const failed = response.status < 200 || response.status >= 300;
+      return {
+        ok: true,
+        status: response.status,
+        data: payload.data,
+        error: failed ? String(payload.message ?? `The API answered ${response.status}.`) : null,
+      };
     } catch {
       // The server answered, so ok stays true — the payload is what is wrong.
       return {
@@ -85,7 +103,27 @@ function createApiClient({ fetchImpl, baseUrl, timeoutMs }) {
     }
   }
 
-  return { getHealth };
+  /**
+   * Ask the API whether it and its database are healthy.
+   *
+   * @returns {Promise<ApiEnvelope>} The result envelope; never rejects.
+   */
+  function getHealth() {
+    return send('GET', '/health');
+  }
+
+  /**
+   * Exchange credentials for an access token.
+   *
+   * @param {{email: string, password: string}} credentials - What the admin typed.
+   * @returns {Promise<ApiEnvelope>} On success, `data` is `{ token, user }`;
+   *   never rejects.
+   */
+  function login({ email, password }) {
+    return send('POST', '/auth/login', { email, password });
+  }
+
+  return { getHealth, login };
 }
 
 module.exports = { createApiClient };
