@@ -17,7 +17,7 @@ docs {
 
   ## Auth
 
-  None. Public.
+  None. Public. An optional Bearer token of an `ADMIN` also returns a **draft** product (`published: false`); without one — or with a non-admin, invalid or expired token, which is treated as no token rather than a 401 — a draft answers 404.
 
   ## Path parameters
 
@@ -42,6 +42,7 @@ docs {
           "https://picsum.photos/seed/lpa-beach-towel/640/640"
         ],
         "description": "Quick-dry towel for Gold Coast beaches.",
+        "published": true,
         "category": {
           "id": 4,
           "name": "Sports",
@@ -83,7 +84,7 @@ docs {
 
   ### 404 Not Found — no active product with this id
 
-  Soft-deleted records answer 404 too.
+  Soft-deleted records answer 404 too, and so does a draft unless the caller sends an `ADMIN` token.
 
     {
       "message": "Product not found.",

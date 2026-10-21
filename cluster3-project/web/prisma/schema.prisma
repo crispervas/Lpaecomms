@@ -158,6 +158,8 @@ model product {
   price       Float   @default(0)
   img         String[] 
   description String?
+  // false = draft: visible to admins only, never listed or sold.
+  published   Boolean @default(true)
 
   created    Json?
   updated    Json?
@@ -189,6 +191,8 @@ model purchase {
   finalAmount    Decimal
 
   paymentStatus  String
+  // Shipping progress, apart from payment: PENDING | SHIPPED | DELIVERED | CANCELLED.
+  fulfillmentStatus String @default("PENDING")
   invoice        String?
   paymentDate    DateTime?
   data           Json?

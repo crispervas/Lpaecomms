@@ -18,7 +18,7 @@ const DEFAULT_FEATURED_LIMIT = 8;
 const DEFAULT_CATALOG_LIMIT = 12;
 
 /** Where fragment for products the storefront may show. */
-const ACTIVE = { status: { not: 0 } };
+const ACTIVE = { status: { not: 0 }, published: true };
 
 /** Columns a card needs; the detail page adds `description`. */
 const CARD_SELECT = {

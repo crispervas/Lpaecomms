@@ -13,6 +13,9 @@ import { PurchaseModel } from '../models/purchase.model.js';
 /** Payment states the schema comment documents. */
 export const PAYMENT_STATUSES = ['PENDING', 'SUCCESS', 'FAILED', 'REJECTED'];
 
+/** Shipping progress of an order, tracked apart from its payment. */
+export const FULFILLMENT_STATUSES = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+
 const money = z.number().min(0).max(1_000_000);
 
 const createSchema = z.object({
@@ -21,6 +24,7 @@ const createSchema = z.object({
   taxes: money.default(0),
   discountAmount: money.default(0),
   paymentStatus: z.enum(PAYMENT_STATUSES),
+  fulfillmentStatus: z.enum(FULFILLMENT_STATUSES).default('PENDING'),
   invoice: z.string().trim().max(100).nullable().optional(),
   paymentDate: z.coerce.date().nullable().optional(),
   data: z.record(z.string(), z.unknown()).nullable().optional(),
@@ -36,6 +40,7 @@ const updateSchema = z
   .object({
     reference: createSchema.shape.reference,
     paymentStatus: createSchema.shape.paymentStatus,
+    fulfillmentStatus: z.enum(FULFILLMENT_STATUSES),
     invoice: createSchema.shape.invoice,
     paymentDate: createSchema.shape.paymentDate,
     data: createSchema.shape.data,
@@ -52,6 +57,7 @@ export default {
   filters: {
     userId: { schema: urlId(), where: (value) => ({ userId: value }) },
     paymentStatus: { schema: z.enum(PAYMENT_STATUSES), where: (value) => ({ paymentStatus: value }) },
+    fulfillmentStatus: { schema: z.enum(FULFILLMENT_STATUSES), where: (value) => ({ fulfillmentStatus: value }) },
   },
   include: {
     user: { select: { id: true, name: true, lastName: true, email: true } },

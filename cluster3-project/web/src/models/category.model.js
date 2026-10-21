@@ -28,7 +28,7 @@ export class CategoryModel {
    */
   async listCategories() {
     const rows = await this.prisma.category.findMany({
-      where: { status: { not: 0 }, products: { some: { status: { not: 0 } } } },
+      where: { status: { not: 0 }, products: { some: { status: { not: 0 }, published: true } } },
       select: { id: true, name: true, code: true },
       orderBy: { name: 'asc' },
     });

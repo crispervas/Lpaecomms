@@ -25,6 +25,8 @@ import contactApiRoutes from './api/contact.routes.js';
 import { requestTime } from '../middlewares/requestTime.js';
 import { buildCrudRouter } from './api/crud.routes.js';
 import { buildAuthRouter } from './api/auth.routes.js';
+import { buildUserStatusRouter } from './api/userStatus.routes.js';
+import { buildStatsRouter } from './api/stats.routes.js';
 import { resources } from '../resources/index.js';
 
 /**
@@ -54,6 +56,9 @@ export function registerRoutes(app, { prisma }) {
   // API routes (JSON).
   apiRouter.use('/', buildHealthRouter(prisma));
   apiRouter.use('/', buildAuthRouter(prisma));
+  // Before the CRUD routers: it guards DELETE /users/:id ahead of the generic route.
+  apiRouter.use('/', buildUserStatusRouter(prisma));
+  apiRouter.use('/', buildStatsRouter(prisma));
   // One router per CRUD resource; see src/resources/.
   for (const resource of resources) apiRouter.use('/', buildCrudRouter(resource, prisma));
   apiRouter.use('/', contactApiRoutes);

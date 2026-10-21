@@ -44,6 +44,7 @@ test('products filter by category code and id', async () => {
   await request(createApp({ prisma })).get('/api/v1/products?category=Lamps&categoryId=2');
   const where = prisma.calls.find((c) => c.model === 'product' && c.method === 'findMany').args.where;
   assert.deepEqual(where.AND.slice(1), [
+    { published: true },
     { categoryId: 2 },
     { category: { code: { equals: 'Lamps', mode: 'insensitive' } } },
   ]);

@@ -18,6 +18,7 @@ params:query {
   ~search: a
   ~categoryId: 1
   ~category: books
+  ~published: false
 }
 
 docs {
@@ -29,7 +30,7 @@ docs {
 
   ## Auth
 
-  None. Public.
+  None. Public. An optional Bearer token of an `ADMIN` also returns **draft** products (`published: false`); without one — or with a non-admin, invalid or expired token, which is treated as no token rather than a 401 — drafts are hidden.
 
   ## Query parameters
 
@@ -42,6 +43,7 @@ docs {
   | `search` | string | no | Case-insensitive match against: name, code, description. |
   | `categoryId` | integer | no | Only products in this category (by id). |
   | `category` | string | no | Only products in this category (by code, case-insensitive), e.g. `books`. |
+  | `published` | `true` \| `false` | no | Admin token only: `false` lists drafts, `true` published products. Ignored for everyone else. |
 
   ## Responses
 
@@ -61,6 +63,7 @@ docs {
             "https://picsum.photos/seed/lpa-beach-towel/640/640"
           ],
           "description": "Quick-dry towel for Gold Coast beaches.",
+          "published": true,
           "category": {
             "id": 4,
             "name": "Sports",

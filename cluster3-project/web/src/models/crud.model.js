@@ -61,6 +61,23 @@ export class CrudModel {
   }
 
   /**
+   * Extra `where` for what this viewer may see, from the resource's
+   * `visibility` hook.
+   *
+   * `undefined` means an internal read (the existence check before an update
+   * or delete, which only admins reach): no visibility rule applies. `null` is
+   * an anonymous caller.
+   *
+   * @param {{id: number, role: string}|null|undefined} viewer - Who is reading.
+   * @returns {Array<Object>} Zero or one `where` fragments.
+   */
+  visibleWhere(viewer) {
+    if (viewer === undefined || !this.resource.visibility) return [];
+    const fragment = this.resource.visibility(viewer);
+    return fragment ? [fragment] : [];
+  }
+
+  /**
    * Read one page of active rows.
    *
    * @param {Object} query - Parsed list query.
@@ -70,13 +87,18 @@ export class CrudModel {
    * @param {'asc'|'desc'} query.order - Sort direction.
    * @param {string} [query.search] - Case-insensitive text matched against `searchable`.
    * @param {Object} [query.filters] - Parsed filter values keyed by filter name.
+   * @param {{id: number, role: string}|null} [query.viewer] - Who is reading;
+   *   omitted for internal reads.
    * @returns {Promise<{items: Array<Object>, total: number}>} The page and the match count.
    */
-  async list({ page, limit, sort, order, search, filters = {} }) {
-    const and = [this.activeWhere()];
+  async list({ page, limit, sort, order, search, filters = {}, viewer }) {
+    const and = [this.activeWhere(), ...this.visibleWhere(viewer)];
 
     for (const [name, value] of Object.entries(filters)) {
-      if (value !== undefined) and.push(this.resource.filters[name].where(value));
+      const filter = this.resource.filters[name];
+      // An admin-only filter would otherwise let anyone ask for hidden rows.
+      if (filter.adminOnly && viewer?.role !== 'ADMIN') continue;
+      if (value !== undefined) and.push(filter.where(value));
     }
 
     if (search && this.resource.searchable.length > 0) {
@@ -106,10 +128,16 @@ export class CrudModel {
    * Read one active row.
    *
    * @param {number} id - Primary key.
-   * @returns {Promise<Object|null>} The row, or null when missing or soft-deleted.
+   * @param {{id: number, role: string}|null} [viewer] - Who is reading; omitted
+   *   for internal reads.
+   * @returns {Promise<Object|null>} The row, or null when missing, soft-deleted
+   *   or hidden from this viewer.
    */
-  async getById(id) {
-    return this.delegate.findFirst({ where: { AND: [this.activeWhere(), { id }] }, ...this.readArgs() });
+  async getById(id, viewer) {
+    return this.delegate.findFirst({
+      where: { AND: [this.activeWhere(), ...this.visibleWhere(viewer), { id }] },
+      ...this.readArgs(),
+    });
   }
 
   /**

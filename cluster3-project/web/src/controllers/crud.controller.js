@@ -50,7 +50,7 @@ export class CrudController {
   async list(req, res, next) {
     try {
       const args = this.listArgs(req.valid.query);
-      const { items, total } = await this.model.list(args);
+      const { items, total } = await this.model.list({ ...args, viewer: req.user ?? null });
       sendPage(
         res,
         items,
@@ -72,7 +72,7 @@ export class CrudController {
    */
   async show(req, res, next) {
     try {
-      const record = await this.model.getById(req.valid.params.id);
+      const record = await this.model.getById(req.valid.params.id, req.user ?? null);
       if (!record) throw boom.notFound(`${this.resource.label} not found.`);
       sendOk(res, record, `${this.resource.label} found`);
     } catch (error) {

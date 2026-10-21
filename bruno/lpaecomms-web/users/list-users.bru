@@ -17,6 +17,7 @@ params:query {
   ~order: desc
   ~search: a
   ~roleId: 1
+  ~status: blocked
 }
 
 auth:bearer {
@@ -44,6 +45,7 @@ docs {
   | `order` | string | no | `asc` or `desc`; default `desc`. |
   | `search` | string | no | Case-insensitive match against: name, lastName, email, document. |
   | `roleId` | integer | no | Only users with this role. |
+  | `status` | `active` \| `blocked` \| `pending` | no | Only accounts in this state (`status` 1, 2 or -2). |
 
   ## Responses
 

@@ -20,6 +20,7 @@ import purchase from './purchase.resource.js';
  * @typedef {Object} ResourceFilter
  * @property {import('zod').ZodTypeAny} schema - Parses the query value.
  * @property {(value: any) => Object} where - Prisma where fragment for a parsed value.
+ * @property {boolean} [adminOnly] - Applied only when an ADMIN reads; ignored otherwise.
  */
 
 /**
@@ -32,6 +33,8 @@ import purchase from './purchase.resource.js';
  * @property {Object<string, ResourceFilter>} filters - Query filters by name.
  * @property {Object} [include] - Prisma include for every read.
  * @property {Object} [omit] - Prisma omit for every read.
+ * @property {(viewer: {id: number, role: string}|null) => Object|null} [visibility] -
+ *   Extra `where` for public reads by this viewer; null shows everything.
  * @property {boolean} [hasDeletedAt] - Soft delete also sets `deletedAt` (user only).
  * @property {import('zod').ZodObject} createSchema - POST body.
  * @property {import('zod').ZodObject} updateSchema - PUT body.

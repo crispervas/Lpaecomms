@@ -56,6 +56,10 @@ export default {
   sortable: ['name', 'lastName', 'email', 'createdAt'],
   filters: {
     roleId: { schema: urlId(), where: (value) => ({ roleId: value }) },
+    status: {
+      schema: z.enum(['active', 'blocked', 'pending']),
+      where: (value) => ({ status: { active: 1, blocked: 2, pending: -2 }[value] }),
+    },
   },
   include: { role: { select: { id: true, name: true, code: true } } },
   omit: { password: true },

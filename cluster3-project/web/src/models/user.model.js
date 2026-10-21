@@ -12,6 +12,12 @@ import { CrudModel } from './crud.model.js';
 /** bcrypt cost; ~250 ms on a laptop, the usual balance for interactive login. */
 export const BCRYPT_ROUNDS = 12;
 
+/** Status of an account that may sign in. */
+export const ACTIVE_STATUS = Object.freeze({ status: 1, statusName: 'ACTIVE' });
+
+/** Status of an account an admin has blocked: kept, but unable to sign in. */
+export const BLOCKED_STATUS = Object.freeze({ status: 2, statusName: 'BLOCKED' });
+
 /**
  * Data access for users.
  */
@@ -36,7 +42,7 @@ export class UserModel extends CrudModel {
    * @throws {Error} Prisma errors (duplicate email/document → 409).
    */
   async create(data) {
-    return super.create({ ...(await this.#withHash(data)), status: 1, statusName: 'ACTIVE' });
+    return super.create({ ...(await this.#withHash(data)), ...ACTIVE_STATUS });
   }
 
   /**
@@ -49,6 +55,27 @@ export class UserModel extends CrudModel {
    */
   async update(id, data) {
     return super.update(id, await this.#withHash(data));
+  }
+
+  /**
+   * Block or unblock an active account.
+   *
+   * Unblocking always lands on ACTIVE, including from PENDING: an admin who
+   * unblocks an account means for it to work.
+   *
+   * @param {number} id - User id.
+   * @param {boolean} blocked - True to block, false to unblock.
+   * @param {Object} updated - Audit stamp for who did it.
+   * @returns {Promise<Object|null>} The updated user (no password), or null
+   *   when there is no such active user.
+   */
+  async setBlocked(id, blocked, updated) {
+    if (!(await this.getById(id))) return null;
+    return this.delegate.update({
+      where: { id },
+      data: { ...(blocked ? BLOCKED_STATUS : ACTIVE_STATUS), updated },
+      ...this.readArgs(),
+    });
   }
 
   /**

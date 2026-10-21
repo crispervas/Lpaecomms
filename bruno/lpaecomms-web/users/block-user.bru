@@ -1,0 +1,142 @@
+meta {
+  name: Block user
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users/2/block
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Block a user
+
+  Sets the account to `status: 2`, `statusName: BLOCKED`. The account and its orders stay; it can no longer sign in on any platform, because login requires an ACTIVE account. An admin cannot block their own account.
+
+  Sets `updated` to an audit stamp of who did it. No body is needed; anything sent is ignored.
+
+  **Limitation:** tokens are stateless, so blocking stops new sign-ins but does not revoke a token the user already holds; it keeps working until it expires (`JWT_EXPIRES_IN`, 1h by default). The same holds for a deleted user.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Path parameters
+
+  | Name | Type | Required | Notes |
+  | --- | --- | --- | --- |
+  | `id` | integer | yes | Positive integer. |
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "User blocked",
+      "data": {
+        "id": 1,
+        "roleId": 2,
+        "genderId": 4,
+        "documentTypeId": 1,
+        "name": "Ada",
+        "lastName": "Lovelace",
+        "email": "ada@lpaecomms.test",
+        "document": "PA1234567",
+        "phone": "+61 400 000 000",
+        "address": "1 Cavill Ave, Surfers Paradise QLD",
+        "emailVerified": false,
+        "session": null,
+        "deletedAt": null,
+        "role": {
+          "id": 2,
+          "name": "Customer",
+          "code": "CUSTOMER"
+        },
+        "created": {
+          "client": "2026-09-27T02:30:14.000Z",
+          "server": "2026-09-27T02:30:14.000Z",
+          "serverDate": "2026-09-27",
+          "serverTime": "12:30:14",
+          "unixTime": 1790476214,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "updated": {
+          "client": "2026-10-21T01:00:00.000Z",
+          "server": "2026-10-21T01:00:00.000Z",
+          "serverDate": "2026-10-21",
+          "serverTime": "11:00:00",
+          "unixTime": 1792544400,
+          "user": 1,
+          "role": "ADMIN"
+        },
+        "statusName": "BLOCKED",
+        "status": 2,
+        "createdAt": "2026-09-27T02:30:14.000Z",
+        "updatedAt": "2026-09-27T02:30:14.000Z"
+      },
+      "pagination": null
+    }
+
+  ### 400 Bad Request — validation failed
+
+  `id` is not a positive integer.
+
+    {
+      "message": "Some fields need attention.",
+      "data": null,
+      "pagination": null,
+      "errors": [
+        {
+          "field": "id",
+          "message": "Invalid input"
+        }
+      ]
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 404 Not Found — no active user with this id
+
+  Soft-deleted records answer 404 too.
+
+    {
+      "message": "User not found.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+
+  ### 409 Conflict — the target is your own account
+
+    {
+      "message": "You cannot block your own account.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+}

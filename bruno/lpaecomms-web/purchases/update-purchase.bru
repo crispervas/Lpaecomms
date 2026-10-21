@@ -17,6 +17,7 @@ auth:bearer {
 body:json {
   {
     "paymentStatus": "SUCCESS",
+    "fulfillmentStatus": "SHIPPED",
     "invoice": "INV-2001",
     "paymentDate": "2026-09-27T03:00:00.000Z"
   }
@@ -44,6 +45,7 @@ docs {
   | Field | Type | Required | Notes |
   | --- | --- | --- | --- |
   | `paymentStatus` | string | no | One of `PENDING`, `SUCCESS`, `FAILED`, `REJECTED`. |
+  | `fulfillmentStatus` | string | no | One of `PENDING`, `SHIPPED`, `DELIVERED`, `CANCELLED`. |
   | `reference` | string \| null | no | Max 100 characters. |
   | `invoice` | string \| null | no | Max 100 characters. |
   | `paymentDate` | string (ISO date) \| null | no | When payment was taken. |
@@ -64,6 +66,7 @@ docs {
         "discountAmount": "0",
         "finalAmount": "32.89",
         "paymentStatus": "PENDING",
+        "fulfillmentStatus": "PENDING",
         "invoice": null,
         "paymentDate": null,
         "data": {

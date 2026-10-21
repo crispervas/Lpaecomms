@@ -18,6 +18,7 @@ params:query {
   ~search: a
   ~userId: 1
   ~paymentStatus: PENDING
+  ~fulfillmentStatus: SHIPPED
 }
 
 auth:bearer {
@@ -27,7 +28,7 @@ auth:bearer {
 docs {
   # List purchases
 
-  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `invoice`, `paymentDate` and `data` can change.
+  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `fulfillmentStatus`, `invoice`, `paymentDate` and `data` can change. `fulfillmentStatus` tracks shipping (`PENDING` → `SHIPPED` → `DELIVERED`, or `CANCELLED`) apart from payment.
 
   Returns one page of active purchases. Soft-deleted records never appear.
 
@@ -46,6 +47,7 @@ docs {
   | `search` | string | no | Case-insensitive match against: reference, invoice. |
   | `userId` | integer | no | Only this user's purchases. |
   | `paymentStatus` | string | no | One of `PENDING`, `SUCCESS`, `FAILED`, `REJECTED`. |
+  | `fulfillmentStatus` | string | no | One of `PENDING`, `SHIPPED`, `DELIVERED`, `CANCELLED`. |
 
   ## Responses
 
@@ -63,6 +65,7 @@ docs {
           "discountAmount": "0",
           "finalAmount": "32.89",
           "paymentStatus": "PENDING",
+          "fulfillmentStatus": "PENDING",
           "invoice": null,
           "paymentDate": null,
           "data": {

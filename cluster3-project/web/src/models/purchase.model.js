@@ -62,7 +62,8 @@ export class PurchaseModel extends CrudModel {
 
     return this.prisma.$transaction(async (tx) => {
       const found = await tx.product.findMany({
-        where: { id: { in: ids }, status: { not: 0 } },
+        // A draft is not for sale, exactly like a deleted product.
+        where: { id: { in: ids }, status: { not: 0 }, published: true },
         select: { id: true, price: true },
       });
       const priceById = new Map(found.map((p) => [p.id, new Prisma.Decimal(p.price)]));

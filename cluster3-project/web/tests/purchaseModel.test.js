@@ -87,3 +87,14 @@ test('updating data to null keeps the recorded lines', async () => {
   await new PurchaseModel(prisma, purchaseResource).update(1, { data: null });
   assert.deepEqual(prisma.calls.find((c) => c.method === 'update').args.data.data, { lines });
 });
+
+test('a draft product cannot be bought', async () => {
+  const prisma = createFakePrisma({ product: { findMany: [] }, purchase: { create: {} } });
+  await assert.rejects(
+    new PurchaseModel(prisma, purchaseResource).create({
+      userId: 1, paymentStatus: 'PENDING', products: [{ productId: 1, quantity: 1 }], created: {},
+    }),
+    (err) => err.output?.statusCode === 400,
+  );
+  assert.equal(prisma.calls[0].args.where.published, true);
+});

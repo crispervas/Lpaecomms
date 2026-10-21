@@ -1,0 +1,75 @@
+meta {
+  name: Get store statistics
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  # Get store statistics
+
+  The figures the desktop admin dashboard shows, counted in the database. Deleted rows never count (users by `deletedAt`, everything else by `status: 0`). Draft products count as products.
+
+  - `users.blocked` — accounts with `status: 2`.
+  - `orders.byFulfillment` — always carries all four statuses, `0` when none.
+  - `orders.revenue` — sum of `finalAmount` for orders with `paymentStatus: SUCCESS` that are not `CANCELLED`, rounded to cents.
+  - `categories` — active categories with their product count, most products first.
+
+  ## Auth
+
+  Bearer token of a user whose role is `ADMIN` (send **auth/Log in** first; it stores `{{token}}`).
+
+  ## Parameters
+
+  None.
+
+  ## Responses
+
+  ### 200 OK
+
+    {
+      "message": "Store statistics",
+      "data": {
+        "users": { "total": 12, "customers": 10, "admins": 2, "blocked": 1 },
+        "orders": {
+          "total": 30,
+          "byFulfillment": { "PENDING": 4, "SHIPPED": 6, "DELIVERED": 18, "CANCELLED": 2 },
+          "revenue": 4821.5
+        },
+        "products": { "total": 40, "published": 36, "drafts": 4 },
+        "categories": [
+          { "id": 1, "name": "Electronics", "products": 12 }
+        ]
+      },
+      "pagination": null
+    }
+
+  ### 401 Unauthorized — missing, invalid or expired token
+
+    {
+      "message": "Sign in to continue.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  ### 403 Forbidden — the token's role is not ADMIN
+
+    {
+      "message": "You do not have permission to do this.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
+
+  Outside production, error bodies also carry `stack`.
+}

@@ -50,6 +50,7 @@ docs {
   | `stock` | integer | no | Units in stock; ≥ 0; defaults to 0 on create, unchanged on update when omitted. |
   | `img` | string[] (URLs) | no | Up to 10 image URLs; defaults to [] on create, unchanged on update when omitted. |
   | `description` | string \| null | no | Max 5000 characters. |
+  | `published` | boolean | no | `false` makes the product a draft: only admins see it, and it cannot be bought. Defaults to `true` on create, unchanged on update when omitted. |
 
   ## Responses
 
@@ -68,6 +69,7 @@ docs {
           "https://picsum.photos/seed/lpa-beach-towel/640/640"
         ],
         "description": "Quick-dry towel for Gold Coast beaches.",
+        "published": true,
         "category": {
           "id": 4,
           "name": "Sports",

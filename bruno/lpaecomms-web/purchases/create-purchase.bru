@@ -33,7 +33,7 @@ body:json {
 docs {
   # Create a purchase
 
-  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `invoice`, `paymentDate` and `data` can change.
+  Orders with their product lines. Totals are computed by the server from each product's current price and are never accepted from the client: each line's `amount` is `price × quantity`, `totalAmount` is the sum of the lines, and `finalAmount` is `totalAmount + taxes − discountAmount`, floored at 0. Quantities and unit prices are kept in `data.lines`. After creation only `reference`, `paymentStatus`, `fulfillmentStatus`, `invoice`, `paymentDate` and `data` can change. `fulfillmentStatus` tracks shipping (`PENDING` → `SHIPPED` → `DELIVERED`, or `CANCELLED`) apart from payment.
 
   The server fills `created` with an audit stamp (`client`, `server`, `serverDate`, `serverTime` in APP_TIMEZONE, `unixTime`, `user`, `role` from the token). `status`, `statusName`, `created`, `updated`, `createdAt`, `updatedAt` and any other undeclared key are ignored if sent. An optional top-level `time` (ISO string) is recorded as `created.client`.
 
@@ -47,6 +47,7 @@ docs {
   | --- | --- | --- | --- |
   | `userId` | integer | yes on create | Id of an existing user. |
   | `paymentStatus` | string | yes on create | One of `PENDING`, `SUCCESS`, `FAILED`, `REJECTED`. |
+  | `fulfillmentStatus` | string | no | One of `PENDING`, `SHIPPED`, `DELIVERED`, `CANCELLED`; defaults to `PENDING`. |
   | `products` | array | yes on create | 1–100 lines of `{ productId: integer, quantity: integer 1–999 }`; each product must exist and be active. Create only. |
   | `taxes` | number | no | ≥ 0; defaults to 0. Create only. |
   | `discountAmount` | number | no | ≥ 0; defaults to 0. Create only. |
@@ -70,6 +71,7 @@ docs {
         "discountAmount": "0",
         "finalAmount": "32.89",
         "paymentStatus": "PENDING",
+        "fulfillmentStatus": "PENDING",
         "invoice": null,
         "paymentDate": null,
         "data": {
@@ -120,7 +122,7 @@ docs {
 
   ### 400 Bad Request — validation failed
 
-  A body field is missing or invalid; one `errors` entry per field. Also returned when a referenced id does not exist (`userId`). For purchases, also when a product is missing or inactive.
+  A body field is missing or invalid; one `errors` entry per field. Also returned when a referenced id does not exist (`userId`). For purchases, also when a product is missing, inactive or a draft.
 
     {
       "message": "Some fields need attention.",

@@ -21,6 +21,7 @@ const createSchema = z.object({
   price: z.number().min(0),
   img: images.default([]),
   description: z.string().max(5000).nullable().optional(),
+  published: z.boolean().default(true),
 });
 
 /** @type {import('./index.js').Resource} */
@@ -39,12 +40,21 @@ export default {
       schema: z.string().trim().min(1).max(50),
       where: (value) => ({ category: { code: { equals: value, mode: 'insensitive' } } }),
     },
+    published: {
+      schema: z.enum(['true', 'false']).transform((value) => value === 'true'),
+      where: (value) => ({ published: value }),
+      adminOnly: true,
+    },
   },
+  // Drafts exist for admins only; everyone else reads the catalogue without them.
+  visibility: (viewer) => (viewer?.role === 'ADMIN' ? null : { published: true }),
   include: { category: { select: { id: true, name: true, code: true } } },
   createSchema,
   // Without the defaults: .partial() keeps them, which would reset stock and
   // images on every update that does not mention them.
-  updateSchema: createSchema.extend({ stock: z.number().int().min(0).max(INT4_MAX), img: images }).partial(),
+  updateSchema: createSchema
+    .extend({ stock: z.number().int().min(0).max(INT4_MAX), img: images, published: z.boolean() })
+    .partial(),
   access: { read: 'public', write: 'ADMIN' },
   Model: CrudModel,
 };

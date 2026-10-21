@@ -87,4 +87,15 @@ docs {
     }
 
   Outside production, error bodies also carry `stack`.
+
+  ### 409 Conflict — the target is your own account
+
+  An admin cannot delete the account they are signed in with.
+
+    {
+      "message": "You cannot delete your own account.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
 }

@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { CrudModel } from '../models/crud.model.js';
+import { CategoryCrudModel } from '../models/categoryCrud.model.js';
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -26,5 +26,5 @@ export default {
   createSchema,
   updateSchema: createSchema.partial(),
   access: { read: 'public', write: 'ADMIN' },
-  Model: CrudModel,
+  Model: CategoryCrudModel,
 };

@@ -12,6 +12,7 @@ import express from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middlewares/authenticate.js';
+import { optionalAuthenticate } from '../../middlewares/optionalAuthenticate.js';
 import { authorize } from '../../middlewares/authorize.js';
 import { validate } from '../../middlewares/validate.js';
 import { createTime, updateTime } from '../../middlewares/audit.js';
@@ -28,7 +29,8 @@ const idParams = z.object({ id: urlId() });
  * @param {'public'|'ADMIN'} level - Access level from the resource.
  * @returns {Array<import('express').RequestHandler>} Empty for public.
  */
-const guard = (level) => (level === 'public' ? [] : [authenticate, authorize(level)]);
+// A public read still identifies an admin, so a resource can show them more.
+const guard = (level) => (level === 'public' ? [optionalAuthenticate] : [authenticate, authorize(level)]);
 
 /**
  * Build a resource's router.

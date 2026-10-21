@@ -21,7 +21,7 @@ test('listByCategory maps rows to cards and pages with skip/take', async () => {
   const cards = await new ProductModel(prisma).listByCategory(2, 12, 24);
   assert.deepEqual(cards, [{ id: 1, name: 'P1', category: 'Home', priceAud: 12.5, imageUrl: 'https://img/1.jpg' }]);
   const args = prisma.calls[0].args;
-  assert.deepEqual(args.where, { status: { not: 0 }, categoryId: 2 });
+  assert.deepEqual(args.where, { status: { not: 0 }, published: true, categoryId: 2 });
   assert.equal(args.skip, 24);
   assert.equal(args.take, 12);
 });
@@ -29,7 +29,7 @@ test('listByCategory maps rows to cards and pages with skip/take', async () => {
 test('listFeatured reads every category', async () => {
   const prisma = createFakePrisma({ product: { findMany: [] } });
   await new ProductModel(prisma).listFeatured(8);
-  assert.deepEqual(prisma.calls[0].args.where, { status: { not: 0 } });
+  assert.deepEqual(prisma.calls[0].args.where, { status: { not: 0 }, published: true });
   assert.equal(prisma.calls[0].args.take, 8);
 });
 
@@ -70,7 +70,7 @@ test('findByIds asks for nothing when the history is empty', async () => {
 test('findByCategoryExcluding excludes in the query', async () => {
   const prisma = createFakePrisma({ product: { findMany: [row(4)] } });
   await new ProductModel(prisma).findByCategoryExcluding(2, [1, 3], 4);
-  assert.deepEqual(prisma.calls[0].args.where, { status: { not: 0 }, categoryId: 2, id: { notIn: [1, 3] } });
+  assert.deepEqual(prisma.calls[0].args.where, { status: { not: 0 }, published: true, categoryId: 2, id: { notIn: [1, 3] } });
   assert.equal(prisma.calls[0].args.take, 4);
 });
 
@@ -78,4 +78,14 @@ test('getById answers null for an id beyond int4 without querying', async () => 
   const prisma = createFakePrisma({ product: { findFirst: row(1) } });
   assert.equal(await new ProductModel(prisma).getById('99999999999'), null);
   assert.equal(prisma.calls.length, 0);
+});
+
+test('every storefront read hides draft products', async () => {
+  const prisma = createFakePrisma({ product: { findMany: [], findFirst: null } });
+  const model = new ProductModel(prisma);
+  await model.listFeatured();
+  await model.getById(1);
+  await model.findByIds([1]);
+  await model.findByCategoryExcluding(2, [1], 4);
+  for (const call of prisma.calls) assert.equal(call.args.where.published, true, call.method);
 });

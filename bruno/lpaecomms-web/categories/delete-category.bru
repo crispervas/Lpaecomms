@@ -17,7 +17,7 @@ auth:bearer {
 docs {
   # Delete a category
 
-  Soft delete: sets `status` to 0 and `statusName` to `INACTIVE`, and records who did it in `updated`. The row stays in the database but disappears from every read.
+  Soft delete: sets `status` to 0 and `statusName` to `INACTIVE`, and records who did it in `updated`. The row stays in the database but disappears from every read. A category that still holds products (published or draft) cannot be deleted: move or delete them first.
 
   ## Auth
 
@@ -87,4 +87,13 @@ docs {
     }
 
   Outside production, error bodies also carry `stack`.
+
+  ### 409 Conflict — the category still holds products
+
+    {
+      "message": "Move or delete this category's products first.",
+      "data": null,
+      "pagination": null,
+      "errors": []
+    }
 }
