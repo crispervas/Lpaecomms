@@ -14,7 +14,7 @@ platforms — the API is the only contract between them.
 
 ```bash
 pnpm install
-cp .env.example .env
+cp .env.development.example .env.development
 ```
 
 ## Commands
@@ -35,7 +35,21 @@ On Windows, set the variable separately before running `electron .`.
 
 ## Environment variables
 
-See `.env.example` for the full list. Two of them are easy to confuse:
+Each environment has its own file, chosen by `NODE_ENV` from the shell — the
+same rule as the web, in `src/main/config/envFile.js`, used both by
+`pnpm dev`/`pnpm start` and by the installer build:
+
+| `NODE_ENV` | File read | Template |
+| --- | --- | --- |
+| unset or `development` | `.env.development` | `.env.development.example` |
+| `staging` | `.env.staging` | `.env.staging.example` |
+| `production` | `.env.production` | `.env.production.example` |
+
+When that file does not exist, `.env` is read instead. Variables already set
+in the shell win over the file. `NODE_ENV=production pnpm start` runs the
+admin against the deployed API without building an installer.
+
+Two of the variables are easy to confuse:
 
 - `NODE_ENV` decides **which API** the app talks to.
 - `app.isPackaged || USE_BUILT_RENDERER` decides **how the renderer is
@@ -60,17 +74,15 @@ its configuration in. `scripts/dist.mjs` validates the build machine's
 ignores its own environment. The values come from:
 
 1. variables already set in the shell (CI secrets, for instance), then
-2. `.env.<NODE_ENV>` when `NODE_ENV` is set and that file exists, otherwise
-3. `.env`.
+2. the environment's file, chosen as above.
 
 ```bash
-pnpm dist:mac                          # values from .env (development)
+pnpm dist:mac                          # values from .env.development (or .env)
 NODE_ENV=production pnpm dist:mac      # values from .env.production
 ```
 
-`.env.staging` and `.env.production` follow `.env.example` and, like every
-real `.env` file, are never committed. A missing or invalid variable stops the
-build, not the installed app.
+Real `.env*` files are never committed; only the `.example` templates are. A
+missing or invalid variable stops the build, not the installed app.
 
 ### Where each installer builds
 

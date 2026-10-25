@@ -661,7 +661,9 @@ Bruno requests); the steps below are for anything else.
 
 ```
 mobile/
-├── .env.example              # Documents VITE_API_BASE_URL (read by api/client.ts)
+├── .env.development.example  # VITE_API_BASE_URL for `pnpm dev` (read by api/client.ts)
+├── .env.staging.example      # VITE_API_BASE_URL for `pnpm build:staging`
+├── .env.production.example   # VITE_API_BASE_URL for `pnpm build` (and so `npx cap sync`)
 ├── assets/                   # Icon + splash PNGs for `pnpm assets`, exported from brand/
 ├── scripts/resize-ios-splash.mjs  # `pnpm assets` step: shrinks the iOS splash so it renders
 ├── capacitor.config.ts       # App id com.lpaecomms.mobile, webDir: dist
@@ -718,7 +720,9 @@ the first such edit is the point to start committing the native projects.
 
 ```
 desktop/
-├── .env.example          # Documents every environment variable (no secrets)
+├── .env.development.example # Documents every environment variable, local values (no secrets)
+├── .env.staging.example  # Same variables for staging
+├── .env.production.example # Same variables for production (the deployed API)
 ├── electron-builder.config.cjs # Installer settings shared by .dmg and .exe
 ├── scripts/dist.mjs      # `pnpm dist:*`: bakes the config, runs electron-builder
 ├── app-config.json       # Baked by scripts/dist.mjs (build output, gitignored)
@@ -731,6 +735,7 @@ desktop/
 │                         #   electron-builder puts them on both installers
 ├── tests/
 │   ├── env.test.js               # Environment validation
+│   ├── envFile.test.js           # Which .env file each NODE_ENV reads, fallback to .env
 │   ├── packagedConfig.test.js    # Configuration baked into installers
 │   ├── describeHealth.test.mjs   # Health envelope → service state
 │   ├── apiClient.test.js         # Result envelope for every failure mode; token, query, pagination
@@ -753,7 +758,8 @@ desktop/
     │   ├── preload.js            # contextBridge surface — named functions only
     │   ├── config/env.js         # Validated, frozen configuration
     │   ├── config/packaged.js    # Bakes and reads a packaged build's config
-    │   ├── config/index.js       # Picks the source: baked file or .env
+    │   ├── config/index.js       # Picks the source: baked file or the environment's .env file
+    │   ├── config/envFile.js     # .env.<NODE_ENV> or .env — shared with scripts/dist.mjs
     │   ├── services/apiClient.js # HTTP client returning result envelopes
     │   ├── services/session.js   # Admin session: role check, token held in main
     │   ├── services/adminApi.js  # Named admin operations (ADMIN_OPERATIONS) over the REST API
@@ -803,8 +809,10 @@ beyond `electron` and Node builtins, so it needs no build step.
 Installers come from `pnpm dist:mac` / `pnpm dist:win`. An installed app has
 no shell environment and no `.env`, so `scripts/dist.mjs` validates the build
 machine's configuration and bakes it into the package as `app-config.json`;
-`config/index.js` reads that file when `app.isPackaged` and the `.env`
-otherwise. The installer's file name carries the environment it was baked for.
+`config/index.js` reads that file when `app.isPackaged`, and otherwise the
+environment's `.env.<NODE_ENV>` (or `.env`), chosen by `config/envFile.js` —
+the same rule `dist.mjs` uses and the web's `loadEnv` follows. The installer's
+file name carries the environment it was baked for.
 
 The admin screens follow the desktop mockups in `documentation/Mockup/`. Their
 colours come only from the `lpa` palette in `tailwind.config.js`, and the fonts

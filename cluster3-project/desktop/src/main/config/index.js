@@ -11,7 +11,9 @@
  * - Packaged: the app-config.json baked into the build (see ./packaged.js).
  *   The shell environment is ignored on purpose, so a stray NODE_ENV on a
  *   user's machine cannot point an installed app at another API.
- * - Otherwise: the .env file, then process.env, as during development.
+ * - Otherwise: `.env.<NODE_ENV>` (or `.env`, see ./envFile.js), then
+ *   process.env, as during development. `NODE_ENV=production pnpm start`
+ *   therefore runs against the production API without packaging.
  *
  * Validation still throws at import time: the application fails fast rather
  * than starting half-configured, and this is the only module the application
@@ -24,6 +26,7 @@ const dotenv = require('dotenv');
 const { app } = require('electron');
 
 const { createConfig } = require('./env.js');
+const { DESKTOP_ROOT, resolveEnvFile } = require('./envFile.js');
 const { readPackagedSource } = require('./packaged.js');
 
 /**
@@ -36,9 +39,11 @@ function loadSource() {
   if (app.isPackaged) {
     return readPackagedSource(app.getAppPath(), (file) => fs.readFileSync(file, 'utf8'));
   }
+  const file = resolveEnvFile(DESKTOP_ROOT, process.env.NODE_ENV);
   // quiet: true suppresses dotenv's promotional banner, which would otherwise
-  // print on every main-process launch.
-  dotenv.config({ quiet: true });
+  // print on every main-process launch. dotenv never overrides a variable the
+  // shell already set.
+  if (file) dotenv.config({ path: file, quiet: true });
   return process.env;
 }
 

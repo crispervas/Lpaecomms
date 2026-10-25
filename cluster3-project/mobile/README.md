@@ -27,7 +27,7 @@ this section):
 
 ```bash
 pnpm install
-cp .env.example .env
+cp .env.development.example .env.development
 pnpm build
 npx cap add ios
 
@@ -73,7 +73,8 @@ image up for 2 s and fades it out; its settings live under
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Vite dev server, in the browser |
-| `pnpm build` | Compile the web assets into `dist/` |
+| `pnpm build` | Compile the web assets into `dist/` (production mode: `.env.production`) |
+| `pnpm build:staging` | The same, in staging mode (`.env.staging`) |
 | `pnpm test.unit` | Run the Vitest unit tests |
 | `pnpm test.e2e` | Run the Cypress end-to-end tests (needs `pnpm dev` running) |
 | `pnpm assets` | Regenerate the iOS/Android icons and splash screens from `assets/` |
@@ -95,11 +96,30 @@ android`. `adb reverse tcp:3000 tcp:3000` lets the app reach the local API at
 Capacitor 8 resolves its default plugins through Swift Package Manager, so there is no `Podfile`/`.xcworkspace` on
 iOS — build or open `ios/App/App.xcodeproj` directly.
 
+## Environments
+
+Each environment has its own file, like the web and the desktop. Here Vite
+does the choosing, by **mode**: it reads `.env` and then `.env.<mode>`, the
+second winning, and bakes every `VITE_` variable into the bundle.
+
+| Command | Mode | File read over `.env` | Template |
+| --- | --- | --- | --- |
+| `pnpm dev` | development | `.env.development` | `.env.development.example` |
+| `pnpm build:staging` | staging | `.env.staging` | `.env.staging.example` |
+| `pnpm build` | production | `.env.production` | `.env.production.example` |
+
+`npx cap sync` copies whatever `dist/` holds, so the app on a phone talks to
+the API of the last build: `pnpm build` then `npx cap sync` for production.
+To test a phone against your local API instead, build without a
+`.env.production` (or with it pointing at your machine), since `pnpm build`
+always runs in production mode. Variables set in the shell win over the files.
+
 ## Running against the local API
 
 The Home view's "Trending now" grid calls `GET /api/v1/products`. Start the
 web platform (`pnpm dev` in `cluster3-project/web`) before `pnpm dev` here,
-and make sure `.env` sets `VITE_API_BASE_URL=http://localhost:3000/api/v1`.
+and make sure `.env.development` (or `.env`) sets
+`VITE_API_BASE_URL=http://localhost:3000/api/v1`.
 With the API down the grid shows an error with a Retry button; the rest of
 the page still renders.
 
