@@ -8,15 +8,11 @@
  * value is hardcoded per environment and nothing branches on a hostname.
  */
 
-import dotenv from 'dotenv';
-import { expand } from 'dotenv-expand';
+import { loadEnv } from './loadEnv.js';
 
-// Load .env and expand ${VAR} references so DATABASE_URL can be composed from
-// the individual POSTGRES_* variables rather than duplicating them.
-// `quiet` suppresses dotenv's own stdout output (a random promotional tip on
-// every load, as of v17) — it does not silence anything this module logs
-// itself, and no error or warning from a malformed .env is affected.
-expand(dotenv.config({ override: true, quiet: true }));
+// Load .env.<NODE_ENV> (or .env) before anything below reads process.env;
+// see loadEnv.js for which file is chosen.
+loadEnv();
 
 /**
  * Environments the application recognises.

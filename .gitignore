@@ -12,11 +12,13 @@ node_modules/
 
 # ---------------------------------------------------------------------------
 # Environment & secrets
-# Commit only the .env.example files; never the real ones.
+# Commit only the example files (.env.example, .env.<environment>.example);
+# never the real ones.
 # ---------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
+!.env.*.example
 *.pem
 *.key
 

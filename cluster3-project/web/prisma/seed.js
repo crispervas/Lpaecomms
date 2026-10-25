@@ -9,13 +9,14 @@
  * twice changes nothing. Credentials come from the environment.
  */
 
-import dotenv from 'dotenv';
-import { expand } from 'dotenv-expand';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { loadEnv } from '../src/config/loadEnv.js';
 
-expand(dotenv.config({ quiet: true }));
+// The same environment file as the app: NODE_ENV=production seeds the
+// database named in .env.production.
+loadEnv();
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 

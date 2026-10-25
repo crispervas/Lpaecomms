@@ -7,13 +7,12 @@
  * src/config/env.js and connects using a pg driver adapter.
  */
 
-import dotenv from 'dotenv';
-import { expand } from 'dotenv-expand';
 import { defineConfig } from 'prisma/config';
+import { loadEnv } from './src/config/loadEnv.js';
 
-// Expand ${VAR} references so the CLI resolves the same composed DATABASE_URL
-// as the application runtime.
-expand(dotenv.config());
+// The same environment file as the application runtime, so the CLI resolves
+// the same composed DATABASE_URL (NODE_ENV=production → .env.production).
+loadEnv();
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

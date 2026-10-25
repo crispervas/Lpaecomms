@@ -73,8 +73,10 @@ cluster3-project/web/
 ├── tests/
 │   └── health.test.js              # GET /api/v1/health with node:test + supertest
 ├── docker-compose.yml              # postgres:16
-├── .env.example                    # Documents every variable (versioned)
-├── .env                            # Real values, NOT versioned
+├── .env.development.example        # Documents every variable, local values (versioned)
+├── .env.staging.example            # Same variables for staging (versioned)
+├── .env.production.example         # Same variables for production (versioned)
+├── .env.<environment> / .env       # Real values, NOT versioned
 ├── package.json
 └── README.md
 ```
@@ -95,7 +97,7 @@ cluster3-project/web/
 ## Database
 
 ```bash
-docker compose up -d        # PostgreSQL 16
+docker compose up -d        # PostgreSQL 16 (add --env-file .env.development if you use that file)
 pnpm prisma migrate dev     # Development: apply migrations (and create new ones)
 pnpm db:migrate             # Staging/production: apply committed migrations only
 pnpm db:seed                # Reference data, 5 categories, 20 products, one admin
@@ -107,7 +109,29 @@ credentials from `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`.
 
 ## Environment variables
 
-Documented in `.env.example`. Beyond the database and port:
+Each environment has its own file, chosen by `NODE_ENV` from the shell
+(`src/config/loadEnv.js`, shared by the app, the Prisma CLI and the seed):
+
+| `NODE_ENV` | File read | Template |
+| --- | --- | --- |
+| unset or `development` | `.env.development` | `.env.development.example` |
+| `staging` | `.env.staging` | `.env.staging.example` |
+| `production` | `.env.production` | `.env.production.example` |
+
+When that file does not exist, `.env` is read instead, so a single local
+`.env` keeps working. With neither, only the real environment is used — the
+case on a host like Render, which sets the variables in its dashboard. A
+file's values override the shell's, except `NODE_ENV` itself.
+
+To run Prisma or the seed against production from your machine, put the
+database's external URL in `.env.production`:
+
+```bash
+NODE_ENV=production pnpm db:migrate
+NODE_ENV=production pnpm db:seed
+```
+
+Beyond the database and port:
 
 | Variable | Required | Purpose |
 | --- | --- | --- |

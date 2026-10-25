@@ -82,8 +82,10 @@ defines `baseUrl` and `adminEmail`, and declares `adminPassword` as a secret
 
 ```
 web/
-├── .env.example          # Documents every environment variable (no secrets)
-├── .env                  # Local values — never committed
+├── .env.development.example # Documents every environment variable, local values (no secrets)
+├── .env.staging.example  # Same variables for staging (no secrets)
+├── .env.production.example # Same variables for production (no secrets)
+├── .env.<environment>    # Real values per NODE_ENV — never committed; `.env` is the fallback
 ├── docker-compose.yml    # Local services (e.g. PostgreSQL)
 ├── package.json          # Scripts and dependencies
 ├── prisma.config.js      # Prisma configuration
@@ -101,6 +103,7 @@ web/
 │       └── pages/                # Per-page composition (home, catalog, product, about…)
 ├── tests/
 │   ├── health.test.js             # Health endpoint (needs the dev database running)
+│   ├── loadEnv.test.js            # Which .env file each NODE_ENV reads, fallback to .env, NODE_ENV kept from the shell
 │   ├── errorHandler.test.js       # Error middleware: JSON envelope for API, HTML for the browser, Prisma 409
 │   ├── helpers/
 │   │   └── fakePrisma.js          # Recording fake Prisma client: tests assert on the queries built
@@ -293,6 +296,7 @@ src/
 ├── server.js             # Entry point: starts the HTTP server
 ├── app.js                # App factory: builds & configures Express (no listen)
 ├── config/               # Cross-cutting configuration and middleware
+│   ├── loadEnv.js        # Picks .env.<NODE_ENV> (or .env) and loads it; shared with prisma.config.js and the seed
 │   ├── env.js            # Reads & validates environment variables (fails fast)
 │   ├── errorHandler.js   # Error middleware chain (logErrors → wrapErrors → errorHandler)
 │   ├── notFoundHandler.js# 404 handlers: JSON for API, HTML page for the browser
